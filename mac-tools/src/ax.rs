@@ -136,7 +136,7 @@ impl Elem {
         (err == AX_OK && !v.is_null()).then(|| Owned(v))
     }
 
-    fn elem_attr(&self, name: &'static str) -> Option<Elem> {
+    pub(crate) fn elem_attr(&self, name: &'static str) -> Option<Elem> {
         let v = self.copy(name)?;
         if unsafe { CFGetTypeID(v.0) } != unsafe { AXUIElementGetTypeID() } {
             return None;
@@ -167,7 +167,7 @@ impl Elem {
         check(name, unsafe { AXUIElementSetAttributeValue(self.0, attr(name).as_concrete_TypeRef(), b.as_CFTypeRef()) })
     }
 
-    fn children(&self, name: &'static str) -> Vec<Elem> {
+    pub(crate) fn children(&self, name: &'static str) -> Vec<Elem> {
         use core_foundation::array::{CFArray, CFArrayRef};
         let Some(v) = self.copy(name) else { return vec![] };
         if unsafe { CFGetTypeID(v.0) } != CFArray::<*const c_void>::type_id() {
