@@ -34,6 +34,11 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [spotify](./spotify) | Playback through the OS (SMTC / AppleScript / MPRIS); likes, shuffle, repeat, volume, playlists through the Web API | Windows, macOS, Linux |
 | [twitch](./twitch) | Helix API: chat, chat modes, ads, stream info, markers, clips, viewers, channel monitor | Windows, macOS, Linux |
 | [youtube](./youtube) | YouTube Data API: viewers, chat, ads, dashboard, go live / end stream | Windows, macOS, Linux |
+| [home-assistant](./home-assistant) | Home Assistant REST API: toggle entities, scenes and scripts, sensor states, level dial, any service, entities wheel | Windows, macOS, Linux |
+| [hue](./hue) | Philips Hue Bridge local API: power, brightness, color temperature, color, scenes (mDNS discovery, link-button pairing) | Windows, macOS, Linux |
+| [game-launcher](./game-launcher) | Launch installed Steam games (every OS) and Epic Games Store games (Windows, macOS) from a key or wheel; launcher pages | Windows, macOS, Linux |
+| [ytmusic](./ytmusic) | YouTube Music Desktop App (YTMDesktop 2.x) Companion Server: playback, likes, volume, repeat, queue, playlists | Windows, macOS, Linux |
+| [slides](./slides) | Slide shows: PowerPoint (COM on Windows, AppleScript on macOS), Keynote (macOS), LibreOffice Impress (Impress Remote protocol, every OS) | Windows, macOS, Linux |
 
 `vscode-companion` and `intellij-companion` are not ported: they are an editor extension and a
 Kotlin IDE plugin that run *inside* VS Code / IntelliJ, not KnobDeck SDK plugins. The Rust `vscode`

@@ -51,6 +51,36 @@
       ],
       "sort": 25
     },
+    "game-launcher": {
+      "version": "1.0.0",
+      "name": "Game Launcher",
+      "summary": "Launch installed Steam and Epic games from a key or wheel.",
+      "tags": [
+        "Gaming",
+        "Launcher"
+      ],
+      "sort": 35
+    },
+    "home-assistant": {
+      "version": "1.0.0",
+      "name": "Home Assistant",
+      "summary": "Toggle entities, run scenes, show sensors and set levels.",
+      "tags": [
+        "Smart home",
+        "Automation"
+      ],
+      "sort": 27
+    },
+    "hue": {
+      "version": "1.0.0",
+      "name": "Philips Hue",
+      "summary": "Hue lights, rooms and scenes: power, brightness, color.",
+      "tags": [
+        "Lighting",
+        "Smart home"
+      ],
+      "sort": 28
+    },
     "intellij": {
       "version": "1.1.0",
       "name": "IntelliJ IDEA",
@@ -93,6 +123,16 @@
       ],
       "featured": true,
       "sort": 20
+    },
+    "slides": {
+      "version": "1.0.0",
+      "name": "Slides",
+      "summary": "Present with PowerPoint, Keynote or LibreOffice Impress.",
+      "tags": [
+        "Productivity",
+        "Presentations"
+      ],
+      "sort": 65
     },
     "spotify": {
       "version": "1.1.0",
@@ -187,6 +227,16 @@
         "Broadcast"
       ],
       "sort": 23
+    },
+    "ytmusic": {
+      "version": "1.0.0",
+      "name": "YouTube Music Desktop",
+      "summary": "Playback, likes, volume, queue and playlists in YTMDesktop.",
+      "tags": [
+        "Music",
+        "Media"
+      ],
+      "sort": 16
     },
     "zoom": {
       "version": "1.0.1",

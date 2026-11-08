@@ -60,6 +60,9 @@ Current decisions (keep this list up to date):
 | linux-tools | KDE: KWin scripts over `org.kde.kwin.Scripting` (windows, desktops), KGlobalAccel `invokeShortcut` (KWin's / PowerDevil's own actions by name: Overview, Expose, Show Desktop, Turn Off Screen), KRunner, Klipper, Spectacle. GNOME: the KnobDeck Shell extension (`linux-desktop/gnome-extension`: windows, workspaces, overview, search, screenshot UI, clipboard), `org.gnome.ScreenSaver`. Both: logind, NetworkManager, BlueZ, power-profiles-daemon, FileManager1, `pactl` | Ctrl+V for clipboard history and Text Snippet (no app-independent paste request on Linux; Wayland lets no client act on another's text field) |
 | browser-plugin | Linux KDE/GNOME: focusing the browser through the compositor (`linux-desktop`), URLs via the browser's program or `gio launch`. macOS Chromium (Chrome/Edge/Brave): AppleScript for tabs, navigation, windows, incognito, history/downloads/bookmarks pages; URLs via `open -a` / the browser exe | Firefox/Zen (no scripting interface), all browsers on Windows and Linux (no control interface without a debug flag), and page commands with no scripting equivalent (find, print, save, zoom, hard reload, reopen tab, full screen) |
 | ai-stats | providers' usage endpoints, local transcripts | none |
+| home-assistant, hue, ytmusic | the service's / device's / app's own API (HA REST, Hue Bridge local API, YTMDesktop Companion Server + its Socket.IO feed) | none |
+| game-launcher | the launchers' own files (Steam `libraryfolders.vdf` / `appmanifest_*.acf`, Epic manifests) and URL schemes (`steam://rungameid/…`, `com.epicgames.launcher://apps/…`) | none |
+| slides | Windows PowerPoint COM (`SlideShowWindows(1).View`), macOS PowerPoint and Keynote AppleScript, LibreOffice Impress Remote protocol (TCP 1599) | none; Keynote has no blank-screen command, so Black/White Screen report that instead of sending B/W |
 
 ## Rule 2: every OS stays working
 

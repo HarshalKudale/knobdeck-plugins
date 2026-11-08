@@ -399,3 +399,46 @@ plugins; **System Vitals** (#28) overlaps our System stats.
 
 Re-run the ranking with:
 `curl "https://mp-gateway.elgato.com/products?extension=plugins&limit=40&ordering=-download_count"`
+
+---
+
+## 9. Next 10 (ranks 21–50), picked 2026-11-08
+
+Re-ran the ranking on 2026-11-08 (1,798 plugins). Ranks 1–20 have not moved, so the top 20 above still
+holds. Picks favour plugins for apps and network services that can ship on Windows, macOS and Linux.
+
+| Pick | Stream Deck plugin (rank) | KnobDeck plugin | Route (Rule 1 tier) | OS |
+|---|---|---|---|---|
+| 1 | Home Assistant (#29) | `home-assistant` | HA REST + websocket API, long-lived token (3) | W M L |
+| 2 | Philips Hue (#36) | `hue` | Hue Bridge local API v2, mDNS discovery, link-button pairing (3) | W M L |
+| 3 | Advanced Launcher (#22) | `game-launcher` | Steam `libraryfolders.vdf` + `steam://rungameid`, Epic / GOG manifests, MS Store apps on W (3, 4) | W M L |
+| 4 | YouTube Music Desktop Connector (#46) | `ytmusic` | YTMDesktop v2 Companion Server (REST + socket.io, in-app auth approval) (3) | W M L |
+| 5 | PowerPoint (#43) | `slides` | PowerPoint COM on W, PowerPoint + Keynote AppleScript on M, LibreOffice Impress UNO on L (3) | W M L |
+| 6 | VoiceMeeter Integration (#48) | `voicemeeter` | `VoicemeeterRemote64.dll`, loaded at runtime (3) | W |
+| 7 | Sound Deck (#25) + Soundpad (#45) | `soundboard` | play files to a chosen output device (cpal/rodio), Soundpad pipe on W (1, 3) | W M L |
+| 8 | Govee Controller (#39) | `govee` | Govee LAN API (UDP multicast), cloud API key as fallback (3) | W M L |
+| 9 | Midi (#49) | `midi` | OS MIDI (WinMM / CoreMIDI / ALSA) via `midir`, virtual port on M/L (1) | W M L |
+| 10 | Speed Test (#21) | `speedtest` | Cloudflare speed endpoints (Ookla has no public API) (3) | W M L |
+
+Not picked, and why:
+- **Covered already:** Discord Volume Mixer (#23, `discord` user volume + member wheel), System Vitals
+  (#28) and GPU Metrics (#42) (System stats in the tools plugins; add network/temps there),
+  Streamlabs Desktop (#31), Window Mover (#32), Audio Mixer (#38, tools app volume), Visual Studio Code
+  (#44), Zoom (#50).
+- **Hardware we can't test here:** Wave Link 3 (#26, Elgato mics), iCUE (#27, Corsair), Camera Hub
+  (#30, Elgato cameras), Battery (#34, vendor SDKs). Build when there is a device to test on.
+- **Keystrokes only (Rule 1):** ShadowPlay (#24), TikTok LIVE Studio (#33): no API.
+- **Needs a helper inside the app:** Adobe Photoshop (#41, UXP plugin). Larger project.
+- **Not a fit / small:** Advanced Screen Saver (#40), Windows Cockpit Pro (#47, overlaps win-tools),
+  Stream Counter (#35, could be a counter action in `clocks`), YouTube Ticker (#37, `youtube` viewers).
+
+### Progress (next 10)
+
+| Step | Status |
+|---|---|
+| home-assistant 1.0.0 (#29): Toggle Entity, Run Scene / Script, Show State, Level dial, Call Service, Entities Wheel; long-lived token setup | done (tested against a mock HA REST server; no real Home Assistant here) |
+| hue 1.0.0 (#36): Power, Brightness, Color Temperature, Set Brightness, Set Color, Scene, Scenes Wheel; mDNS / discovery.meethue.com, link-button pairing, re-finds a moved bridge by id | done (tested against a mock bridge, incl. pairing and an unpaired user; no real bridge here). Uses the v1 API over HTTP; v2 (HTTPS, self-signed) not yet |
+| game-launcher 1.0.0 (#22): Launch Game (with the game's icon), Games Wheel (recent / A–Z), Open Launcher Page; Steam everywhere, Epic on Windows/macOS | done (read this machine's real Steam library; Epic manifest parsing unit-tested only). Not done: GOG Galaxy, Xbox / Microsoft Store games, Battle.net, EA, Ubisoft, Heroic / Lutris |
+| ytmusic 1.0.0 (#46): Play/Pause, Next, Previous, Now Playing (album art), Like, Dislike, Volume, Mute, Shuffle, Repeat, Seek, Play Playlist, Playlists Wheel, Up Next Wheel; realtime Socket.IO feed | done (tested against a mock Companion Server incl. the auth flow and realtime feed; YTMDesktop not installed here) |
+| slides 1.0.0 (#43): Next, Previous, Start, End, Go to Slide, Black / White Screen, Slide Counter; PowerPoint (W, M), Keynote (M), LibreOffice Impress (W, M, L) | Impress tested against a mock Impress Remote server incl. PIN pairing. PowerPoint COM and the AppleScript paths only type-check here: **need a run on Windows and a Mac** |
+| Left for later (user's call, 2026-11-08): voicemeeter (#48), soundboard (#25, #45), govee (#39), midi (#49), speedtest (#21) | — |

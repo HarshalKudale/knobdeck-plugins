@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools", "mac-tools", "ai-stats", "elgato-lights", "weather", "clocks", "streamlabs", "voicemod", "spotify", "twitch", "youtube", "linux-desktop", "linux-tools"]
+members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools", "mac-tools", "ai-stats", "elgato-lights", "weather", "clocks", "streamlabs", "voicemod", "spotify", "twitch", "youtube", "linux-desktop", "linux-tools", "home-assistant", "hue", "game-launcher", "ytmusic", "slides"]
 
 [workspace.dependencies]
 knobdeck-sdk = { git = "https://github.com/HarshalKudale/knobdeck-sdk.git" }
