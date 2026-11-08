@@ -17,6 +17,10 @@ Window management and system tools for KnobDeck on **macOS** — the macOS count
 - **Audio:** Mute Microphone toggle, and wheels to switch the output or input device.
 - **Text Snippet:** types saved text into whatever has focus, or with Paste mode on, copies it to
   the clipboard and pastes it.
+- **Menu Command:** presses any item of an app's menu bar — pick the app and the command
+  (File ▸ Export ▸ PNG…) from a list of its menus, or type the path. It runs the menu item itself,
+  so it works when the item has no shortcut or you've changed it. Choose **App in front** to run
+  the same command in whichever app is in front (type the path, since the list needs a chosen app).
 - **Clipboard History:** the last 16 copies (text, rich text, images, files); picking one pastes it.
 
 ## Permissions
@@ -40,7 +44,7 @@ rather than shipped as actions that silently do nothing.
 - System actions call macOS directly instead of pressing shortcuts, so the app in front can't
   intercept them and remapped shortcuts don't break them: Mission Control, App Exposé and Show
   Desktop ask the Dock, Lock Screen uses the system lock call, Emoji & Symbols opens the Character
-  Viewer, Hide Others and Paste go through Accessibility (Paste presses the app's own Edit ▸ Paste),
+  Viewer, Hide Others, Paste and Menu Command go through Accessibility (Paste presses the app's own Edit ▸ Paste),
   and Screenshot opens the Screenshot app.
 - macOS has no API to switch Spaces or open Spotlight, so those post **your** configured system
   shortcut (read from Keyboard Shortcuts; macOS handles it before any app sees it) and report it if

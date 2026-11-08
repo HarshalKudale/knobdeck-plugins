@@ -5,7 +5,8 @@
 //! Position (halves, quarters, centre, custom, next display), window-picker
 //! wheels ("Dynamic …"), a window switcher with app icons, Spaces / Mission
 //! Control / system shortcuts, live system stats, audio device switching and
-//! microphone mute, and a clipboard history.
+//! microphone mute, a clipboard history, and Menu Command (press any item of
+//! an app's menu bar).
 //!
 //! Window control goes through the Accessibility API (KnobDeck's permission).
 //! What macOS doesn't allow for other apps' windows (always on top, opacity,
@@ -27,6 +28,8 @@ mod clipboard;
 #[cfg(target_os = "macos")]
 mod icon;
 #[cfg(target_os = "macos")]
+mod menus;
+#[cfg(target_os = "macos")]
 mod screens;
 #[cfg(target_os = "macos")]
 mod stats;
@@ -45,7 +48,7 @@ mod app {
     use crate::ax::{self, Elem, Rect};
     use crate::screens::{self, Display};
     use crate::system::{self, Dock, Hotkey};
-    use crate::{audio, clipboard, icon, stats, windows};
+    use crate::{audio, clipboard, icon, menus, stats, windows};
     use knobdeck_sdk::input::{self, InputExt};
     use knobdeck_sdk::{json, Action, Ctx, Error, Plugin, Result, Value, Visual};
     use std::collections::HashMap;
@@ -392,7 +395,7 @@ mod app {
         let mut p = Plugin::new("mac-tools", "Mac Tools")
             .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
-            .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system shortcuts, live stats, audio devices, mic mute and clipboard history.")
+            .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system shortcuts, live stats, audio devices, mic mute, clipboard history and app menu commands.")
             .icon("app-window")
             .platforms(&["macos"])
             // Several toggles derive their state from the focused window.
@@ -418,6 +421,8 @@ mod app {
                 let f = ax::focused_window()?.frame()?;
                 Ok(json!((f.y - resolve_display(&f, &str_input(&ctx.inputs, "monitor"))?.work.y).round().to_string()))
             })
+            .query("get-menu-apps", |ctx| Ok(menu_apps(&ctx.inputs)))
+            .query("get-menu-commands", |ctx| menu_commands(&ctx.inputs))
             .query("get-window-w", |_| Ok(json!(ax::focused_window()?.frame()?.w.round().to_string())))
             .query("get-window-h", |_| Ok(json!(ax::focused_window()?.frame()?.h.round().to_string())))
             // ── Current Window ──
@@ -495,6 +500,8 @@ mod app {
             .action(open_button("screen-snip", "Screenshot", "scissors", "com.apple.screenshot.launcher"))
             .action(Action::button("emoji-panel", "Emoji & Symbols").icon("smile").on_press(|_| system::character_viewer()))
             .action(Action::button("hide-others", "Hide Others").icon("eye-off").on_press(|_| system::hide_others()))
+            // Presses the item through Accessibility like a click, not its shortcut.
+            .action(Action::button("menu-command", "Menu Command").icon("menu").inputs(menu_command_inputs()).on_press(|ctx| press_menu_command(&ctx.inputs)))
             // No API opens the Force Quit window; ⌥⌘Esc is reserved by loginwindow, so no app can capture it.
             .action(keys_button("force-quit", "Force Quit…", "circle-x", "cmd alt esc"))
             .action(Action::button("lock-screen", "Lock Screen").icon("lock").on_press(|_| system::lock_screen()))
@@ -585,6 +592,76 @@ mod app {
                 }),
         )
         .run()
+    }
+
+    // ── Menu Command ─────────────────────────────────────────────────────────
+
+    /// A combobox stores either the typed text or the picked `{label, value}`.
+    fn combo_value(v: &Value) -> String {
+        match v {
+            Value::Object(o) => o.get("value").and_then(Value::as_str).unwrap_or("").to_string(),
+            Value::String(s) => s.clone(),
+            _ => String::new(),
+        }
+    }
+
+    fn menu_command_inputs() -> Vec<Value> {
+        vec![
+            input::query_select("app", "App", "get-menu-apps", &[]).default_value(menus::FRONT),
+            json!({
+                "key": "command",
+                "label": "Command",
+                "type": "combobox",
+                "query": {"id": "get-menu-commands", "args": ["app"]},
+                "placeholder": "Pick from the app's menus, or type File > Export…",
+            }),
+        ]
+    }
+
+    fn menu_apps(inputs: &Value) -> Value {
+        let mut opts = vec![json!({"value": menus::FRONT, "label": "App in front (when pressed)"})];
+        let saved = str_input(inputs, "app");
+        let mut found = saved.is_empty() || saved == menus::FRONT;
+        for a in menus::running_apps() {
+            found |= a.bundle_id == saved;
+            opts.push(json!({"value": a.bundle_id, "label": a.name}));
+        }
+        // Keep a saved app that isn't running now, so the picker doesn't drop it.
+        if !found {
+            opts.push(json!({"value": saved, "label": format!("{saved} (not running)")}));
+        }
+        Value::Array(opts)
+    }
+
+    /// The picker's list: the chosen app's menu items. For "App in front" that's the
+    /// front app while configuring (usually KnobDeck's own window), so ask for an app.
+    fn menu_commands(inputs: &Value) -> Result<Value> {
+        let choice = str_input(inputs, "app");
+        if choice.is_empty() || choice == menus::FRONT {
+            return Ok(json!([]));
+        }
+        let app = menus::target_app(&choice, false)?;
+        let opts = menus::list(&app)?
+            .into_iter()
+            .map(|e| {
+                let path = e.path_text();
+                let mut label = path.clone();
+                if let Some(s) = &e.shortcut {
+                    label = format!("{label}   {s}");
+                }
+                json!({"value": path, "label": label})
+            })
+            .collect();
+        Ok(Value::Array(opts))
+    }
+
+    fn press_menu_command(inputs: &Value) -> Result {
+        let path = menus::parse_path(&combo_value(&inputs["command"]));
+        if path.is_empty() {
+            return Err(Error::msg("Pick a menu command first"));
+        }
+        let app = menus::target_app(&str_input(inputs, "app"), true)?;
+        menus::press(&app, &path)
     }
 
     fn snippet_inputs() -> Vec<Value> {
