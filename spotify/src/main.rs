@@ -63,7 +63,7 @@ fn main() {
                 }))
                 .on_press(|ctx| {
                     os::play_pause()?;
-                    ctx.set_state(if ctx.state.as_deref() == Some("playing") { "paused" } else { "playing" });
+                    ctx.fan_out(if ctx.state.as_deref() == Some("playing") { "paused" } else { "playing" });
                     Ok(())
                 }),
         )

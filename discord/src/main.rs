@@ -512,13 +512,8 @@ fn main() {
                         s.current_channel_id = Some(channel);
                         s.current_guild_id = Some(guild).filter(|g| !g.is_empty());
                     }
-                    ctx.set_state("in");
-                    // Flip every other join-voice-channel instance back to idle.
-                    for (iid, _) in join_instances() {
-                        if iid != ctx.instance_id {
-                            ctx.runtime().set_state(&iid, "idle");
-                        }
-                    }
+                    // Every instance on this channel (deck and dial alike) shows "in", the rest "idle".
+                    push_join_states();
                     ctx.runtime().notify("leave-voice-channel", "in-call");
                     Ok(())
                 }),
@@ -686,7 +681,8 @@ fn main() {
                     ctx.log(format!("output-volume onAdjust: value={:?} delta={:?} target={target} clamped={clamped}", ctx.value, ctx.delta));
                     set_voice_settings(&c, json!({"output": {"volume": clamped}}))?;
                     state().output_volume = clamped;
-                    ctx.set_state(num(clamped));
+                    // Discord has one output volume: every Output Volume slider follows.
+                    ctx.fan_out(num(clamped));
                     Ok(())
                 }),
         )

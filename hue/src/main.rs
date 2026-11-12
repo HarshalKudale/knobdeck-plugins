@@ -136,7 +136,7 @@ fn main() {
                 .on_press(|ctx| {
                     let on = read(&ctx.inputs)?["on"] != true;
                     write(&ctx.inputs, json!({"on": on}))?;
-                    ctx.set_state(if on { "on" } else { "off" });
+                    ctx.fan_out_by(&["target"], if on { "on" } else { "off" });
                     Ok(())
                 }),
         )
@@ -161,7 +161,7 @@ fn main() {
                     .round()
                     .clamp(0.0, 100.0);
                     write(&ctx.inputs, if target == 0.0 { json!({"on": false}) } else { json!({"on": true, "bri": hue::pct_to_bri(target)}) })?;
-                    ctx.set_state(target);
+                    ctx.fan_out_by(&["target"], target);
                     Ok(())
                 }),
         )
@@ -190,7 +190,7 @@ fn main() {
                     }
                     .clamp(2000.0, 6500.0);
                     write(&ctx.inputs, json!({"on": true, "ct": hue::kelvin_to_mired(target)}))?;
-                    ctx.set_state(target.round());
+                    ctx.fan_out_by(&["target"], target.round());
                     Ok(())
                 }),
         )
