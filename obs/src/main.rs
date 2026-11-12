@@ -422,7 +422,8 @@ fn main() {
                     SCENE_ITEM_IDS.lock().unwrap().get_or_insert_with(HashMap::new).insert(ctx.instance_id.clone(), id);
                     let enable = ctx.state.as_deref() != Some("visible");
                     call("SetSceneItemEnabled", json!({"sceneName": ctx.inputs["scene"], "sceneItemId": id, "sceneItemEnabled": enable}))?;
-                    ctx.set_state(pick(enable, "visible", "hidden"));
+                    // Every key on this scene's source follows (OBS's own event confirms later).
+                    ctx.fan_out_by(&["scene", "source"], pick(enable, "visible", "hidden"));
                     Ok(())
                 }),
         )
@@ -443,7 +444,7 @@ fn main() {
                     register(&ctx.instance_id, "audio-mixer", &ctx.inputs);
                     let muted = ctx.state.as_deref() != Some("muted");
                     call("SetInputMute", json!({"inputName": source, "inputMuted": muted}))?;
-                    ctx.set_state(pick(muted, "muted", "unmuted"));
+                    ctx.fan_out_by(&["source"], pick(muted, "muted", "unmuted"));
                     Ok(())
                 }),
         )
@@ -484,7 +485,7 @@ fn main() {
                     require_obs(ctx)?;
                     let enable = ctx.state.as_deref() != Some("on");
                     call("SetStudioModeEnabled", json!({"studioModeEnabled": enable}))?;
-                    ctx.set_state(pick(enable, "on", "off"));
+                    ctx.fan_out(pick(enable, "on", "off"));
                     Ok(())
                 }),
         )
@@ -528,7 +529,7 @@ fn main() {
                     register(&ctx.instance_id, "filter", &ctx.inputs);
                     let enable = ctx.state.as_deref() != Some("enabled");
                     call("SetSourceFilterEnabled", json!({"sourceName": ctx.inputs["source"], "filterName": ctx.inputs["filter"], "filterEnabled": enable}))?;
-                    ctx.set_state(pick(enable, "enabled", "disabled"));
+                    ctx.fan_out_by(&["source", "filter"], pick(enable, "enabled", "disabled"));
                     Ok(())
                 }),
         )
@@ -598,7 +599,8 @@ fn main() {
                     .round()
                     .clamp(0.0, 100.0);
                     call("SetInputVolume", json!({"inputName": source, "inputVolumeMul": mul_from_percent(target)}))?;
-                    ctx.set_state(target);
+                    // Sliders on the same source follow; the step size doesn't matter.
+                    ctx.fan_out_by(&["source"], target);
                     Ok(())
                 }),
         )

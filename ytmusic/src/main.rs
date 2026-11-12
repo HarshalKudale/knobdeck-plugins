@@ -147,7 +147,7 @@ fn main() {
                 .live(POLL, |_| Ok(Visual::new().state(if ytmd::playing(&state()?) { "playing" } else { "paused" })))
                 .on_press(|ctx| {
                     command("playPause", None)?;
-                    ctx.set_state(if ctx.state.as_deref() == Some("playing") { "paused" } else { "playing" });
+                    ctx.fan_out(if ctx.state.as_deref() == Some("playing") { "paused" } else { "playing" });
                     Ok(())
                 }),
         )
@@ -180,7 +180,7 @@ fn main() {
                 .live(POLL, |_| Ok(Visual::new().state(if ytmd::like_status(&state()?) == 2 { "liked" } else { "none" })))
                 .on_press(|ctx| {
                     command("toggleLike", None)?;
-                    ctx.set_state(if ctx.state.as_deref() == Some("liked") { "none" } else { "liked" });
+                    ctx.fan_out(if ctx.state.as_deref() == Some("liked") { "none" } else { "liked" });
                     Ok(())
                 }),
         )
@@ -206,7 +206,7 @@ fn main() {
                     .round()
                     .clamp(0.0, 100.0);
                     command("setVolume", Some(json!(target as i64)))?;
-                    ctx.set_state(target);
+                    ctx.fan_out(target);
                     Ok(())
                 }),
         )
@@ -219,7 +219,7 @@ fn main() {
                     // The state has no mute flag, so the key remembers what it last did.
                     let mute = ctx.state.as_deref() != Some("muted");
                     command(if mute { "mute" } else { "unmute" }, None)?;
-                    ctx.set_state(if mute { "muted" } else { "unmuted" });
+                    ctx.fan_out(if mute { "muted" } else { "unmuted" });
                     Ok(())
                 }),
         )
@@ -235,7 +235,7 @@ fn main() {
                     let now = ytmd::repeat_mode(&state()?).max(0);
                     let next = (now + 1) % 3;
                     command("repeatMode", Some(json!(next)))?;
-                    ctx.set_state(repeat_state(next));
+                    ctx.fan_out(repeat_state(next));
                     Ok(())
                 }),
         )

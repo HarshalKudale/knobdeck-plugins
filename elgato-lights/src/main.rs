@@ -108,7 +108,7 @@ fn main() {
                 .on_press(|ctx| {
                     let on = first_state(&ctx.inputs)?["on"] != 1;
                     set_all(&ctx.inputs, json!({"on": on as u8}))?;
-                    ctx.set_state(on_label(on));
+                    ctx.fan_out_by(&["light"], on_label(on));
                     Ok(())
                 }),
         )
@@ -126,7 +126,7 @@ fn main() {
                     .round()
                     .clamp(3.0, 100.0); // the lights' minimum is 3%
                     set_all(&ctx.inputs, json!({"on": 1, "brightness": target as i64}))?;
-                    ctx.set_state(target);
+                    ctx.fan_out_by(&["light"], target);
                     Ok(())
                 }),
         )
@@ -157,7 +157,7 @@ fn main() {
                     }
                     .clamp(2900.0, 7000.0);
                     let s = set_all(&ctx.inputs, json!({"on": 1, "temperature": lights::kelvin_to_api(target)}))?;
-                    ctx.set_state(s["temperature"].as_i64().map_or(target as i64, lights::api_to_kelvin));
+                    ctx.fan_out_by(&["light"], s["temperature"].as_i64().map_or(target as i64, lights::api_to_kelvin));
                     Ok(())
                 }),
         )

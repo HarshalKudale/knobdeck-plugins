@@ -156,7 +156,7 @@ fn main() {
                     let entity = entity_of(&ctx.inputs)?;
                     let before = guard(press_toggle(&c, &entity))?;
                     // Show the expected state at once; the next poll corrects it.
-                    ctx.set_state(if ha::is_on(&before) { "off" } else { "on" });
+                    ctx.fan_out_by(&["entity"], if ha::is_on(&before) { "off" } else { "on" });
                     Ok(())
                 }),
         )
@@ -213,7 +213,7 @@ fn main() {
                     let (domain, service, data) = ha::level_call(&s, target)?;
                     guard(c.call(domain, service, &data))?;
                     ha::invalidate();
-                    ctx.set_state(target);
+                    ctx.fan_out_by(&["entity"], target);
                     Ok(())
                 }),
         )

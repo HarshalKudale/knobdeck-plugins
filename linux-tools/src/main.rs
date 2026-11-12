@@ -656,7 +656,7 @@ mod app {
                     .on_press(|ctx| {
                         let kind = radio_of(&ctx.inputs);
                         let on = system::set_radio(&kind, !system::radio_on(&kind)?)?;
-                        ctx.set_state(if on { "on" } else { "off" });
+                        ctx.fan_out_by(&["radio"], if on { "on" } else { "off" });
                         Ok(())
                     }),
             )
@@ -670,7 +670,7 @@ mod app {
                     .initial_with(|ic| Some((if system::active_profile().is_ok_and(|a| a == ic.input_str("profile")) { "active" } else { "inactive" }).into()))
                     .on_press(|ctx| {
                         system::set_profile(&ctx.input_str("profile"))?;
-                        ctx.set_state("active");
+                        ctx.fan_out_by(&["profile"], "active");
                         Ok(())
                     }),
             )
@@ -741,7 +741,7 @@ mod app {
                     .on_press(|ctx| {
                         match audio::toggle_app_mute(&resolve_app(&ctx.inputs)?)? {
                             None => ctx.set_error(no_stream(&ctx.inputs)),
-                            Some(muted) => ctx.fan_out(mute_state(muted)),
+                            Some(muted) => ctx.fan_out_by(&["app"], mute_state(muted)),
                         }
                         Ok(())
                     }),
@@ -771,7 +771,7 @@ mod app {
                                 }
                             },
                         };
-                        ctx.set_state(result);
+                        ctx.fan_out_by(&["app"], result);
                         Ok(())
                     }),
             )
@@ -814,7 +814,7 @@ mod app {
                             return ctx.fail("Choose a device first");
                         }
                         audio::set_default(is_input(&ctx.inputs), &id)?;
-                        ctx.set_state("active");
+                        ctx.fan_out_by(&["flow", "device"], "active");
                         Ok(())
                     }),
             )
@@ -835,7 +835,7 @@ mod app {
                         // From A (or anything else) go to B; from B go back to A.
                         let to_b = audio::default_device(input).as_deref() != Some(b.as_str());
                         audio::set_default(input, if to_b { &b } else { &a })?;
-                        ctx.set_state(if to_b { "b" } else { "a" });
+                        ctx.fan_out_by(&["flow", "device", "device_b"], if to_b { "b" } else { "a" });
                         Ok(())
                     }),
             )
@@ -848,7 +848,7 @@ mod app {
                     .state("muted", "Muted", "volume-x")
                     .initial_with(|ic| Some(mute_state(audio::device_muted(is_input(&ic.inputs), &ic.input_str("device")).unwrap_or(false)).into()))
                     .on_press(|ctx| {
-                        ctx.set_state(mute_state(audio::toggle_device_mute(is_input(&ctx.inputs), &ctx.input_str("device"))?));
+                        ctx.fan_out_by(&["flow", "device"], mute_state(audio::toggle_device_mute(is_input(&ctx.inputs), &ctx.input_str("device"))?));
                         Ok(())
                     }),
             )
@@ -868,7 +868,7 @@ mod app {
                             }
                             None => audio::adjust_device_volume(input, &id, input_int(&ctx.inputs, "step").unwrap_or(5) as f64 * ctx.delta.unwrap_or(0.0))?,
                         };
-                        ctx.set_state(result);
+                        ctx.fan_out_by(&["flow", "device"], result);
                         Ok(())
                     }),
             );

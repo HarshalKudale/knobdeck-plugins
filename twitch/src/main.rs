@@ -33,7 +33,7 @@ fn chat_mode(id: &str, label: &str, icon: &str, field: &'static str) -> Action {
                 body["slow_mode_wait_time"] = json!(ctx.input_f64("seconds").unwrap_or(30.0).clamp(3.0, 120.0) as i64);
             }
             helix::call("PATCH", &format!("/chat/settings?{}", own()?), Some(body))?;
-            ctx.set_state(if on { "on" } else { "off" });
+            ctx.fan_out(if on { "on" } else { "off" });
             Ok(())
         })
 }

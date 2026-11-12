@@ -31,7 +31,7 @@
       "sort": 86
     },
     "discord": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "name": "Discord",
       "summary": "Mute, deafen, push-to-talk, channels and soundboard.",
       "tags": [
@@ -42,7 +42,7 @@
       "sort": 10
     },
     "elgato-lights": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "name": "Elgato Lights",
       "summary": "Key Light, Ring Light and Light Strip: power, brightness, temperature, color.",
       "tags": [
@@ -62,7 +62,7 @@
       "sort": 35
     },
     "home-assistant": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Home Assistant",
       "summary": "Toggle entities, run scenes, show sensors and set levels.",
       "tags": [
@@ -72,7 +72,7 @@
       "sort": 27
     },
     "hue": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Philips Hue",
       "summary": "Hue lights, rooms and scenes: power, brightness, color.",
       "tags": [
@@ -92,7 +92,7 @@
       "sort": 70
     },
     "linux-tools": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Linux Tools",
       "summary": "Windows, workspaces, per-app volume, audio devices, clipboard history on GNOME and KDE.",
       "tags": [
@@ -114,7 +114,7 @@
       "sort": 41
     },
     "obs": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "name": "OBS Studio",
       "summary": "Scenes, sources, recording and streaming.",
       "tags": [
@@ -125,7 +125,7 @@
       "sort": 20
     },
     "slides": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Slides",
       "summary": "Present with PowerPoint, Keynote or LibreOffice Impress.",
       "tags": [
@@ -135,7 +135,7 @@
       "sort": 65
     },
     "spotify": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "name": "Spotify",
       "summary": "Play, pause, skip and now playing for the Spotify desktop app.",
       "tags": [
@@ -146,7 +146,7 @@
       "sort": 15
     },
     "streamlabs": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Streamlabs Desktop",
       "summary": "Go live, record, replay buffer, scenes, sources and audio.",
       "tags": [
@@ -156,7 +156,7 @@
       "sort": 22
     },
     "twitch": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "name": "Twitch",
       "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers.",
       "tags": [
@@ -177,7 +177,7 @@
       "sort": 80
     },
     "voicemod": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Voicemod",
       "summary": "Voices, voice changer, hear myself, mic mute and soundboard.",
       "tags": [
@@ -208,7 +208,7 @@
       "sort": 85
     },
     "win-tools": {
-      "version": "1.4.0",
+      "version": "1.4.1",
       "name": "Windows Tools",
       "summary": "Window management, audio devices, per-app volume, clipboard history.",
       "tags": [
@@ -229,7 +229,7 @@
       "sort": 23
     },
     "ytmusic": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "YouTube Music Desktop",
       "summary": "Playback, likes, volume, queue and playlists in YTMDesktop.",
       "tags": [

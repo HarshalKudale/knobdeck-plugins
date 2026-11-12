@@ -34,7 +34,7 @@ fn setting(id: &str, label: &str, icon: &str, status: &'static str, toggle: &'st
     a.live(POLL, move |_| Ok(Visual::new().state(if ask(status, json!({}))?["value"] == true { &on } else { &off })))
         .on_press(move |ctx| {
             let now_on = ask(toggle, json!({}))?["value"] == true;
-            ctx.set_state(if now_on { &on2 } else { &off2 });
+            ctx.fan_out(if now_on { &on2 } else { &off2 });
             Ok(())
         })
 }
@@ -93,7 +93,7 @@ fn main() {
                         return ctx.fail("Choose a voice first");
                     }
                     tell("loadVoice", json!({"voiceID": voice}))?;
-                    ctx.set_state("active");
+                    ctx.fan_out_by(&["voice"], "active");
                     Ok(())
                 }),
         )

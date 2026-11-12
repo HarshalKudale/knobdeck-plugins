@@ -174,7 +174,7 @@ fn blank_toggle(id: &str, label: &str, black: bool) -> Action {
             let app = pick(&ctx.inputs)?;
             let is_blank = blanked(app, ctx, black);
             run(app, if is_blank { Op::Resume } else if black { Op::Black } else { Op::White })?;
-            ctx.set_state(if is_blank { "showing" } else { "blank" });
+            ctx.fan_out_by(&["app"], if is_blank { "showing" } else { "blank" });
             Ok(())
         })
 }

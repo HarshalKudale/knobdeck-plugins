@@ -39,7 +39,7 @@ fn output_toggle(id: &str, label: &str, icon: &str, field: &'static str, active:
             };
             call("StreamingService", method, args)?;
             // Streamlabs reports "starting"/"stopping" first; the poll shows the final state.
-            ctx.set_state(if ctx.state.as_deref() == Some(on2.as_str()) { &off2 } else { &on2 });
+            ctx.fan_out(if ctx.state.as_deref() == Some(on2.as_str()) { &off2 } else { &on2 });
             Ok(())
         })
 }
@@ -104,7 +104,7 @@ fn main() {
                 .on_press(|ctx| {
                     let scene = require(ctx, "scene", "a scene")?;
                     call("ScenesService", "makeSceneActive", json!([scene]))?;
-                    ctx.set_state("active");
+                    ctx.fan_out_by(&["scene"], "active");
                     Ok(())
                 }),
         )
@@ -127,7 +127,7 @@ fn main() {
                     let show = it["visible"] != true;
                     let resource = it["resourceId"].as_str().map(String::from).unwrap_or_else(|| format!("SceneItem[\"{scene}\",\"{item}\",\"{}\"]", it["sourceId"].as_str().unwrap_or("")));
                     call(&resource, "setVisibility", json!([show]))?;
-                    ctx.set_state(if show { "visible" } else { "hidden" });
+                    ctx.fan_out_by(&["scene", "item"], if show { "visible" } else { "hidden" });
                     Ok(())
                 }),
         )
@@ -148,7 +148,7 @@ fn main() {
                     let id = require(ctx, "source", "an audio source")?;
                     let mute = audio_source(&id)?["muted"] != true;
                     call("SourcesService", "setMuted", json!([id, mute]))?;
-                    ctx.set_state(if mute { "muted" } else { "unmuted" });
+                    ctx.fan_out_by(&["source"], if mute { "muted" } else { "unmuted" });
                     Ok(())
                 }),
         )
@@ -174,7 +174,7 @@ fn main() {
                     .round()
                     .clamp(0.0, 100.0);
                     call(&format!("AudioSource[\"{id}\"]"), "setDeflection", json!([target / 100.0]))?;
-                    ctx.set_state(target);
+                    ctx.fan_out_by(&["source"], target);
                     Ok(())
                 }),
         )
