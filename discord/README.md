@@ -40,12 +40,13 @@ Most Discord actions now prefer **server, channel, friend, device, sound, and ca
 2. In KnobDeck, open **Plugins → Discord** and click **Setup**.
 3. Discord shows an authorization popup inside the client. Click **Authorize**.
 
-That's it. KnobDeck stores the sign-in in its plugin data folder (`%APPDATA%\KnobDeck\plugin-data\discord\` on
-Windows, `~/Library/Application Support/KnobDeck/plugin-data/discord/` on macOS) and renews it on its own,
-so you only run setup again if you revoke access in Discord (**User Settings → Authorized Apps**).
+That's it. The sign-in is kept in your OS credential store (macOS Keychain, Windows Credential
+Manager, or the Secret Service on Linux: KWallet / GNOME Keyring) and renewed on its own, so you only
+run setup again if you revoke access in Discord (**User Settings → Authorized Apps**). On a Linux
+session without a Secret Service it stays in the plugin data folder, readable by your user only.
 
-There is no Discord developer app or client secret to create: the token exchange happens on
-`app.knobdeck.harshalkudale.com`, so the secret never ships with the plugin.
+There is no Discord developer app or client secret to create: KnobDeck's Discord app is a public
+client, so setup signs in with PKCE and talks to Discord directly.
 
 ---
 
@@ -68,6 +69,7 @@ Setup asks Discord for these scopes:
 
 - **"Discord is not connected"**: Discord must be running. The plugin reconnects on its own when it starts.
 - **Setup fails**: make sure you are signed in to the Discord desktop app (not only the browser) and try again.
+- **Setup fails with `invalid_scope`**: Discord only lets accounts listed on KnobDeck's Discord app authorize it until Discord approves the app for RPC.
 - **Actions stop working after a while**: run **Setup** again; this happens when access was revoked in Discord.
 
 The plugin talks to the Discord desktop client over its local RPC pipe, the same channel Discord's

@@ -64,15 +64,14 @@ jobs:
       - name: Discord build-time settings
         shell: bash
         run: |
-          printf 'DISCORD_CLIENT_ID=%s\nKNOBDECK_DISCORD_TOKEN_URL=%s\n' \
-            '${{ vars.DISCORD_CLIENT_ID }}' '${{ vars.KNOBDECK_DISCORD_TOKEN_URL }}' > discord/.env
+          printf 'DISCORD_CLIENT_ID=%s\n' '${{ vars.DISCORD_CLIENT_ID }}' > discord/.env
       - name: Package plugins
         shell: bash
         # App credentials baked in at build time (option_env!); unset ones leave the plugin asking for its own in setup.
         env:
           VOICEMOD_CLIENT_KEY: ${{ vars.VOICEMOD_CLIENT_KEY }}
           SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
-          # No Google secret here: the website's token endpoint adds it server-side (like Discord's).
+          # No Google secret here: the website's token endpoint adds it server-side.
           GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           KNOBDECK_GOOGLE_TOKEN_URL: ${{ vars.KNOBDECK_GOOGLE_TOKEN_URL }}
           TWITCH_CLIENT_ID: ${{ vars.TWITCH_CLIENT_ID }}

@@ -1,7 +1,6 @@
-//! Expose `DISCORD_CLIENT_ID` and `KNOBDECK_DISCORD_TOKEN_URL` from `.env` (if
-//! present) as compile-time env vars so a shipped binary can fall back to them
-//! via `option_env!`. The client secret is never built in: the token exchange
-//! and renewal run on the KnobDeck website (`/api/discord/token`).
+//! Expose `DISCORD_CLIENT_ID` from `.env` (if present) as a compile-time env var so a
+//! shipped binary can fall back to it via `option_env!`. There is no client secret:
+//! the Discord app is a public client and the plugin signs in with PKCE.
 
 fn main() {
     println!("cargo:rerun-if-changed=.env");
@@ -9,7 +8,7 @@ fn main() {
     for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
         if let Some((k, v)) = line.split_once('=') {
             let v = v.trim().trim_matches(|c| c == '"' || c == '\'');
-            if matches!(k.trim(), "DISCORD_CLIENT_ID" | "KNOBDECK_DISCORD_TOKEN_URL") {
+            if k.trim() == "DISCORD_CLIENT_ID" {
                 println!("cargo:rustc-env={}={}", k.trim(), v);
             }
         }
