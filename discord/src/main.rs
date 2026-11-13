@@ -153,7 +153,7 @@ fn connect_inner() {
     let login = |token: &str| Rpc::connect(&client_id()).and_then(|c| c.authenticate(token).map(|_| c));
     let mut result = login(&token);
     if matches!(result, Err(RpcError { code: Some(_), .. })) {
-        // Expired or revoked: one renewal through the token worker before asking for setup.
+        // Expired or revoked: one renewal with Discord before asking for setup.
         if let Some(fresh) = refresh_token() {
             log("RPC token renewed");
             result = login(&fresh);
