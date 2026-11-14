@@ -25,5 +25,5 @@ If KnobDeck is removed from the bridge's list of apps, the plugin asks you to ru
 
 The plugin uses the bridge's local REST API (`http://<bridge>/api/<username>/…`). The bridge is
 found by mDNS (`_hue._tcp`), or by Signify's discovery service when mDNS finds nothing. Pairing
-creates a bridge username for KnobDeck, stored only in this plugin's data folder. Keys refresh
+creates a bridge username for KnobDeck, stored only in this computer's credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service). Keys refresh
 every 3 seconds from one shared reply, well within the bridge's request limits.

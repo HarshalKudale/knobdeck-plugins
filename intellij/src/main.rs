@@ -37,18 +37,22 @@ fn execute_idea_action(action_id: &str, inputs: &Value) -> Result {
     if let Some(name) = inputs["runConfig"].as_str().map(str::trim).filter(|n| !n.is_empty()) {
         req = req.query("name", name);
     }
-    let password = env_or("IDEA_PASSWORD", "");
+    let password = knobdeck_sdk::secrets::env_or_stored("IDEA_PASSWORD");
     if !password.is_empty() {
         req = req.set("Authorization", &password);
     }
     match req.call() {
         Ok(_) => Ok(()),
-        Err(ureq::Error::Status(403, _)) => {
+        Err(ureq::Error::Status(401 | 403, _)) => {
             knobdeck_sdk::mark_setup_required("The IntelliJ companion rejected the password");
             Err(Error::msg("IntelliJ companion plugin rejected the configured password."))
         }
-        Err(ureq::Error::Status(500, _)) => Err(Error::msg("IntelliJ companion plugin rejected the configured password.")),
-        Err(ureq::Error::Status(code, _)) => Err(Error::msg(format!("IntelliJ companion plugin returned HTTP {code}."))),
+        // The companion explains failures (unknown action, missing run configuration, nothing to
+        // step over…) as `{"error": "..."}`; show that rather than a bare status code.
+        Err(ureq::Error::Status(code, r)) => match r.into_json::<Value>().ok().and_then(|b| b["error"].as_str().map(str::to_string)) {
+            Some(message) => Err(Error::msg(message)),
+            None => Err(Error::msg(format!("IntelliJ companion plugin returned HTTP {code}."))),
+        },
         Err(e) => Err(Error::msg(format!("IntelliJ companion plugin is not reachable on port {port}. ({e})"))),
     }
 }
@@ -62,7 +66,7 @@ enum Kind {
 
 // (id, label, IDE actionId, icon, kind)
 const ACTIONS: &[(&str, &str, &str, &str, Kind)] = &[
-    ("open-action-browser", "Open Action Browser", "streamdeck.show.action.browser", "compass", Kind::Plain),
+    ("open-action-browser", "Open Action Browser", "KnobDeck.ShowActionBrowser", "compass", Kind::Plain),
     ("custom-action", "Customized Action", "", "sparkles", Kind::Custom),
     ("update-project", "Update Project", "Vcs.UpdateProject", "arrow-down-to-line", Kind::Plain),
     ("new-project", "New Project", "NewProject", "folder-plus", Kind::Plain),
@@ -83,6 +87,7 @@ const ACTIONS: &[(&str, &str, &str, &str, Kind)] = &[
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["IDEA_PASSWORD"]);
     let mut plugin = Plugin::new(&format!("intellij-{}", std::env::consts::OS), "IntelliJ IDE")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

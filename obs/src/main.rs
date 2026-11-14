@@ -1,6 +1,6 @@
 //! OBS Studio plugin for KnobDeck — controls OBS via obs-websocket v5.
 //!
-//! Config: run the plugin setup flow (or write `.env` with OBS_HOST / OBS_PORT / OBS_PASSWORD).
+//! Config: run the plugin setup flow (or set OBS_HOST / OBS_PORT / OBS_PASSWORD in the environment).
 
 mod obs_ws;
 
@@ -342,7 +342,8 @@ fn scenes() -> Result<Vec<Value>> {
 
 fn main() {
     load_env();
-    let (host, port, password) = (env_or("OBS_HOST", "localhost"), env_or("OBS_PORT", "4455"), env_or("OBS_PASSWORD", ""));
+    knobdeck_sdk::secrets::migrate_env(&["OBS_PASSWORD"]);
+    let (host, port, password) = (env_or("OBS_HOST", "localhost"), env_or("OBS_PORT", "4455"), knobdeck_sdk::secrets::env_or_stored("OBS_PASSWORD"));
 
     // Kick off the first connection immediately so the cache may be warm by the first sync
     // (not under codegen, where Plugin::run() exits before anything is needed).

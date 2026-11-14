@@ -33,7 +33,9 @@ fn main() {
             }
         };
         ctx.log(format!("[setup] paired with {} ({addr})", config["name"].as_str().unwrap_or("Hue Bridge")));
-        knobdeck_sdk::save_env(&[("HUE_BRIDGE", &addr), ("HUE_USER", &user), ("HUE_BRIDGE_ID", &id)])?;
+        // The bridge username is its API key: it goes to the OS credential store.
+        knobdeck_sdk::secrets::set("HUE_USER", &user)?;
+        knobdeck_sdk::save_env(&[("HUE_BRIDGE", &addr), ("HUE_BRIDGE_ID", &id)])?;
         Ok(())
     })
 }

@@ -26,7 +26,7 @@ fn base() -> String {
 fn vlc_request(command: Option<&str>, params: &[(&str, &str)]) -> Result<Value> {
     let base = base();
     let mut req = ureq::get(&format!("{base}/requests/status.json")).timeout(Duration::from_secs(10));
-    let password = env_or("VLC_PASSWORD", "");
+    let password = knobdeck_sdk::secrets::env_or_stored("VLC_PASSWORD");
     if !password.is_empty() {
         let token = base64::engine::general_purpose::STANDARD.encode(format!(":{password}"));
         req = req.set("Authorization", &format!("Basic {token}"));
@@ -118,6 +118,7 @@ fn command_button(id: &str, label: &str, icon: &str, command: &'static str, para
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["VLC_PASSWORD"]);
     Plugin::new(&format!("vlc-{}", std::env::consts::OS), "VLC")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

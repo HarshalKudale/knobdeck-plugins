@@ -156,7 +156,8 @@ impl Bridge {
             let same = public_config(&addr).is_ok_and(|c| c["bridgeid"].as_str().is_some_and(|id| id.eq_ignore_ascii_case(&self.id)));
             if same {
                 knobdeck_sdk::log(format!("bridge moved to {addr}"));
-                let _ = knobdeck_sdk::save_env(&[("HUE_BRIDGE", &addr)]);
+                // save_env replaces .env: keep the bridge id alongside the new address.
+                let _ = knobdeck_sdk::save_env(&[("HUE_BRIDGE", &addr), ("HUE_BRIDGE_ID", &self.id)]);
                 *self.addr.lock().unwrap() = addr;
                 return true;
             }

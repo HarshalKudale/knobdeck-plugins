@@ -20,7 +20,8 @@ fn main() {
         }
         let count = ha::states(&conn).map(|s| s.len()).unwrap_or(0);
         ctx.log(format!("[setup] connected to {} ({count} entities)", conn.url));
-        knobdeck_sdk::save_env(&[("HA_URL", &conn.url), ("HA_TOKEN", &conn.token)])?;
+        knobdeck_sdk::secrets::set("HA_TOKEN", &conn.token)?;
+        knobdeck_sdk::save_env(&[("HA_URL", &conn.url)])?;
         Ok(())
     })
 }

@@ -17,7 +17,7 @@ fn bridge() -> Result<&'static Bridge> {
     if let Some(b) = BRIDGE.get() {
         return Ok(b);
     }
-    let (addr, user) = (env_or("HUE_BRIDGE", ""), env_or("HUE_USER", ""));
+    let (addr, user) = (env_or("HUE_BRIDGE", ""), knobdeck_sdk::secrets::env_or_stored("HUE_USER"));
     if addr.is_empty() || user.is_empty() {
         return Err(Error::msg("Run setup to pair with your Hue Bridge"));
     }
@@ -79,6 +79,7 @@ fn recall_scene(b: &Bridge, scene: &str) -> Result<()> {
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["HUE_USER"]);
     Plugin::new(&format!("hue-{}", std::env::consts::OS), "Philips Hue")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

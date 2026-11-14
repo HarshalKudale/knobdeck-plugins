@@ -1,11 +1,11 @@
 [package]
 name = "obs"
-version = "1.2.1"
+version = "1.3.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-knobdeck-sdk.workspace = true
+knobdeck-sdk = { workspace = true, features = ["secrets"] }
 base64.workspace = true
 sha2.workspace = true
 tungstenite.workspace = true

@@ -23,6 +23,7 @@ fn viewers_label() -> Result<String> {
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["GOOGLE_CLIENT_SECRET"]);
     Plugin::new(&format!("youtube-{}", std::env::consts::OS), "YouTube")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
@@ -33,7 +34,7 @@ fn main() {
         .setup("youtube-setup", None)
         .setup_inputs(vec![
             input::text("client_id", "Your Google app's client ID (optional)").placeholder("leave empty to use KnobDeck's"),
-            input::text("client_secret", "Your Google app's client secret (optional)").with("help", "Only for your own Google Cloud app (type Desktop, YouTube Data API enabled). Kept only on this computer."),
+            input::text("client_secret", "Your Google app's client secret (optional)").with("help", "Only for your own Google Cloud app (type Desktop, YouTube Data API enabled). Kept in this computer's credential store."),
         ])
         .action(
             Action::button("viewers", "Viewers")

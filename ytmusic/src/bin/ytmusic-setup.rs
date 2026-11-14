@@ -24,7 +24,8 @@ fn main() {
         if let Err(e) = conn.get("state") {
             return ctx.fail(e.message());
         }
-        knobdeck_sdk::save_env(&[("YTMD_HOST", &host), ("YTMD_PORT", &port), ("YTMD_TOKEN", &conn.token)])?;
+        knobdeck_sdk::secrets::set("YTMD_TOKEN", &conn.token)?;
+        knobdeck_sdk::save_env(&[("YTMD_HOST", &host), ("YTMD_PORT", &port)])?;
         Ok(())
     })
 }

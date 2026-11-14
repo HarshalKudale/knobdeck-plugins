@@ -316,8 +316,8 @@ runs *inside* the app and exposes a local endpoint.
 
 | Helper | Status | Used by | Ships to | Notes |
 |---|---|---|---|---|
-| KnobDeck VS Code Companion (extension) | **exists** (source not in this workspace) | `vscode` | VS Code Marketplace + Open VSX (for Cursor, VSCodium, Windsurf) | Local HTTP action server, host/port/password. Must track VS Code API changes. |
-| KnobDeck IntelliJ Companion (IDE plugin) | **exists** (source not in this workspace) | `intellij` | JetBrains Marketplace | Kotlin. Rebuild/verify for each yearly IDE platform (`sinceBuild`/`untilBuild`). |
+| KnobDeck VS Code Companion (extension) | **exists** (`knobdeck-companion/vscode`) | `vscode` | VS Code Marketplace + Open VSX (for Cursor, VSCodium, Windsurf) | Local HTTP action server, host/port/password. Must track VS Code API changes. |
+| KnobDeck IntelliJ Companion (IDE plugin) | **exists** (`knobdeck-companion/intellij`) | `intellij` | JetBrains Marketplace | Java. Rebuild/verify for each yearly IDE platform (`sinceBuild`/`untilBuild`). |
 | Browser extension (WebExtension) + native messaging host | **proposed** | `browser-plugin` | Chrome Web Store, Edge Add-ons, Firefox AMO | Removes keystrokes on Windows and Firefox/Zen: tabs, zoom, reload, find via `chrome.tabs` API. One extension codebase, 3 stores. |
 | — | not needed | OBS, Discord, VLC, Zoom, Voicemod, Streamlabs, Wave Link | — | The app already has a local API (enable it in the app's settings). |
 | — | not needed | Spotify, Twitch, YouTube, Weather, Elgato lights | — | Web/LAN APIs. Need our OAuth apps (Spotify, Twitch, Google) and a token-exchange endpoint on the KnobDeck website, as Discord has. |
