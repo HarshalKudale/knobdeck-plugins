@@ -413,18 +413,20 @@ mod app {
                 }
                 Ok(Value::Array(opts))
             })
+            // "Get current" on the custom-position inputs reads KnobDeck's own config window
+            // (placed where the user wants it), not the app behind it.
             .query("get-window-x", |ctx| {
-                let f = ax::focused_window()?.frame()?;
+                let f = ax::knobdeck_window()?.frame()?;
                 Ok(json!((f.x - resolve_display(&f, &str_input(&ctx.inputs, "monitor"))?.work.x).round().to_string()))
             })
             .query("get-window-y", |ctx| {
-                let f = ax::focused_window()?.frame()?;
+                let f = ax::knobdeck_window()?.frame()?;
                 Ok(json!((f.y - resolve_display(&f, &str_input(&ctx.inputs, "monitor"))?.work.y).round().to_string()))
             })
             .query("get-menu-apps", |ctx| Ok(menu_apps(&ctx.inputs)))
             .query("get-menu-commands", |ctx| menu_commands(&ctx.inputs))
-            .query("get-window-w", |_| Ok(json!(ax::focused_window()?.frame()?.w.round().to_string())))
-            .query("get-window-h", |_| Ok(json!(ax::focused_window()?.frame()?.h.round().to_string())))
+            .query("get-window-w", |_| Ok(json!(ax::knobdeck_window()?.frame()?.w.round().to_string())))
+            .query("get-window-h", |_| Ok(json!(ax::knobdeck_window()?.frame()?.h.round().to_string())))
             // ── Current Window ──
             .action(window_button("minimize", "Minimize", "minus", minimize))
             .action(window_button("maximize", "Fill Screen", "square", fill))

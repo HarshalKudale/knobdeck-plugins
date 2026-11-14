@@ -103,6 +103,11 @@ pub fn frontmost_app_pid() -> Option<i32> {
     window_owner_pids(true).into_iter().find(|&pid| !is_knobdeck_pid(pid) && !Elem::app(pid).windows().is_empty())
 }
 
+/// KnobDeck's own app (the one showing its config window), frontmost first.
+pub fn knobdeck_app_pid() -> Option<i32> {
+    window_owner_pids(true).into_iter().find(|&pid| is_knobdeck_pid(pid) && !Elem::app(pid).windows().is_empty())
+}
+
 /// Every standard window, frontmost app first (minimised windows included).
 pub fn list_open_windows() -> Vec<OpenWindow> {
     let mut pids = window_owner_pids(true);
