@@ -16,8 +16,8 @@ fn main() {
             return ctx.fail(format!("{} — {hint}.", e.message()));
         }
         ctx.log("[setup] Voicemod connected");
-        // An empty value keeps using the built-in key.
-        knobdeck_sdk::save_env(&[("VOICEMOD_CLIENT_KEY", &typed)])?;
+        // An empty value keeps using the built-in key (and removes a stored one).
+        knobdeck_sdk::secrets::set("VOICEMOD_CLIENT_KEY", &typed)?;
         Ok(())
     })
 }

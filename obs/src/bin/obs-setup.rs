@@ -1,4 +1,4 @@
-//! OBS setup: save the connection details collected by the setup page to `.env`.
+//! OBS setup: save the connection details collected by the setup page (password in the OS credential store).
 
 fn main() {
     knobdeck_sdk::run_setup(|ctx| {
@@ -17,7 +17,9 @@ fn main() {
             _ => return ctx.fail("Invalid port number"),
         }
 
-        std::fs::write(ctx.data_dir().join(".env"), format!("OBS_HOST={host}\nOBS_PORT={port}\nOBS_PASSWORD={password}\n"))?;
+        // Host and port are settings; the password goes to the OS credential store.
+        knobdeck_sdk::save_env(&[("OBS_HOST", &host), ("OBS_PORT", &port)])?;
+        knobdeck_sdk::secrets::set("OBS_PASSWORD", &password)?;
         ctx.log(format!("[setup] OBS connection configured: ws://{host}:{port}"));
         Ok(())
     })

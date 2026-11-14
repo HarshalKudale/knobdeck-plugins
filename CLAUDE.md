@@ -100,8 +100,19 @@ Current decisions (keep this list up to date):
   On Linux, resize/maximize results need an unlocked screen: hidden clients don't acknowledge
   configures.
 
-## Rule 3: a change to a plugin bumps its version
+## Rule 4: a change to a plugin bumps its version
 
 - Any code change to a plugin bumps its `version` in `Cargo.toml`.
 - Put the same version in `index.json`. CI builds only plugins whose `index.json` version differs from the previous release's `registry.json` and copies every other plugin's artifact over from that release, so without the bump your change is not published.
 - Icons are not release assets: the registry links `<dir>/icons/<icon>` by raw GitHub URL, so changing an icon file needs no version bump.
+
+## Rule 5: secrets live in the OS credential store
+
+Passwords, tokens, API keys, pairing keys and a user's own client secret never go in `.env` or any
+file. Enable the SDK's `secrets` feature (`oauth` includes it): setup calls
+`knobdeck_sdk::secrets::set("KEY", &value)` (an empty value removes it), the plugin reads
+`knobdeck_sdk::secrets::env_or_stored("KEY")`. Only the plugin binary touches the store (setup's value
+reaches it through a user-only hand-off file), so on macOS the Keychain item trusts only the plugin.
+When a released setup wrote a secret to `.env`, the plugin calls
+`knobdeck_sdk::secrets::migrate_env(&["KEY"])` right after `load_env()`. Host, port and other
+settings stay in `.env` (`save_env`). Discord has its own equivalent code in `discord/src/common.rs`.

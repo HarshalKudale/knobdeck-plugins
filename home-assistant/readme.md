@@ -32,4 +32,4 @@ If the token is revoked, the plugin asks you to run setup again.
 
 The plugin uses Home Assistant's REST API (`/api/states`, `/api/services/<domain>/<service>`) with
 the token as a bearer token. Keys refresh every 2 seconds (sensor keys every 5) from one shared
-`/api/states` reply. The token is stored only in this plugin's data folder on your computer.
+`/api/states` reply. The token is stored only in this computer's credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service).

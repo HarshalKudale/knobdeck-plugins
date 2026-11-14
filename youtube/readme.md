@@ -15,7 +15,9 @@ Start and stop streams with the OBS plugin.
 Setup opens Google's sign-in page; choose the account that owns your channel and allow KnobDeck
 to view your YouTube account.
 If you use your own Google Cloud app (type Desktop, YouTube Data API enabled), enter its client ID
-and secret in setup; they are kept only in KnobDeck's plugin data folder on this computer.
+and secret in setup. The secret and your sign-in are kept in this computer's credential store
+(macOS Keychain, Windows Credential Manager, Linux Secret Service); the client ID stays in
+KnobDeck's plugin data folder.
 
 ## How it works
 

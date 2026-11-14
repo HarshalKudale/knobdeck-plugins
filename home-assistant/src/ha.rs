@@ -15,9 +15,9 @@ impl Conn {
         Conn { url: normalize_url(url), token: token.trim().to_string() }
     }
 
-    /// From the saved setup (`HA_URL`, `HA_TOKEN`).
+    /// From the saved setup (`HA_URL` in `.env`, `HA_TOKEN` in the OS credential store).
     pub fn from_env() -> Result<Conn> {
-        let (url, token) = (knobdeck_sdk::env_or("HA_URL", ""), knobdeck_sdk::env_or("HA_TOKEN", ""));
+        let (url, token) = (knobdeck_sdk::env_or("HA_URL", ""), knobdeck_sdk::secrets::env_or_stored("HA_TOKEN"));
         if url.is_empty() || token.is_empty() {
             return Err(Error::msg("Run setup to connect to Home Assistant"));
         }

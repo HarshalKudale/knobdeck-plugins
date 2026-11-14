@@ -4,7 +4,8 @@
 //! shipped in the plugin: with KnobDeck's app, code exchange and refresh go through the KnobDeck
 //! website (KNOBDECK_GOOGLE_TOKEN_URL, baked in at build time), which adds the secret server-side,
 //! as the Discord plugin does. A user with their own Google app can instead enter its id and
-//! secret in setup; they are kept only in this computer's plugin data folder.
+//! secret in setup; the secret, like the sign-in, is kept in the OS credential store
+//! (`knobdeck_sdk::secrets`), the id in the plugin data folder's `.env`.
 
 use knobdeck_sdk::oauth::OAuth;
 use knobdeck_sdk::{env_or, Error, Result, Value};
@@ -12,9 +13,9 @@ use std::time::Duration;
 
 pub const GOOGLE_TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
 
-/// The user's own Google app (from setup's `.env`), if they entered one.
+/// The user's own Google app's secret, if they entered one (OS credential store).
 fn own_secret() -> String {
-    env_or("GOOGLE_CLIENT_SECRET", "")
+    knobdeck_sdk::secrets::env_or_stored("GOOGLE_CLIENT_SECRET")
 }
 
 pub fn client_id() -> String {

@@ -22,7 +22,8 @@ fn main() {
             Ok(n) => ctx.log(format!("[setup] Streamlabs connected, {n} scene(s)")),
             Err(e) => return ctx.fail(format!("{} — keep Streamlabs Desktop open while running setup.", e.message())),
         }
-        knobdeck_sdk::save_env(&[("STREAMLABS_TOKEN", &token), ("STREAMLABS_PORT", &port)])?;
+        knobdeck_sdk::secrets::set("STREAMLABS_TOKEN", &token)?;
+        knobdeck_sdk::save_env(&[("STREAMLABS_PORT", &port)])?;
         Ok(())
     })
 }

@@ -84,7 +84,11 @@ TARGET=aarch64-apple-darwin ./scripts/check-windows-from-mac.sh   # macOS, from 
 ## Notes
 
 - **Native executables.** Each plugin ships as a native executable (plus a `<id>-setup` binary for plugins with setup).
-- **Config and credentials.** Setup writes `.env` (and Discord its token) into the plugin data folder (`%APPDATA%/KnobDeck/plugin-data/<id>/` on Windows, `~/Library/Application Support/KnobDeck/plugin-data/<id>/` on macOS, the host's config folder on Linux, via `ctx.data_dir()`), which survives updates and reinstalls; the plugin reads it at start-up (`load_env()`, which also moves a `.env` left in the plugin folder by an older version). On an auth failure a plugin calls `mark_setup_required(reason)` and KnobDeck asks the user to run setup again. Discord never ships its client secret: `discord-setup` sends the authorization code to the KnobDeck website (`KNOBDECK_DISCORD_TOKEN_URL`, baked in from `discord/.env` by `build.rs` or set at runtime), which performs the token exchange; the plugin renews expired tokens through the same endpoint.
+- **Config and credentials.** Passwords, tokens and API keys never go in files: setup hands them over with
+  `knobdeck_sdk::secrets::set` and the plugin binary keeps them in the OS credential store (macOS Keychain,
+  Windows Credential Manager, Linux Secret Service; Discord does the same with its own code). A plugin whose
+  older setup wrote a secret to `.env` calls `secrets::migrate_env(&[..])` at start-up to move it. Other
+  settings: setup writes `.env` into the plugin data folder (`%APPDATA%/KnobDeck/plugin-data/<id>/` on Windows, `~/Library/Application Support/KnobDeck/plugin-data/<id>/` on macOS, the host's config folder on Linux, via `ctx.data_dir()`), which survives updates and reinstalls; the plugin reads it at start-up (`load_env()`, which also moves a `.env` left in the plugin folder by an older version). On an auth failure a plugin calls `mark_setup_required(reason)` and KnobDeck asks the user to run setup again. Discord ships no client secret: it signs in with PKCE as a public client and renews tokens with Discord directly.
 - **OBS** subscribes to the non-high-volume event set (no input-volume-meter spam, which the plugin never used).
 - **Browser plugin** reads bookmarks/history from a *copy* of the browser's SQLite file (bundled SQLite via `rusqlite`), because running browsers lock the original.
 

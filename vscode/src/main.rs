@@ -39,7 +39,7 @@ fn enc(s: &str) -> String {
 fn get(path: &str, inputs: &Value, params: &[(&str, &str)]) -> Result<ureq::Response> {
     let port = resolve_port(inputs);
     let mut req = ureq::get(&format!("http://{}:{port}{path}", host())).timeout(Duration::from_secs(10));
-    let password = env_or("VSCODE_PASSWORD", "");
+    let password = knobdeck_sdk::secrets::env_or_stored("VSCODE_PASSWORD");
     if !password.is_empty() {
         req = req.set("Authorization", &password);
     }
@@ -130,6 +130,7 @@ const SIMPLE: &[(&str, &str, &str, &str)] = &[
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["VSCODE_PASSWORD"]);
     let mut plugin = Plugin::new(&format!("vscode-{}", std::env::consts::OS), "VS Code")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

@@ -4,15 +4,16 @@
 mod api;
 
 use knobdeck_sdk::input::{self, InputExt};
-use knobdeck_sdk::{env_or, json, load_env, Action, Plugin, Result, Value, Visual};
+use knobdeck_sdk::{json, load_env, Action, Plugin, Result, Value, Visual};
 use std::time::Duration;
 
 const POLL: Duration = Duration::from_secs(2);
 
 /// Voicemod issues client keys per app: KnobDeck's is baked in at build time (CI variable
-/// VOICEMOD_CLIENT_KEY); setup can override it with the user's own.
+/// VOICEMOD_CLIENT_KEY); setup can override it with the user's own, kept in the OS credential store.
 fn key() -> String {
-    env_or("VOICEMOD_CLIENT_KEY", option_env!("VOICEMOD_CLIENT_KEY").unwrap_or(""))
+    let own = knobdeck_sdk::secrets::env_or_stored("VOICEMOD_CLIENT_KEY");
+    if own.is_empty() { option_env!("VOICEMOD_CLIENT_KEY").unwrap_or("").to_string() } else { own }
 }
 
 fn ask(action: &str, payload: Value) -> Result<Value> {
@@ -64,6 +65,7 @@ fn sounds() -> Result<Vec<(String, String)>> {
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["VOICEMOD_CLIENT_KEY"]);
     Plugin::new(if cfg!(target_os = "macos") { "voicemod-macos" } else { "voicemod-windows" }, "Voicemod")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

@@ -28,7 +28,7 @@ network.
 The plugin talks to the app's Companion Server (`http://127.0.0.1:9863/api/v1`): commands are
 sent to `/command`, and the app's realtime feed (Socket.IO at `/api/v1/realtime`) keeps the keys
 up to date without polling. If the feed drops, the plugin reads `/state` instead. The token is
-stored only in this plugin's data folder; if it is revoked in the app, the plugin asks for setup
+stored only in this computer's credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service); if it is revoked in the app, the plugin asks for setup
 again.
 
 YouTube Music Desktop is a community app, not made by Google.

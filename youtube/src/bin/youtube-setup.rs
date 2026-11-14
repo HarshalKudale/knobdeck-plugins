@@ -30,8 +30,10 @@ fn main() {
             Some(t) => ctx.log(format!("[setup] signed in to YouTube channel {t}")),
             None => return ctx.fail("This Google account has no YouTube channel"),
         }
-        // Empty values keep using KnobDeck's app.
-        knobdeck_sdk::save_env(&[("GOOGLE_CLIENT_ID", &id), ("GOOGLE_CLIENT_SECRET", &secret)])?;
+        // Empty values keep using KnobDeck's app. The secret goes to the plugin for the OS
+        // credential store (an empty one removes a stored secret).
+        knobdeck_sdk::secrets::set("GOOGLE_CLIENT_SECRET", &secret)?;
+        knobdeck_sdk::save_env(&[("GOOGLE_CLIENT_ID", &id)])?;
         Ok(())
     })
 }

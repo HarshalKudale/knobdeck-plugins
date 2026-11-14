@@ -10,7 +10,7 @@ use std::time::Duration;
 const POLL: Duration = Duration::from_secs(2);
 
 fn cfg() -> api::Config {
-    api::Config { host: env_or("STREAMLABS_HOST", "127.0.0.1"), port: env_or("STREAMLABS_PORT", "59650"), token: env_or("STREAMLABS_TOKEN", "") }
+    api::Config { host: env_or("STREAMLABS_HOST", "127.0.0.1"), port: env_or("STREAMLABS_PORT", "59650"), token: knobdeck_sdk::secrets::env_or_stored("STREAMLABS_TOKEN") }
 }
 
 fn call(resource: &str, method: &str, args: Value) -> Result<Value> {
@@ -75,6 +75,7 @@ fn options(list: Vec<Value>, value: &str, label: &str) -> Value {
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["STREAMLABS_TOKEN"]);
     Plugin::new(if cfg!(target_os = "macos") { "streamlabs-macos" } else { "streamlabs-windows" }, "Streamlabs Desktop")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

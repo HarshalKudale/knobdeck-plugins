@@ -112,6 +112,7 @@ const WHEEL_DOMAINS: &[(&str, &str)] = &[
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["HA_TOKEN"]);
     Plugin::new(&format!("home-assistant-{}", std::env::consts::OS), "Home Assistant")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

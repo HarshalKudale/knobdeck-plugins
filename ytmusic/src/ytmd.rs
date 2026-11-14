@@ -21,7 +21,7 @@ pub struct Conn {
 
 impl Conn {
     pub fn from_env() -> Result<Conn> {
-        let token = knobdeck_sdk::env_or("YTMD_TOKEN", "");
+        let token = knobdeck_sdk::secrets::env_or_stored("YTMD_TOKEN");
         if token.is_empty() {
             return Err(Error::msg("Run setup to connect to YouTube Music Desktop"));
         }

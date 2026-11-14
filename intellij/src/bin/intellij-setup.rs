@@ -1,4 +1,4 @@
-//! IntelliJ setup: verify the companion is reachable, then save `.env`.
+//! IntelliJ setup: verify the companion is reachable, then save the settings (password in the OS credential store).
 
 use std::time::Duration;
 
@@ -39,10 +39,9 @@ fn main() {
             }
         }
 
-        std::fs::write(ctx.data_dir().join(".env"), format!("IDEA_HOST={host}
-IDEA_PORT={port}
-IDEA_PASSWORD={password}
-"))?;
+        // Host and port are settings; the password goes to the OS credential store.
+        knobdeck_sdk::save_env(&[("IDEA_HOST", &host), ("IDEA_PORT", &port)])?;
+        knobdeck_sdk::secrets::set("IDEA_PASSWORD", &password)?;
         ctx.log(format!("[setup] IntelliJ companion plugin configured: {base}"));
         Ok(())
     })

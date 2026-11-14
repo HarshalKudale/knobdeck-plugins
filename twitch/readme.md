@@ -18,4 +18,5 @@ registered your own app at dev.twitch.tv (client type **Public**), paste its cli
 ## How it works
 
 The Twitch Helix API with your sign-in (device-code flow; no password or secret is stored, only a
-token in KnobDeck's plugin data folder).
+token, kept in this computer's credential store: macOS Keychain, Windows Credential Manager, Linux
+Secret Service).

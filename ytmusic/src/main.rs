@@ -121,6 +121,7 @@ fn playlists() -> Result<Vec<Value>> {
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["YTMD_TOKEN"]);
     Plugin::new(&format!("ytmusic-{}", std::env::consts::OS), "YouTube Music Desktop")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

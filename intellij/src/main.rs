@@ -37,7 +37,7 @@ fn execute_idea_action(action_id: &str, inputs: &Value) -> Result {
     if let Some(name) = inputs["runConfig"].as_str().map(str::trim).filter(|n| !n.is_empty()) {
         req = req.query("name", name);
     }
-    let password = env_or("IDEA_PASSWORD", "");
+    let password = knobdeck_sdk::secrets::env_or_stored("IDEA_PASSWORD");
     if !password.is_empty() {
         req = req.set("Authorization", &password);
     }
@@ -87,6 +87,7 @@ const ACTIONS: &[(&str, &str, &str, &str, Kind)] = &[
 
 fn main() {
     load_env();
+    knobdeck_sdk::secrets::migrate_env(&["IDEA_PASSWORD"]);
     let mut plugin = Plugin::new(&format!("intellij-{}", std::env::consts::OS), "IntelliJ IDE")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS

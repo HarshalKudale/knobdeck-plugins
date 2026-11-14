@@ -1,4 +1,4 @@
-//! VLC setup: verify the HTTP interface is reachable, then save `.env`.
+//! VLC setup: verify the HTTP interface is reachable, then save the settings (password in the OS credential store).
 
 use base64::Engine;
 use std::time::Duration;
@@ -42,7 +42,9 @@ fn main() {
             }
         }
 
-        std::fs::write(ctx.data_dir().join(".env"), format!("VLC_HOST={host}\nVLC_PORT={port}\nVLC_PASSWORD={password}\n"))?;
+        // Host and port are settings; the password goes to the OS credential store.
+        knobdeck_sdk::save_env(&[("VLC_HOST", &host), ("VLC_PORT", &port)])?;
+        knobdeck_sdk::secrets::set("VLC_PASSWORD", &password)?;
         ctx.log(format!("[setup] VLC HTTP configured: {base}"));
         Ok(())
     })

@@ -1,4 +1,4 @@
-//! VS Code setup: verify the companion is reachable, then save `.env`.
+//! VS Code setup: verify the companion is reachable, then save the settings (password in the OS credential store).
 
 use std::time::Duration;
 
@@ -35,10 +35,9 @@ fn main() {
             }
         }
 
-        std::fs::write(ctx.data_dir().join(".env"), format!("VSCODE_HOST={host}
-VSCODE_PORT={port}
-VSCODE_PASSWORD={password}
-"))?;
+        // Host and port are settings; the password goes to the OS credential store.
+        knobdeck_sdk::save_env(&[("VSCODE_HOST", &host), ("VSCODE_PORT", &port)])?;
+        knobdeck_sdk::secrets::set("VSCODE_PASSWORD", &password)?;
         ctx.log(format!("[setup] VS Code companion configured: {base}"));
         Ok(())
     })
