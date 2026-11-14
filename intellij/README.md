@@ -24,9 +24,9 @@ KnobDeck companion plugin for IntelliJ-based IDEs. It mirrors the JetBrains Stre
 
 ## Setup
 
-1. Install the **KnobDeck IntelliJ Companion** plugin into IntelliJ IDEA / Android Studio / WebStorm / other JetBrains IDEs.
+1. Install the **KnobDeck Companion** plugin (JetBrains Marketplace, or the zip from [knobdeck-companion](https://github.com/HarshalKudale/knobdeck-companion/releases)) into IntelliJ IDEA / Android Studio / WebStorm / other JetBrains IDEs (2024.3+).
 2. In the IDE open **Settings → Tools → KnobDeck**.
-3. Enable the action service and choose the port/password.
+3. The action service is on by default; optionally set a port/password.
 4. Run the KnobDeck plugin setup and enter the same host/port/password.
 
 The KnobDeck plugin then calls the companion with requests like:

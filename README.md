@@ -40,9 +40,10 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [ytmusic](./ytmusic) | YouTube Music Desktop App (YTMDesktop 2.x) Companion Server: playback, likes, volume, repeat, queue, playlists | Windows, macOS, Linux |
 | [slides](./slides) | Slide shows: PowerPoint (COM on Windows, AppleScript on macOS), Keynote (macOS), LibreOffice Impress (Impress Remote protocol, every OS) | Windows, macOS, Linux |
 
-`vscode-companion` and `intellij-companion` are not ported: they are an editor extension and a
-Kotlin IDE plugin that run *inside* VS Code / IntelliJ, not KnobDeck SDK plugins. The Rust `vscode`
-and `intellij` plugins talk to the originals unchanged.
+The `vscode` and `intellij` plugins talk to companions that run *inside* VS Code / JetBrains IDEs
+(an editor extension and an IDE plugin, not KnobDeck SDK plugins). They live in
+[knobdeck-companion](https://github.com/HarshalKudale/knobdeck-companion), whose CI builds these two
+plugins from this repo and drives them against the companions.
 
 Spotify, Twitch, Voicemod and YouTube take app credentials at build time from repository variables
 (`SPOTIFY_CLIENT_ID`, `TWITCH_CLIENT_ID`, `VOICEMOD_CLIENT_KEY`, `GOOGLE_CLIENT_ID`,
