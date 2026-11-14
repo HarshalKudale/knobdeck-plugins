@@ -337,6 +337,19 @@ pub fn focused_window() -> Result<Elem> {
         .ok_or_else(|| Error::msg("The front app has no window"))
 }
 
+/// KnobDeck's own config window. The custom-position "Get current" buttons read
+/// this one: the user places the config window where they want, then captures
+/// its frame. `focused_window` can't be used, it skips KnobDeck on purpose.
+pub fn knobdeck_window() -> Result<Elem> {
+    ensure_trusted()?;
+    let app = crate::windows::knobdeck_app_pid().map(Elem::app).ok_or_else(|| Error::msg("KnobDeck's window isn't open"))?;
+    app.elem_attr("AXFocusedWindow")
+        .filter(Elem::is_standard_window)
+        .or_else(|| app.elem_attr("AXMainWindow").filter(Elem::is_standard_window))
+        .or_else(|| app.windows().into_iter().next())
+        .ok_or_else(|| Error::msg("KnobDeck's window isn't open"))
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Rect {
     pub x: f64,
