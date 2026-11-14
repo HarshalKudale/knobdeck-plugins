@@ -150,7 +150,8 @@ fn connect_inner() {
         std::process::exit(1);
     };
 
-    let login = |token: &str| Rpc::connect(&client_id()).and_then(|c| c.authenticate(token).map(|_| c));
+    let cid = client_id();
+    let login = |token: &str| Rpc::connect(&cid).and_then(|c| c.authenticate(token).map(|_| c));
     let mut result = login(&token);
     if matches!(result, Err(RpcError { code: Some(_), .. })) {
         // Expired or revoked: one renewal with Discord before asking for setup.
