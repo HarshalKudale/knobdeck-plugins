@@ -9,42 +9,99 @@
       color-scheme: dark;
       --bg: #0f1117;
       --panel: #171b24;
+      --inset: #11141b;
       --border: #283042;
       --text: #f3f4f6;
       --muted: #9aa3b2;
       --accent: #5865f2;
       --accent-hover: #4752c4;
+      --warn-bg: rgba(250, 204, 21, 0.08);
+      --warn-border: rgba(250, 204, 21, 0.35);
+      --warn-text: #fde68a;
     }
 
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
+      display: flex;
+      padding: 16px;
       background: var(--bg);
       color: var(--text);
       font: 14px/1.45 Inter, Segoe UI, system-ui, sans-serif;
     }
 
     .card {
-      width: min(320px, calc(100vw - 32px));
-      padding: 24px;
+      margin: auto;
+      width: min(440px, 100%);
+      padding: 22px;
       border: 1px solid var(--border);
       border-radius: 16px;
       background: var(--panel);
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
 
-    h1 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
+    h1 { margin: 0; font-size: 18px; text-align: center; }
+    p { margin: 0; }
+    .lead { color: var(--muted); text-align: center; }
 
-    p {
-      margin: 0 0 18px;
+    .notice {
+      padding: 10px 12px;
+      border: 1px solid var(--warn-border);
+      border-radius: 10px;
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      font-size: 12.5px;
+    }
+    .notice strong { color: var(--text); }
+
+    details {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--inset);
+      font-size: 12.5px;
+    }
+    summary {
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      user-select: none;
+    }
+    details ol {
+      margin: 0;
+      padding: 0 14px 12px 30px;
       color: var(--muted);
     }
+    details li + li { margin-top: 6px; }
+    details b { color: var(--text); font-weight: 600; }
+
+    code {
+      font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 1px 5px;
+      border-radius: 5px;
+      user-select: all;
+      word-break: break-all;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-weight: 600; font-size: 13px; }
+    label span { color: var(--muted); font-weight: 400; }
+    input {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--inset);
+      color: var(--text);
+      font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+    input[aria-invalid="true"] { border-color: #f87171; }
+    .hint { color: var(--muted); font-size: 12px; }
 
     button {
       width: 100%;
@@ -57,31 +114,60 @@
       background: var(--accent);
       cursor: pointer;
     }
-
     button:hover { background: var(--accent-hover); }
     button:disabled { opacity: 0.7; cursor: wait; }
 
     .status {
       min-height: 20px;
-      margin-top: 12px;
       color: var(--muted);
       font-size: 12px;
+      text-align: center;
+      white-space: pre-line;
     }
-
     .status.error { color: #f87171; }
     .status.success { color: #4ade80; }
   </style>
 </head>
 <body>
-  <div class="card">
+  <form class="card" id="setup-form" novalidate>
     <h1>Discord Setup</h1>
-    <p>Authorize KnobDeck with your Discord desktop client.</p>
-    <button id="auth-btn" type="button">Authorize Discord</button>
-    <div id="status" class="status"></div>
-  </div>
+    <p class="lead">Keep the Discord desktop app open and signed in. Discord shows an authorization popup in the app when you continue.</p>
+
+    <div class="notice">
+      <strong>Discord limits who can authorize an app.</strong>
+      Discord lets an app use RPC (the local connection KnobDeck uses to control Discord) only after Discord approves it.
+      Until KnobDeck's Discord app is approved, only a short list of test accounts can authorize it, and setup fails for
+      everyone else with <code>invalid_scope</code>. This is a restriction on Discord's side.
+      To use the plugin now, create your own Discord app (free, about two minutes) and enter its Client ID below.
+    </div>
+
+    <details>
+      <summary>How to create your own Discord app</summary>
+      <ol>
+        <li>Open <code>https://discord.com/developers/applications</code> in your browser. Sign in with the account you use in the Discord app, then click <b>New Application</b> and give it any name.</li>
+        <li>Open <b>OAuth2</b> and copy the <b>Client ID</b>.</li>
+        <li>On the same page, add <code>http://localhost</code> under <b>Redirects</b>, turn on <b>Public Client</b>, and click <b>Save Changes</b>.</li>
+        <li>Paste the Client ID below. KnobDeck doesn't need the client secret.</li>
+      </ol>
+    </details>
+
+    <div class="field">
+      <label for="client-id">Client ID <span>(optional)</span></label>
+      <input id="client-id" name="client_id" type="text" inputmode="numeric" autocomplete="off" spellcheck="false"
+             placeholder="Leave blank to use KnobDeck's app">
+      <div class="hint">KnobDeck saves it with your Discord sign-in in your system's credential store (Keychain, Windows Credential Manager or Secret Service).</div>
+    </div>
+
+    <button id="auth-btn" type="submit">Authorize Discord</button>
+    <div id="status" class="status" role="status"></div>
+  </form>
 
   <script>
+    // Only the ID, never a secret, is remembered here so re-running setup keeps it filled in.
+    const STORAGE_KEY = 'knobdeck.discord.setup.clientId';
+    const form = document.getElementById('setup-form');
     const button = document.getElementById('auth-btn');
+    const input = document.getElementById('client-id');
     const status = document.getElementById('status');
 
     function setStatus(text, kind = '') {
@@ -89,10 +175,33 @@
       status.className = `status ${kind}`.trim();
     }
 
-    button.addEventListener('click', () => {
-      button.disabled = true;
-      setStatus('Waiting for Discord authorization...');
-      window.parent.postMessage({ source: 'knobdeck-setup-page', type: 'setup-submit', values: {} }, '*');
+    function setBusy(busy) {
+      button.disabled = busy;
+      input.disabled = busy;
+    }
+
+    try { input.value = localStorage.getItem(STORAGE_KEY) || ''; } catch (_) {}
+
+    input.addEventListener('input', () => input.removeAttribute('aria-invalid'));
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const clientId = input.value.replace(/\s+/g, '');
+      if (clientId && !/^\d{17,20}$/.test(clientId)) {
+        input.setAttribute('aria-invalid', 'true');
+        setStatus('The Client ID is the 17 to 20 digit number on your app\'s OAuth2 page.', 'error');
+        input.focus();
+        return;
+      }
+      input.value = clientId;
+      try {
+        if (clientId) localStorage.setItem(STORAGE_KEY, clientId);
+        else localStorage.removeItem(STORAGE_KEY);
+      } catch (_) {}
+
+      setBusy(true);
+      setStatus(clientId ? 'Waiting for Discord authorization (your app)...' : 'Waiting for Discord authorization...');
+      window.parent.postMessage({ source: 'knobdeck-setup-page', type: 'setup-submit', values: { client_id: clientId } }, '*');
     });
 
     window.addEventListener('message', (event) => {
@@ -100,10 +209,10 @@
       if (!data || data.source !== 'knobdeck-host') return;
       if (data.type === 'setup-complete') {
         setStatus('Discord authorized.', 'success');
-        button.disabled = false;
+        setBusy(false);
       } else if (data.type === 'setup-failed') {
         setStatus(data.message || 'Setup failed.', 'error');
-        button.disabled = false;
+        setBusy(false);
       }
     });
   </script>

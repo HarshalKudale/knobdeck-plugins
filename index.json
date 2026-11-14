@@ -31,7 +31,7 @@
       "sort": 86
     },
     "discord": {
-      "version": "1.2.0",
+      "version": "1.3.0",
       "name": "Discord",
       "summary": "Mute, deafen, push-to-talk, channels and soundboard.",
       "tags": [

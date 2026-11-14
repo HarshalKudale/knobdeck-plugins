@@ -38,15 +38,29 @@ Most Discord actions now prefer **server, channel, friend, device, sound, and ca
 
 1. Open the **Discord desktop app** and sign in.
 2. In KnobDeck, open **Plugins → Discord** and click **Setup**.
-3. Discord shows an authorization popup inside the client. Click **Authorize**.
+3. Optionally enter your own Discord app's **Client ID** (see below), then click **Authorize Discord**.
+4. Discord shows an authorization popup inside the client. Click **Authorize**.
 
 That's it. The sign-in is kept in your OS credential store (macOS Keychain, Windows Credential
 Manager, or the Secret Service on Linux: KWallet / GNOME Keyring) and renewed on its own, so you only
 run setup again if you revoke access in Discord (**User Settings → Authorized Apps**). On a Linux
 session without a Secret Service it stays in the plugin data folder, readable by your user only.
 
-There is no Discord developer app or client secret to create: KnobDeck's Discord app is a public
-client, so setup signs in with PKCE and talks to Discord directly.
+### Using your own Discord app (Client ID)
+
+Discord lets an app use RPC only after Discord approves it. Until KnobDeck's Discord app is
+approved, only a short list of test accounts can authorize it, and setup fails for everyone else
+with `invalid_scope`. This is Discord's restriction. To use the plugin now, create your own app:
+
+1. Open <https://discord.com/developers/applications>, sign in with the account you use in the
+   Discord app, and click **New Application**.
+2. Open **OAuth2** and copy the **Client ID**.
+3. On the same page, add `http://localhost` under **Redirects**, turn on **Public Client**, and save.
+4. Paste the Client ID into the setup window.
+
+You don't need a client secret: the app is a public client, so setup signs in with PKCE and
+talks to Discord directly. The Client ID is saved with the sign-in in the OS credential store,
+and token renewals use the same app. Leave the field blank to use KnobDeck's app.
 
 ---
 
@@ -69,7 +83,8 @@ Setup asks Discord for these scopes:
 
 - **"Discord is not connected"**: Discord must be running. The plugin reconnects on its own when it starts.
 - **Setup fails**: make sure you are signed in to the Discord desktop app (not only the browser) and try again.
-- **Setup fails with `invalid_scope`**: Discord only lets accounts listed on KnobDeck's Discord app authorize it until Discord approves the app for RPC.
+- **Setup fails with `invalid_scope`**: Discord only lets an app's owner and its listed App Testers authorize RPC until Discord approves the app. Use your own app's Client ID (above). With your own app, sign in to Discord with the account that created it.
+- **Setup fails with `invalid_client`** (your own app): turn on **Public Client** in the app's OAuth2 settings.
 - **Actions stop working after a while**: run **Setup** again; this happens when access was revoked in Discord.
 
 The plugin talks to the Discord desktop client over its local RPC pipe, the same channel Discord's

@@ -3,6 +3,10 @@
 //! The Discord application is a public client: authorization codes (with their PKCE verifier) and
 //! refresh tokens are exchanged straight with Discord, with no client secret and no KnobDeck server.
 //!
+//! The user may enter their own Discord app's Client ID during setup (Discord only lets an app's
+//! owner and listed testers grant `rpc` until Discord approves the app). That ID is saved inside
+//! the sign-in, so the refresh token is always renewed with the app that issued it.
+//!
 //! The sign-in lives in the OS credential store (macOS Keychain, Windows Credential Manager, Linux
 //! Secret Service). Only the plugin binary touches it: setup leaves a fresh sign-in in a hand-off
 //! file (owner-only on Unix) that the plugin moves into the store on its next start. On macOS a
@@ -35,14 +39,30 @@ pub const TOKEN_FILE: &str = "discord-rpc-token.json";
 const KEYRING_SERVICE: &str = "KnobDeck Discord plugin";
 const KEYRING_USER: &str = "discord-rpc-token";
 
-/// Runtime env var, else the value inlined from `.env` at build time, else KnobDeck's app.
-pub fn client_id() -> String {
+/// KnobDeck's bundled app: runtime env var, else the value inlined from `.env` at build time,
+/// else [`APP_ID`].
+pub fn default_client_id() -> String {
     std::env::var("DISCORD_CLIENT_ID")
         .ok()
         .filter(|v| !v.is_empty())
         .or_else(|| option_env!("DISCORD_CLIENT_ID").map(String::from))
         .filter(|v| !v.is_empty())
         .unwrap_or_else(|| APP_ID.into())
+}
+
+/// A Discord application ID is a snowflake: 17 to 20 digits.
+pub fn is_valid_client_id(id: &str) -> bool {
+    (17..=20).contains(&id.len()) && id.bytes().all(|b| b.is_ascii_digit())
+}
+
+/// The app the stored sign-in belongs to: the Client ID the user entered at setup, else the
+/// bundled app (also for sign-ins saved before custom IDs existed).
+pub fn client_id() -> String {
+    stored().as_ref().and_then(saved_client_id).unwrap_or_else(default_client_id)
+}
+
+fn saved_client_id(v: &Value) -> Option<String> {
+    v["client_id"].as_str().filter(|id| is_valid_client_id(id)).map(String::from)
 }
 
 pub struct Pkce {
@@ -64,9 +84,8 @@ fn now_secs() -> u64 {
 }
 
 /// POST a grant to Discord's token endpoint; returns what we store.
-fn request_token(grant: &[(&str, &str)]) -> Result<Value, String> {
-    let cid = client_id();
-    let mut form = vec![("client_id", cid.as_str())];
+fn request_token(client_id: &str, grant: &[(&str, &str)]) -> Result<Value, String> {
+    let mut form = vec![("client_id", client_id)];
     form.extend_from_slice(grant);
     let reply: Value = match ureq::post(TOKEN_ENDPOINT).timeout(std::time::Duration::from_secs(15)).send_form(&form) {
         Ok(r) => r.into_json().map_err(|e| format!("Discord token exchange returned invalid JSON: {e}"))?,
@@ -82,13 +101,14 @@ fn request_token(grant: &[(&str, &str)]) -> Result<Value, String> {
         "access_token": access,
         "refresh_token": reply["refresh_token"],
         "expires_at": now_secs() + reply["expires_in"].as_u64().unwrap_or(0),
+        "client_id": client_id,
     }))
 }
 
-/// Setup: swap the authorization code (and its PKCE verifier) for tokens and leave them for the
-/// plugin. Returns the access token.
-pub fn exchange_code(code: &str, verifier: &str) -> Result<String, String> {
-    let saved = request_token(&[("grant_type", "authorization_code"), ("code", code), ("code_verifier", verifier)])?;
+/// Setup: swap the authorization code (and its PKCE verifier) for tokens from `client_id`'s app and
+/// leave them, with that ID, for the plugin. Returns the access token.
+pub fn exchange_code(client_id: &str, code: &str, verifier: &str) -> Result<String, String> {
+    let saved = request_token(client_id, &[("grant_type", "authorization_code"), ("code", code), ("code_verifier", verifier)])?;
     write_handoff(&saved)?;
     Ok(saved["access_token"].as_str().unwrap_or_default().to_string())
 }
@@ -96,8 +116,10 @@ pub fn exchange_code(code: &str, verifier: &str) -> Result<String, String> {
 /// Renew the access token with the stored refresh token. None if there is no refresh token or
 /// Discord refused it (the user must run setup again).
 pub fn refresh_token() -> Option<String> {
-    let refresh = stored()?["refresh_token"].as_str()?.to_string();
-    let saved = request_token(&[("grant_type", "refresh_token"), ("refresh_token", &refresh)])
+    let v = stored()?;
+    let refresh = v["refresh_token"].as_str()?.to_string();
+    let cid = saved_client_id(&v).unwrap_or_else(default_client_id);
+    let saved = request_token(&cid, &[("grant_type", "refresh_token"), ("refresh_token", &refresh)])
         .map_err(|e| knobdeck_sdk::log(format!("token refresh failed: {e}")))
         .ok()?;
     store(&saved);
@@ -172,6 +194,18 @@ fn write_handoff(v: &Value) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn client_id_is_a_snowflake() {
+        assert!(is_valid_client_id(APP_ID));
+        assert!(is_valid_client_id("12345678901234567"));
+        assert!(!is_valid_client_id("1234567890123456")); // 16 digits
+        assert!(!is_valid_client_id("123456789012345678901")); // 21 digits
+        assert!(!is_valid_client_id("12345678901234567a"));
+        assert!(!is_valid_client_id(""));
+        assert_eq!(saved_client_id(&json!({"client_id": "12345678901234567"})).as_deref(), Some("12345678901234567"));
+        assert_eq!(saved_client_id(&json!({"access_token": "t"})), None);
+    }
 
     #[test]
     fn pkce_pair_is_rfc7636_s256() {
