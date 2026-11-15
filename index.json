@@ -103,7 +103,7 @@
       "sort": 42
     },
     "mac-tools": {
-      "version": "1.4.0",
+      "version": "1.5.0",
       "name": "macOS Tools",
       "summary": "Window management, Spaces, audio devices, clipboard history, app menu commands.",
       "tags": [
