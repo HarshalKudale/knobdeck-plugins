@@ -287,3 +287,10 @@ mod tests {
         assert_eq!(item.cmd_char().as_deref(), Some("V"));
     }
 }
+
+/// Whether an app with this bundle id is installed (Launch Services knows it).
+pub fn app_installed(bundle_id: &str) -> bool {
+    use objc2_app_kit::NSWorkspace;
+    use objc2_foundation::NSString;
+    NSWorkspace::sharedWorkspace().URLForApplicationWithBundleIdentifier(&NSString::from_str(bundle_id)).is_some()
+}

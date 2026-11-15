@@ -22,6 +22,11 @@ fn main() {
 #[cfg(target_os = "macos")]
 mod audio;
 #[cfg(target_os = "macos")]
+mod automation;
+// Pure text helpers of the automation actions; compiled everywhere so their tests run on CI hosts.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+mod script_text;
+#[cfg(target_os = "macos")]
 mod ax;
 #[cfg(target_os = "macos")]
 mod clipboard;
@@ -48,7 +53,7 @@ mod app {
     use crate::ax::{self, Elem, Rect};
     use crate::screens::{self, Display};
     use crate::system::{self, Dock, Hotkey};
-    use crate::{audio, clipboard, icon, menus, stats, windows};
+    use crate::{audio, automation, clipboard, icon, menus, stats, windows};
     use knobdeck_sdk::input::{self, InputExt};
     use knobdeck_sdk::{json, Action, Ctx, Error, Plugin, Result, Value, Visual};
     use std::collections::HashMap;
@@ -465,7 +470,7 @@ mod app {
         let mut p = Plugin::new("mac-tools", "Mac Tools")
             .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
-            .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system shortcuts, live stats, audio devices, mic mute, clipboard history and app menu commands.")
+            .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system shortcuts, live stats, audio devices, mic mute, clipboard history, app menu commands, and Shortcuts, AppleScript and Keyboard Maestro actions.")
             .icon("app-window")
             .platforms(&["macos"])
             .on_ready(|_| {
@@ -594,6 +599,50 @@ mod app {
                     system::type_text(&text)
                 }
             }))
+            // ── Automation: Shortcuts, AppleScript / JXA, Keyboard Maestro ──
+            .query("get-shortcuts", |_| {
+                let list = automation::shortcuts()?;
+                if list.is_empty() {
+                    return Err(Error::msg("No shortcuts found. Make one in the Shortcuts app"));
+                }
+                Ok(Value::Array(list.into_iter().map(|n| json!({"value": n, "label": n})).collect()))
+            })
+            .action(
+                Action::button("run-shortcut", "Run Shortcut")
+                    .icon("layers")
+                    .inputs([vec![input::query_combobox("shortcut", "Shortcut", "get-shortcuts")], automation::input_inputs(true), vec![automation::output_input()]].concat())
+                    .on_press(automation::run_shortcut),
+            )
+            .action(
+                Action::button("run-applescript", "Run AppleScript")
+                    .icon("scroll-text")
+                    .inputs(
+                        [
+                            vec![
+                                input::select("source", "Script", &[("text", "Written here"), ("file", "A script file")]).default_value("text"),
+                                input::select("language", "Language", &[("applescript", "AppleScript"), ("javascript", "JavaScript (JXA)")])
+                                    .default_value("applescript")
+                                    .with("showIf", json!({"key": "source", "equals": "text"})),
+                                input::textarea("script", "Script")
+                                    .placeholder("tell application \"Finder\" to reveal {file}")
+                                    .accepts_placeholders()
+                                    .with("showIf", json!({"key": "source", "equals": "text"})),
+                                input::text("file", "Script file").placeholder("~/Scripts/My Script.scpt").with("showIf", json!({"key": "source", "equals": "file"})),
+                            ],
+                            automation::input_inputs(true),
+                            vec![automation::output_input()],
+                        ]
+                        .concat(),
+                    )
+                    .on_press(automation::run_applescript),
+            )
+            .query("get-km-macros", |_| Ok(Value::Array(automation::km_macros()?.into_iter().map(|(uid, label)| json!({"value": uid, "label": label})).collect())))
+            .action(
+                Action::button("run-km-macro", "Run Keyboard Maestro Macro")
+                    .icon("keyboard")
+                    .inputs([vec![input::query_select("macro", "Macro", "get-km-macros", &[])], automation::input_inputs(true)].concat())
+                    .on_press(automation::run_km_macro),
+            )
             .action(open_button("finder", "Finder", "folder-open", "com.apple.finder"))
             .action(open_button("open-settings", "System Settings", "settings", "com.apple.systempreferences"))
             .action(open_button("activity-monitor", "Activity Monitor", "activity", "com.apple.ActivityMonitor"))

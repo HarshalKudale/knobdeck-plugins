@@ -22,11 +22,23 @@ Window management and system tools for KnobDeck on **macOS** — the macOS count
   so it works when the item has no shortcut or you've changed it. Choose **App in front** to run
   the same command in whichever app is in front (type the path, since the list needs a chosen app).
 - **Clipboard History:** the last 16 copies (text, rich text, images, files); picking one pastes it.
+- **Run Shortcut:** runs one of your Apple Shortcuts. Its input can be the selected text, the files
+  selected in Finder, the clipboard, or text you write (with placeholders such as `{date}`), and
+  its result can be pasted, copied or shown as a notification.
+- **Run AppleScript:** a script written in the action (AppleScript or JavaScript) or a script file.
+  Placeholders in the script become quoted strings (`{selection}` → `"the text"`, `{files}` → a
+  list of paths), and the chosen input reaches the script's `on run argv`. The result can be
+  pasted, copied or shown.
+- **Run Keyboard Maestro Macro:** pick a macro from Keyboard Maestro's list; the chosen input is
+  its parameter (`%TriggerValue%`). Needs Keyboard Maestro.
 
 ## Permissions
 
 - **Accessibility** (already granted to KnobDeck) — moving, resizing and reading windows.
 - Shortcut actions are sent by KnobDeck itself, like its built-in key actions.
+- **Automation**, once per app the first time an action controls it: Finder (to read its
+  selected files), Keyboard Maestro Engine, and any app your scripts talk to. Allow it when asked,
+  or later in System Settings ▸ Privacy & Security ▸ Automation.
 
 ## Differences from Win Tools
 
