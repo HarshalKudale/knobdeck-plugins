@@ -1,12 +1,7 @@
-//! OS seam: put text on the clipboard, open a terminal in a folder.
+//! OS seam: put text on the clipboard.
 
+#[cfg_attr(target_os = "linux", allow(unused_imports))] // Error: Windows and macOS only
 use knobdeck_sdk::{Error, Result};
-use std::path::Path;
-use std::process::Command;
-
-fn spawn(c: &mut Command) -> std::io::Result<()> {
-    c.spawn().map(|_| ())
-}
 
 // ── Windows ───────────────────────────────────────────────────────────────────
 
@@ -41,17 +36,6 @@ pub fn set_clipboard(text: &str) -> Result {
     }
 }
 
-/// Windows Terminal when installed, else Command Prompt.
-#[cfg(windows)]
-pub fn terminal(dir: &Path) -> Result {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NEW_CONSOLE: u32 = 0x10;
-    if spawn(Command::new("wt.exe").arg("-d").arg(dir)).is_ok() {
-        return Ok(());
-    }
-    spawn(Command::new("cmd.exe").arg("/K").current_dir(dir).creation_flags(CREATE_NEW_CONSOLE)).map_err(|e| Error::msg(format!("Couldn't open a terminal: {e}")))
-}
-
 // ── macOS ─────────────────────────────────────────────────────────────────────
 
 #[cfg(target_os = "macos")]
@@ -67,12 +51,6 @@ pub fn set_clipboard(text: &str) -> Result {
     }
 }
 
-/// The Terminal app, opened on the folder.
-#[cfg(target_os = "macos")]
-pub fn terminal(dir: &Path) -> Result {
-    spawn(Command::new("/usr/bin/open").args(["-a", "Terminal"]).arg(dir)).map_err(|e| Error::msg(format!("Couldn't open Terminal: {e}")))
-}
-
 // ── Linux ─────────────────────────────────────────────────────────────────────
 
 /// Through the desktop's clipboard owner (Klipper on Plasma, the KnobDeck extension on GNOME),
@@ -85,34 +63,4 @@ pub fn set_clipboard(text: &str) -> Result {
         Desktop::Gnome => Ok(linux_desktop::gnome::call("clipboard-set", &knobdeck_sdk::json!({ "text": text })).map(|_| ())?),
         Desktop::Other => Err(linux_desktop::unsupported()),
     }
-}
-
-/// The desktop's own terminal (Konsole, GNOME Console / Terminal), else whatever
-/// `xdg-terminal-exec` picks.
-#[cfg(target_os = "linux")]
-pub fn terminal(dir: &Path) -> Result {
-    use linux_desktop::{desktop, Desktop};
-    let d = dir.as_os_str();
-    let mut tries: Vec<Command> = vec![];
-    let mut c = |prog: &str, args: &[&std::ffi::OsStr]| {
-        let mut c = Command::new(prog);
-        c.args(args).current_dir(dir);
-        tries.push(c);
-    };
-    let wd = format!("--working-directory={}", dir.display());
-    match desktop() {
-        Desktop::Kde => c("konsole", &["--workdir".as_ref(), d]),
-        _ => {
-            c("kgx", &[wd.as_ref()]);
-            c("gnome-terminal", &[wd.as_ref()]);
-        }
-    }
-    c("xdg-terminal-exec", &[]);
-    c("konsole", &["--workdir".as_ref(), d]);
-    for mut cmd in tries {
-        if spawn(&mut cmd).is_ok() {
-            return Ok(());
-        }
-    }
-    Err(Error::msg("No terminal app found (Konsole, Console or GNOME Terminal)"))
 }

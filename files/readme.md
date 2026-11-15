@@ -6,7 +6,7 @@ the files, then press a key or open the Files wheel.
 ## What it does
 
 - **Convert Images**: to PNG, JPEG or WebP (lossless). Reads PNG, JPEG, WebP, GIF, BMP and TIFF,
-  and HEIC on macOS.
+  and HEIC on macOS (other systems can't decode it, so HEIC files aren't offered there).
 - **Resize Images**: to a longest edge in pixels (never enlarges) or by a percentage.
 - **Rotate Images**: 90° right, 180°, 90° left.
 - **Remove Image Metadata**: a copy without EXIF (camera, location), XMP, IPTC and comments.
@@ -20,8 +20,6 @@ the files, then press a key or open the Files wheel.
   the pattern has `{ext}`.
 - **Move or Copy to Folder**: a folder you choose (`~` is your home folder).
 - **New File in Folder**: a file or folder in the folder you're looking at.
-- **Terminal Here**: Windows Terminal (or Command Prompt), Terminal, Konsole or GNOME Console in
-  that folder.
 - **Files Wheel**: only the actions that fit the selection (image actions for images, Merge for
   two or more PDFs…).
 
@@ -36,9 +34,13 @@ allow it, or later in System Settings ▸ Privacy & Security ▸ Automation.
 ## How it works
 
 The selection comes from the KnobDeck SDK (`os-files`): the Shell's own COM objects for File
-Explorer (the active tab) and the desktop, Finder's Apple Events, and on Linux the PRIMARY
-selection that Dolphin fills with the selected files. Images, PDFs and zip files are processed in
+Explorer (the active tab) and the desktop, Finder's Apple Events, and Dolphin's accessibility
+tree on Linux. Images, PDFs and zip files are processed in
 Rust inside the plugin (`image`, `lopdf`, `zip`); HEIC is read with macOS's `sips`. No keyboard
 shortcuts are used.
 
-On Linux, Dolphin shares its selection. Other file managers (Files, Nemo) may not; the plugin then says so.
+On Linux the plugin reads Dolphin's selection through the desktop's accessibility service (it
+switches it on the first time, as a screen reader does). Other file managers (Files, Nemo) don't
+share their selection; the plugin then says so. KnobDeck can't hide a trigger key from the app on
+Linux, so open the dial with a chord Dolphin doesn't use: Ctrl+Alt+Space toggles Dolphin's
+selection before the plugin reads it.
