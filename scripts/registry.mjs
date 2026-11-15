@@ -7,11 +7,11 @@ import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "no
 import { OS_PLUGINS, findEntry, readIndex } from "./plugins.mjs";
 
 const [tag, prevTag, prevPath] = process.argv.slice(2);
-const REPO = "https://github.com/HarshalKudale/knobdeck-plugins";
+const REPO = "https://github.com/Knobdeck/knobdeck-plugins";
 // Registry site (knobdeck-app-site repo): serves registry.json and the readmes.
 const SITE = "https://app.knobdeck.harshalkudale.com";
 // Icons live in the repo and are hot-linked from here, so changing one needs no release.
-const RAW = "https://raw.githubusercontent.com/HarshalKudale/knobdeck-plugins/master";
+const RAW = "https://raw.githubusercontent.com/Knobdeck/knobdeck-plugins/master";
 const index = readIndex();
 const prev = prevPath ? JSON.parse(readFileSync(prevPath, "utf8")).plugins : [];
 
