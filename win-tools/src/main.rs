@@ -556,7 +556,7 @@ mod app {
                     }),
             )
             // ── Switch Window (taskbar-style wheel) ──
-            .action(
+            .action(off(
                 Action::wheel("switch-window-wheel", "Switch to Window")
                     .icon("layout-grid")
                     .on_open(|ctx| window_slices("switch-window-wheel").or_else(|e| ctx.fail(e.message().to_string())))
@@ -567,8 +567,8 @@ mod app {
                         };
                         win32::bring_window_to_front(hwnd)
                     }),
-            )
-            .action(focus_app_action())
+            ))
+            .action(off(focus_app_action()))
             .query("get-focus-apps", |_| focus_app_options())
             // ── Position ──
             .action(window_button("move-next-monitor", "Move to Next Monitor", "monitor-up", win32::move_to_next_monitor))
@@ -614,20 +614,17 @@ mod app {
                     "maximize" => return win32::maximize(Some(hwnd)),
                     "center" => win32::center_window(hwnd, work_of(hwnd, &ctx.inputs)?)?,
                     "custom" => apply_custom_position(hwnd, &ctx.inputs)?,
-                    "front" => {}
                     region => {
                         let Some(r) = region_of(region) else { return ctx.fail("Choose a position") };
                         win32::move_to_region(hwnd, work_of(hwnd, &ctx.inputs)?, r);
                     }
                 }
-                if ctx.input_bool("focus") {
-                    win32::bring_window_to_front(hwnd)?;
-                }
+                // Moved windows aren't focused: Windows lets a background process take the
+                // foreground only by a workaround, so the option was dropped.
                 Ok(())
             }));
 
         // ── Dynamic Window Actions: window-picker wheels ──
-        // "Bring to Front" is already covered by "Switch to Window", so it isn't duplicated here.
         p = p
             .action(picker_wheel("dynamic-minimize-wheel", "Dynamic Minimize", "minus", vec![], |_, w| win32::minimize(Some(w))))
             .action(picker_wheel("dynamic-maximize-wheel", "Dynamic Maximize", "square", vec![], |_, w| win32::maximize(Some(w))))
@@ -853,7 +850,6 @@ mod app {
                     ("maximize", "Maximize"),
                     ("minimize", "Minimize"),
                     ("custom", "Custom position"),
-                    ("front", "Just bring to front"),
                 ],
             )
             .with("default", "left-half"),
@@ -862,7 +858,6 @@ mod app {
         let mut extra = custom_position_inputs().into_iter();
         v.extend(extra.next());
         v.extend(extra.map(|i| i.with("showIf", custom.clone())));
-        v.push(input::checkbox("focus", "Bring the window to the front").with("default", true));
         v
     }
 

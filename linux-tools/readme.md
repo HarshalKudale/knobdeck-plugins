@@ -15,7 +15,6 @@ Ubuntu and Arch based distributions.
   next display, and **Move App Window** for a named app. Every action can target the current
   display or a chosen one.
 - **Dynamic wheels:** pick any open window (with its app icon) and apply one of the actions above.
-  **Switch to Window** focuses the chosen window, including minimized ones.
 - **Workspaces and desktop:** previous / next / new / close desktop, Overview, Present Windows,
   Applications, Search (KRunner / GNOME search), Screenshot, Files, System Settings, System
   Monitor, Lock Screen, and on Plasma Show Desktop, Emoji Picker and Turn Off Display.

@@ -9,7 +9,6 @@ Window management and system tools for KnobDeck on **macOS** — the macOS count
 - **Position:** halves, quarters, thirds, center, fill a display, custom position/size, and move
   to the next display. Every action can target the current display or a chosen one.
 - **Dynamic wheels:** pick any open window (with its app icon) and apply one of the actions above.
-  **Switch to Window** brings the chosen window forward, including minimized ones.
 - **Spaces and system:** previous/next Space, Mission Control, App Exposé, Show Desktop,
   Screenshot, Emoji & Symbols, Hide Others, Force Quit App (a wheel of running apps), Lock Screen,
   Sleep Display, and Finder / System Settings / Activity Monitor.

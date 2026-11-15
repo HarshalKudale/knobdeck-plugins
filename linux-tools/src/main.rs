@@ -681,7 +681,7 @@ mod app {
                 Ok(())
             }))
             // ── Switch Window ──
-            .action(
+            .action(off(
                 Action::wheel("switch-window-wheel", "Switch to Window")
                     .icon("layout-grid")
                     .on_open(|ctx| switch_slices().or_else(|e| ctx.fail(e.message().to_string())))
@@ -692,8 +692,8 @@ mod app {
                             None => ctx.fail("That window is no longer available"),
                         }
                     }),
-            )
-            .action(focus_app_action());
+            ))
+            .action(off(focus_app_action()));
 
         // ── Dynamic Window Actions: window-picker wheels ──
         p = p

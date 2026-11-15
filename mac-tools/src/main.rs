@@ -513,7 +513,7 @@ mod app {
             .action(window_toggle("toggle-max-restore", "Fill / Restore", "maximize-2", [("normal", "Windowed", "minimize-2"), ("maximized", "Filled", "maximize-2")], is_filled, toggle_fill))
             .action(window_toggle("toggle-fullscreen", "Full Screen", "fullscreen", [("windowed", "Windowed", "minimize-2"), ("fullscreen", "Full Screen", "maximize")], Elem::is_fullscreen, toggle_fullscreen))
             // ── Switch Window ──
-            .action(
+            .action(off(
                 Action::wheel("switch-window-wheel", "Switch to Window")
                     .icon("layout-grid")
                     .on_open(|ctx| switch_slices().or_else(|e| ctx.fail(e.message().to_string())))
@@ -527,8 +527,8 @@ mod app {
                             }
                         }
                     }),
-            )
-            .action(focus_app_action())
+            ))
+            .action(off(focus_app_action()))
             .query("get-focus-apps", |_| focus_app_options())
             // ── Position ──
             .action(window_button("move-next-monitor", "Move to Next Display", "monitor-up", move_to_next_display))
