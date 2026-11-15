@@ -68,9 +68,19 @@ pub fn screenshot() -> Result {
     }
 }
 
-/// Plasma's emoji picker, GNOME Characters.
+/// Plasma's emoji picker. GNOME has none (GNOME Characters is a separate app that only copies),
+/// so the action reports that there.
 pub fn emoji_picker() -> Result {
-    launch_first(&["plasma-emojier", "gnome-characters"], "emoji picker")
+    not_on_gnome("an emoji picker")?;
+    launch_first(&["plasma-emojier"], "emoji picker")
+}
+
+/// Fails on GNOME, for actions GNOME has no real route for (they would only be imitated there).
+pub fn not_on_gnome(what: &str) -> Result {
+    if desktop() == Desktop::Gnome {
+        return Err(Error::msg(format!("GNOME has no {what}; this action works on KDE Plasma")));
+    }
+    Ok(())
 }
 
 pub fn settings() -> Result {
@@ -106,21 +116,33 @@ pub fn lock_screen() -> Result {
     Ok(bus::call0(&bus::session()?, "org.freedesktop.ScreenSaver", "/org/freedesktop/ScreenSaver", "org.freedesktop.ScreenSaver", "Lock", &())?)
 }
 
-/// Turn the displays off: PowerDevil's own action on Plasma; GNOME blanks through its
-/// screensaver (which also locks once the lock delay passes, as GNOME does when idle).
+/// Turn the displays off: PowerDevil's own action on Plasma. GNOME has no call that only turns
+/// them off (its screensaver also locks), so the action reports that there.
 pub fn sleep_display() -> Result {
     match desktop() {
         Desktop::Kde => kde_action("org_kde_powerdevil", "Turn Off Screen"),
-        Desktop::Gnome => Ok(bus::call0(&bus::session()?, "org.gnome.ScreenSaver", "/org/gnome/ScreenSaver", "org.gnome.ScreenSaver", "SetActive", &(true,))?),
+        Desktop::Gnome => not_on_gnome("call that only turns the screen off"),
         Desktop::Other => Err(linux_desktop::unsupported()),
     }
 }
 
+/// `next`, `prev`, `new` or `close`. GNOME's dynamic workspaces (its default) add and remove
+/// workspaces on their own, so New / Close only run when the user turned them off.
 pub fn desktop_switch(dir: &str) -> Result {
+    if matches!(dir, "new" | "close") && desktop() == Desktop::Gnome && gnome_dynamic_workspaces() {
+        return Err(Error::msg("GNOME adds and removes workspaces itself; turn off Dynamic Workspaces in Settings ▸ Multitasking to use this"));
+    }
     wm::desktop_switch(dir)
 }
 
+/// `org.gnome.mutter dynamic-workspaces` (GNOME's default is on).
+fn gnome_dynamic_workspaces() -> bool {
+    std::process::Command::new("gsettings").args(["get", "org.gnome.mutter", "dynamic-workspaces"]).output().map_or(true, |o| String::from_utf8_lossy(&o.stdout).trim() != "false")
+}
+
+/// Plasma's own Show Desktop. GNOME has none (minimizing every window only imitates it).
 pub fn show_desktop() -> Result {
+    not_on_gnome("Show Desktop")?;
     wm::show_desktop()
 }
 

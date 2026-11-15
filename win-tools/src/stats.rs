@@ -71,7 +71,37 @@ fn summed(counter: isize) -> Option<f64> {
         return None;
     }
     let items = unsafe { std::slice::from_raw_parts(items, count as usize) };
-    Some(items.iter().filter(|i| i.FmtValue.CStatus == 0).map(|i| unsafe { i.FmtValue.Anonymous.doubleValue }).sum())
+    let mut per_gpu: Vec<(String, f64)> = vec![];
+    for i in items.iter().filter(|i| i.FmtValue.CStatus == 0) {
+        let name = unsafe { i.szName.to_string() }.unwrap_or_default();
+        let gpu = gpu_of(&name).to_string();
+        let v = unsafe { i.FmtValue.Anonymous.doubleValue };
+        match per_gpu.iter_mut().find(|(g, _)| *g == gpu) {
+            Some((_, total)) => *total += v,
+            None => per_gpu.push((gpu, v)),
+        }
+    }
+    // Like Task Manager: each GPU's 3D engines are summed over processes, and the busiest GPU
+    // is shown (an integrated + a dedicated GPU must not add up past 100 %).
+    per_gpu.into_iter().map(|(_, v)| v.min(100.0)).fold(None, |m: Option<f64>, v| Some(m.map_or(v, |m| m.max(v))))
+}
+
+/// The GPU part of a `GPU Engine` instance name: `pid_1234_luid_0x0_0xC0E4_phys_0_eng_0_engtype_3D`
+/// → `luid_0x0_0xC0E4_phys_0`.
+fn gpu_of(instance: &str) -> &str {
+    let start = instance.find("luid_").unwrap_or(0);
+    let rest = &instance[start..];
+    let end = rest.find("_eng_").unwrap_or(rest.len());
+    &rest[..end]
+}
+
+#[cfg(test)]
+mod gpu_tests {
+    #[test]
+    fn groups_engines_by_gpu() {
+        assert_eq!(super::gpu_of("pid_1234_luid_0x00000000_0x0000C0E4_phys_0_eng_0_engtype_3D"), "luid_0x00000000_0x0000C0E4_phys_0");
+        assert_eq!(super::gpu_of("odd"), "odd");
+    }
 }
 
 fn memory() -> Option<f64> {

@@ -265,3 +265,13 @@ mod tests {
         }
     }
 }
+
+/// Force-quit a running app (what the Force Quit window does).
+pub fn force_quit(pid: i32) -> Result {
+    let app = NSRunningApplication::runningApplicationWithProcessIdentifier(pid).ok_or_else(|| Error::msg("That app is no longer running"))?;
+    if app.forceTerminate() {
+        Ok(())
+    } else {
+        Err(Error::msg("macOS didn't let KnobDeck quit that app"))
+    }
+}

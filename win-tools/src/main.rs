@@ -2,7 +2,7 @@
 //!
 //! Current Window (minimize/maximize/z-order/toggles), Audio (per-app volume/mute matched by
 //! exe name), Position (snap to halves/quarters/fullscreen/custom on any monitor), window-picker
-//! wheels ("Dynamic …"), a taskbar-style switcher, virtual-desktop/system shortcuts, live system stats, and Windows clipboard history.
+//! wheels ("Dynamic …"), a taskbar-style switcher, system actions and live system stats.
 
 #[cfg(not(windows))]
 fn main() {
@@ -293,10 +293,13 @@ mod app {
     }
 
     pub fn run() -> ! {
+        // Physical pixels everywhere: window rects, monitor areas and SetWindowPos then agree on
+        // every monitor, also when they use different scaling.
+        let _ = unsafe { windows::Win32::UI::HiDpi::SetProcessDpiAwarenessContext(windows::Win32::UI::HiDpi::DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
         let mut p = Plugin::new("win-tools", "Win Tools")
             .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
-            .description("Advanced window management: snap, resize, transparency, always-on-top, per-app volume, and more.")
+            .description("Advanced window management: snap, resize, always-on-top, per-app volume, audio devices, and more.")
             .icon("app-window")
             .platforms(&["windows"])
             // ── Queries ──
@@ -338,14 +341,14 @@ mod app {
             .action(window_button("send-to-back", "Send to Back", "send-to-back", win32::send_to_back))
             // ── Toggles ──
             .action(window_toggle("toggle-always-on-top", "Always on Top", "pin", [("off", "Normal", "circle"), ("on", "Always on Top", "pin")], win32::always_on_top_state, |_| win32::toggle_always_on_top(None)))
-            .action(window_toggle("toggle-borderless", "Toggle Borderless", "square-dashed", [("bordered", "Bordered", "square"), ("borderless", "Borderless", "square-dashed")], win32::borderless_state, |_| win32::toggle_borderless(None)))
-            .action(
+            .action(off(window_toggle("toggle-borderless", "Toggle Borderless", "square-dashed", [("bordered", "Bordered", "square"), ("borderless", "Borderless", "square-dashed")], win32::borderless_state, |_| win32::toggle_borderless(None))))
+            .action(off(
                 window_toggle("toggle-transparency", "Toggle Transparency", "blend", [("opaque", "Opaque", "square"), ("transparent", "Transparent", "square-dashed")], win32::transparency_state, |ctx| {
                     win32::toggle_transparency(alpha_from_opacity(&ctx.inputs), None)
                 })
                 .inputs(vec![transparency_opacity_input()]),
-            )
-            .action(Action::button("set-opacity", "Set Opacity").icon("droplet").inputs(opacity_preset_inputs("Opacity", "Custom opacity (0–100)")).on_press(|ctx| {
+            ))
+            .action(off(Action::button("set-opacity", "Set Opacity").icon("droplet").inputs(opacity_preset_inputs("Opacity", "Custom opacity (0–100)")).on_press(|ctx| {
                 match preset_percent(&ctx.inputs) {
                     Some(pct) => win32::set_opacity(pct, None),
                     None => {
@@ -353,8 +356,8 @@ mod app {
                         Ok(())
                     }
                 }
-            }))
-            .action(window_toggle("toggle-click-through", "Toggle Click-Through", "mouse-pointer-click", [("normal", "Normal", "mouse-pointer-2"), ("clickthrough", "Click-Through", "mouse-pointer-ban")], win32::click_through_state, |_| win32::toggle_click_through(None)))
+            })))
+            .action(off(window_toggle("toggle-click-through", "Toggle Click-Through", "mouse-pointer-click", [("normal", "Normal", "mouse-pointer-2"), ("clickthrough", "Click-Through", "mouse-pointer-ban")], win32::click_through_state, |_| win32::toggle_click_through(None))))
             .action(window_toggle("toggle-max-restore", "Maximize / Restore", "maximize-2", [("normal", "Windowed", "minimize-2"), ("maximized", "Maximized", "maximize-2")], win32::maximize_restore_state, |_| win32::toggle_maximize_restore(None)))
             // ── Audio (per-app volume) ──
             .action(
@@ -579,11 +582,11 @@ mod app {
             .action(snap_button("move-bottom-left", "Move Bottom Left", "move-down-left", reg(0.0, 0.5, 0.5, 0.5)))
             .action(snap_button("move-bottom-right", "Move Bottom Right", "move-down-right", reg(0.5, 0.5, 0.5, 0.5)))
             .action(center_button("move-center", "Move Center"))
-            .action(Action::button("fullscreen", "Fullscreen").icon("fullscreen").inputs(vec![monitor_input()]).on_press(|ctx| {
+            .action(off(Action::button("fullscreen", "Fullscreen").icon("fullscreen").inputs(vec![monitor_input()]).on_press(|ctx| {
                 let hwnd = win32::target_window()?;
                 win32::make_fullscreen(hwnd, win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?.monitor);
                 Ok(())
-            }))
+            })))
             .action(Action::button("custom-position", "Custom Position").icon("move").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(win32::target_window()?, &ctx.inputs)))
             // ── A named app's window (not just the focused one), like Windows Mover & Resizer ──
             .query("get-open-apps", |_| {
@@ -610,7 +613,6 @@ mod app {
                     "minimize" => return win32::minimize(Some(hwnd)),
                     "maximize" => return win32::maximize(Some(hwnd)),
                     "center" => win32::center_window(hwnd, work_of(hwnd, &ctx.inputs)?)?,
-                    "fullscreen" => win32::make_fullscreen(hwnd, win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?.monitor),
                     "custom" => apply_custom_position(hwnd, &ctx.inputs)?,
                     "front" => {}
                     region => {
@@ -633,13 +635,13 @@ mod app {
             .action(picker_wheel("dynamic-close-wheel", "Dynamic Close", "x", vec![], |_, w| win32::close_win(Some(w))))
             .action(picker_wheel("dynamic-send-to-back-wheel", "Dynamic Send to Back", "send-to-back", vec![], |_, w| win32::send_to_back(Some(w))))
             .action(picker_wheel("dynamic-always-on-top-wheel", "Dynamic Always on Top", "pin", vec![], |_, w| win32::toggle_always_on_top(Some(w)).map(|_| ())))
-            .action(picker_wheel("dynamic-borderless-wheel", "Dynamic Borderless", "square-dashed", vec![], |_, w| win32::toggle_borderless(Some(w)).map(|_| ())))
-            .action(picker_wheel("dynamic-transparency-wheel", "Dynamic Transparency", "blend", vec![transparency_opacity_input()], |ctx, w| {
+            .action(off(picker_wheel("dynamic-borderless-wheel", "Dynamic Borderless", "square-dashed", vec![], |_, w| win32::toggle_borderless(Some(w)).map(|_| ()))))
+            .action(off(picker_wheel("dynamic-transparency-wheel", "Dynamic Transparency", "blend", vec![transparency_opacity_input()], |ctx, w| {
                 win32::toggle_transparency(alpha_from_opacity(&ctx.inputs), Some(w)).map(|_| ())
-            }))
-            .action(picker_wheel("dynamic-click-through-wheel", "Dynamic Click-Through", "mouse-pointer-click", vec![], |_, w| win32::toggle_click_through(Some(w)).map(|_| ())))
+            })))
+            .action(off(picker_wheel("dynamic-click-through-wheel", "Dynamic Click-Through", "mouse-pointer-click", vec![], |_, w| win32::toggle_click_through(Some(w)).map(|_| ()))))
             .action(picker_wheel("dynamic-max-restore-wheel", "Dynamic Maximize / Restore", "maximize-2", vec![], |_, w| win32::toggle_maximize_restore(Some(w)).map(|_| ())))
-            .action(picker_wheel("dynamic-set-opacity-wheel", "Dynamic Set Opacity", "droplet", {
+            .action(off(picker_wheel("dynamic-set-opacity-wheel", "Dynamic Set Opacity", "droplet", {
                 let mut v = vec![input::select("preset", "Opacity", &opacity_options(true)).with("default", "75")];
                 v.push(input::text("custom", "Custom opacity (0–100)").placeholder("75").with("showIf", json!({"key": "preset", "equals": "__custom__"})));
                 v
@@ -649,13 +651,13 @@ mod app {
                     ctx.set_error("Opacity must be a number between 0 and 100");
                     Ok(())
                 }
-            }))
+            })))
             .action(picker_wheel("dynamic-move-next-monitor-wheel", "Dynamic Move to Next Monitor", "monitor-up", vec![], |_, w| win32::move_to_next_monitor(Some(w))))
             .action(picker_wheel("dynamic-center-window-wheel", "Dynamic Center Window", "focus", vec![monitor_input()], |ctx, w| win32::center_window(w, work_of(w, &ctx.inputs)?)))
-            .action(picker_wheel("dynamic-fullscreen-wheel", "Dynamic Fullscreen", "fullscreen", vec![monitor_input()], |ctx, w| {
+            .action(off(picker_wheel("dynamic-fullscreen-wheel", "Dynamic Fullscreen", "fullscreen", vec![monitor_input()], |ctx, w| {
                 win32::make_fullscreen(w, win32::resolve_monitor(w, &str_input(&ctx.inputs, "monitor"))?.monitor);
                 Ok(())
-            }))
+            })))
             .action(snap_picker("dynamic-move-left-half-wheel", "Dynamic Move Left Half", "panel-left", reg(0.0, 0.0, 0.5, 1.0)))
             .action(snap_picker("dynamic-move-right-half-wheel", "Dynamic Move Right Half", "panel-right", reg(0.5, 0.0, 0.5, 1.0)))
             .action(snap_picker("dynamic-move-top-half-wheel", "Dynamic Move Top Half", "panel-top", reg(0.0, 0.0, 1.0, 0.5)))
@@ -672,10 +674,10 @@ mod app {
         p = p
             // No public API switches, creates or closes virtual desktops (the internal COM
             // interfaces change between Windows builds); Win+Ctrl chords are reserved by the shell.
-            .action(keys_button("desktop-previous", "Previous Desktop", "chevrons-left", "ctrl win left"))
-            .action(keys_button("desktop-next", "Next Desktop", "chevrons-right", "ctrl win right"))
-            .action(keys_button("desktop-new", "New Desktop", "copy-plus", "ctrl win d"))
-            .action(keys_button("desktop-close", "Close Desktop", "copy-x", "ctrl win f4"))
+            .action(off(keys_button("desktop-previous", "Previous Desktop", "chevrons-left", "ctrl win left")))
+            .action(off(keys_button("desktop-next", "Next Desktop", "chevrons-right", "ctrl win right")))
+            .action(off(keys_button("desktop-new", "New Desktop", "copy-plus", "ctrl win d")))
+            .action(off(keys_button("desktop-close", "Close Desktop", "copy-x", "ctrl win f4")))
             .action(shell_button("task-view", "Task View", "layout-grid", "shell:::{3080F90E-D7AD-11D9-BD98-0000947B0257}"))
             .action(shell_button("show-desktop", "Show Desktop", "monitor", "shell:::{3080F90D-D7AD-11D9-BD98-0000947B0257}"))
             .action(shell_button("screen-snip", "Screen Snip", "scissors", "ms-screenclip:"))
@@ -683,7 +685,7 @@ mod app {
             .action(shell_button("open-settings", "Windows Settings", "settings", "ms-settings:"))
             .action(shell_button("run-dialog", "Run Dialog", "square-terminal", "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}"))
             // No API opens the emoji panel; Win+. is reserved by the shell.
-            .action(keys_button("emoji-panel", "Emoji Panel", "smile", "win period"))
+            .action(off(keys_button("emoji-panel", "Emoji Panel", "smile", "win period")))
             .action(shell_button("task-manager", "Task Manager", "activity", "taskmgr.exe"))
             // A plain button (opens Task Manager) whose tile shows the chosen stat live.
             .action(
@@ -756,9 +758,6 @@ mod app {
                 let text = ctx.expand(&ctx.input_str("text"))?;
                 if text.is_empty() {
                     ctx.set_error("Add the snippet's text first");
-                } else if ctx.input_bool("paste") {
-                    clipboard::set_text(&text)?;
-                    clipboard::send_paste();
                 } else {
                     clipboard::type_text(&text);
                 }
@@ -766,7 +765,7 @@ mod app {
             }));
 
         // ── Clipboard History ──
-        p.action(
+        p.action(off(
             Action::wheel("clipboard-history-wheel", "Clipboard History").icon("clipboard-list").on_open(|ctx| {
                 let history = clipboard::list_history().or_else(|e| ctx.fail(e.message().to_string()))?;
                 log(format!("historyEnabled: {}, items: {}", history.enabled, history.items.len()));
@@ -807,7 +806,7 @@ mod app {
                 clipboard::send_paste();
                 Ok(())
             }),
-        )
+        ))
         .run()
     }
 
@@ -853,7 +852,6 @@ mod app {
                     ("center", "Center"),
                     ("maximize", "Maximize"),
                     ("minimize", "Minimize"),
-                    ("fullscreen", "Fullscreen"),
                     ("custom", "Custom position"),
                     ("front", "Just bring to front"),
                 ],
@@ -972,6 +970,14 @@ mod app {
         Action::button(id, label).icon(icon).on_press(move |_| win32::shell_open(target))
     }
 
+    /// Actions kept in the code but offered on no OS (CLAUDE.md rule 1): keybind-based, or not
+    /// reliable for every app. An empty `platforms` means "every OS", so this names none.
+    const DISABLED: &[&str] = &["none"];
+
+    fn off(a: Action) -> Action {
+        a.platforms(DISABLED)
+    }
+
     /// A button that presses a Windows shell shortcut through the host. Last
     /// resort only: use it when no API or shell target does the job (see CLAUDE.md).
     fn keys_button(id: &str, label: &str, icon: &str, keys: &'static str) -> Action {
@@ -979,7 +985,7 @@ mod app {
     }
 
     fn snippet_inputs() -> Vec<Value> {
-        vec![input::textarea("text", "Text").accepts_placeholders(), input::checkbox("paste", "Paste mode (copy to the clipboard and paste instead of typing)")]
+        vec![input::textarea("text", "Text").accepts_placeholders()]
     }
 
     fn center_button(id: &str, label: &str) -> Action {

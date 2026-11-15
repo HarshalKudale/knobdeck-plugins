@@ -186,6 +186,14 @@ fn link_wheel(id: &str, label: &str, icon: &str, action: &'static str, child_pre
         })
 }
 
+/// Actions kept in the code but offered on no OS (CLAUDE.md rule 1): keybind-based. An empty
+/// `platforms` means "every OS", so this names none.
+const DISABLED: &[&str] = &["none"];
+
+fn off(a: Action) -> Action {
+    a.platforms(DISABLED)
+}
+
 fn main() {
     load_env();
     ext::serve();
@@ -197,17 +205,15 @@ fn main() {
         .icon("globe")
         .ack_timeout_ms(5000);
 
-    // Every action runs in the extension. Only these have no extension API in some browser, so
-    // they keep a shortcut (`mod` is Ctrl on Windows/Linux and ⌘ on macOS): the address bar, find
-    // and save have none in any browser; Firefox/Zen refuse extension tabs on their internal pages
-    // (about:downloads, about:history, the bookmarks manager).
+    // Every action runs in the extension. The address bar, find and save have no extension API in
+    // any browser; they only had a shortcut, so they are disabled (CLAUDE.md rule 1: a keybind
+    // belongs in KnobDeck's Keybind action). Firefox/Zen refuse extension tabs on their internal
+    // pages (downloads, history, bookmarks manager): those actions report it there.
     let none: Fallback = |_| None;
     let address_bar: Fallback = |_| Some("mod l");
     let find: Fallback = |_| Some("mod f");
     let save: Fallback = |_| Some("mod s");
-    let downloads: Fallback = |f| (f == Family::Firefox).then_some(if cfg!(target_os = "macos") { "cmd j" } else { "ctrl j" });
-    let history: Fallback = |f| (f == Family::Firefox).then_some(if cfg!(target_os = "macos") { "cmd shift h" } else { "ctrl h" });
-    let bookmarks_manager: Fallback = |f| (f == Family::Firefox).then_some(if cfg!(target_os = "macos") { "cmd shift o" } else { "ctrl shift o" });
+    let (downloads, history, bookmarks_manager) = (none, none, none);
     let basics: Vec<(&'static str, &str, &str, Fallback)> = vec![
         ("new-tab", "New Tab", "notebook-tabs", none),
         ("new-window", "New Window", "app-window", none),
@@ -232,11 +238,12 @@ fn main() {
         ("stop-loading", "Stop Loading", "circle-stop", none),
     ];
     for (id, label, icon, fallback) in basics {
-        plugin = plugin.action(basic_button(id, label, icon, fallback));
+        let action = basic_button(id, label, icon, fallback);
+        plugin = plugin.action(if ["focus-address-bar", "find-in-page", "save-page"].contains(&id) { off(action) } else { action });
     }
 
     plugin
-        .action(
+        .action(off(
             Action::button("custom-keybind", "Custom Keybind")
                 .icon("keyboard")
                 .inputs(vec![browser_input(), input::keybind("keys", "Keys").placeholder("k")])
@@ -247,7 +254,7 @@ fn main() {
                     }
                     call(&ctx.inputs, "custom-keybind", json!({"keys": keys})).map(|_| ())
                 }),
-        )
+        ))
         .action(
             Action::button("open-url", "Open URL")
                 .icon("link")

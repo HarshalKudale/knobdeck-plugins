@@ -380,6 +380,14 @@ mod app {
         Action::button(id, label).icon(icon).inputs(vec![monitor_input()]).on_press(move |ctx| snap(None, &ctx.inputs, region))
     }
 
+    /// Actions kept in the code but offered on no OS (CLAUDE.md rule 1): keybind-based, or not
+    /// reliable for every app. An empty `platforms` means "every OS", so this names none.
+    const DISABLED: &[&str] = &["none"];
+
+    fn off(a: Action) -> Action {
+        a.platforms(DISABLED)
+    }
+
     fn button(id: &str, label: &str, icon: &str, f: fn() -> Result) -> Action {
         Action::button(id, label).icon(icon).on_press(move |_| f())
     }
@@ -404,13 +412,21 @@ mod app {
     }
 
     /// Flip between opaque and the chosen opacity; returns the new state.
+    /// Window opacity is a KWin window property. GNOME only fades the drawn window, and its own
+    /// animations reset that, so opacity is offered on Plasma only.
+    fn set_opacity(id: Option<&str>, value: f64) -> Result {
+        system::not_on_gnome("window opacity setting")?;
+        wm::set_opacity(id, value)
+    }
+
     fn toggle_transparency(id: Option<&str>, inputs: &Value) -> Result<&'static str> {
+        system::not_on_gnome("window opacity setting")?;
         let w = wm::info(id)?;
         if w.opacity < 0.995 {
-            wm::set_opacity(Some(&w.id), 1.0)?;
+            set_opacity(Some(&w.id), 1.0)?;
             Ok("opaque")
         } else {
-            wm::set_opacity(Some(&w.id), input_int(inputs, "opacity").unwrap_or(75) as f64 / 100.0)?;
+            set_opacity(Some(&w.id), input_int(inputs, "opacity").unwrap_or(75) as f64 / 100.0)?;
             Ok("transparent")
         }
     }
@@ -546,7 +562,7 @@ mod app {
         let mut p = Plugin::new("linux-tools", "Linux Tools")
             .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
-            .description("Window management, workspaces, per-app volume, audio devices, clipboard history and system actions for GNOME and KDE Plasma.")
+            .description("Window management, workspaces, per-app volume, audio devices and system actions for GNOME and KDE Plasma.")
             .icon("app-window")
             .platforms(&["linux"])
             .on_ready(|_| {
@@ -604,7 +620,7 @@ mod app {
             // GNOME doesn't let anyone remove a window's border; the action reports that there.
             .action(window_toggle("toggle-borderless", "Toggle Borderless (Plasma)", "square-dashed", [("bordered", "Bordered", "square"), ("borderless", "Borderless", "square-dashed")], |w| w.no_border, "toggle-border"))
             .action(
-                Action::toggle("toggle-transparency", "Toggle Transparency")
+                Action::toggle("toggle-transparency", "Toggle Transparency (Plasma)")
                     .icon("blend")
                     .volatile()
                     .state("opaque", "Opaque", "square")
@@ -616,8 +632,8 @@ mod app {
                         Ok(())
                     }),
             )
-            .action(Action::button("set-opacity", "Set Opacity").icon("droplet").inputs(opacity_preset_inputs()).on_press(|ctx| match preset_percent(&ctx.inputs) {
-                Some(pct) => wm::set_opacity(None, pct as f64 / 100.0),
+            .action(Action::button("set-opacity", "Set Opacity (Plasma)").icon("droplet").inputs(opacity_preset_inputs()).on_press(|ctx| match preset_percent(&ctx.inputs) {
+                Some(pct) => set_opacity(None, pct as f64 / 100.0),
                 None => {
                     ctx.set_error("Opacity must be a number between 10 and 100");
                     Ok(())
@@ -689,7 +705,7 @@ mod app {
             .action(picker_wheel("dynamic-always-on-top-wheel", "Dynamic Always on Top", "pin", vec![], |_, w| wm::toggle("toggle-above", Some(w)).map(|_| ())))
             .action(picker_wheel("dynamic-fullscreen-wheel", "Dynamic Full Screen", "fullscreen", vec![], |_, w| wm::toggle("toggle-fullscreen", Some(w)).map(|_| ())))
             .action(picker_wheel("dynamic-max-restore-wheel", "Dynamic Maximize / Restore", "maximize-2", vec![], |_, w| wm::toggle("toggle-maximize", Some(w)).map(|_| ())))
-            .action(picker_wheel("dynamic-transparency-wheel", "Dynamic Transparency", "blend", vec![transparency_opacity_input()], |ctx, w| toggle_transparency(Some(w), &ctx.inputs).map(|_| ())))
+            .action(picker_wheel("dynamic-transparency-wheel", "Dynamic Transparency (Plasma)", "blend", vec![transparency_opacity_input()], |ctx, w| toggle_transparency(Some(w), &ctx.inputs).map(|_| ())))
             .action(picker_wheel("dynamic-move-next-monitor-wheel", "Dynamic Move to Next Monitor", "monitor-up", vec![], |_, w| move_to_next_output(Some(w))))
             .action(picker_wheel("dynamic-center-window-wheel", "Dynamic Center Window", "focus", vec![monitor_input()], |ctx, w| center(Some(w), &ctx.inputs)))
             .action(snap_picker("dynamic-move-left-half-wheel", "Dynamic Move Left Half", "panel-left", reg(0.0, 0.0, 0.5, 1.0)))
@@ -713,9 +729,9 @@ mod app {
             .action(button("present-windows", "Present Windows", "app-window", system::present_windows))
             .action(button("app-launcher", "Applications", "layout-dashboard", system::app_launcher))
             .action(button("search", "Search", "search", system::search))
-            .action(button("show-desktop", "Show Desktop", "monitor", system::show_desktop))
+            .action(button("show-desktop", "Show Desktop (Plasma)", "monitor", system::show_desktop))
             .action(button("screen-snip", "Screenshot", "scissors", system::screenshot))
-            .action(button("emoji-panel", "Emoji Picker", "smile", system::emoji_picker))
+            .action(button("emoji-panel", "Emoji Picker (Plasma)", "smile", system::emoji_picker))
             .action(button("file-manager", "Files", "folder-open", system::file_manager))
             .action(button("open-settings", "System Settings", "settings", system::settings))
             .action(button("system-monitor", "System Monitor", "activity", system::system_monitor))
@@ -733,7 +749,7 @@ mod app {
                     }),
             )
             .action(button("lock-screen", "Lock Screen", "lock", system::lock_screen))
-            .action(button("sleep-display", "Turn Off Display", "moon", system::sleep_display))
+            .action(button("sleep-display", "Turn Off Display (Plasma)", "moon", system::sleep_display))
             .action(
                 Action::toggle("radio-toggle", "Wi-Fi / Bluetooth")
                     .icon("wifi")
@@ -965,7 +981,7 @@ mod app {
             );
 
         // ── Clipboard History ──
-        p.action(
+        p.action(off(
             Action::wheel("clipboard-history-wheel", "Clipboard History")
                 .icon("clipboard-list")
                 .on_open(|ctx| {
@@ -999,7 +1015,7 @@ mod app {
                     // Paste into whatever has focus (the dial never takes it).
                     clipboard::paste()
                 }),
-        )
+        ))
         .run()
     }
 
