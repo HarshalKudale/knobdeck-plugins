@@ -12,10 +12,10 @@ action reaches the browser's own tabs, windows and zoom without focusing it or s
 - Opens URLs, bookmarks, and history items in the browser you pick.
 - New / close / reopen / next / previous tab, new window, private window, reload, hard reload, back,
   forward, stop, print, bookmark, fullscreen, page zoom (slider and hold), tab cycling (hold).
-- Custom Keybind: key events sent to the page (a page can ignore them).
-- Focus Address Bar, Find in Page and Save Page (all browsers) and Downloads / History / Bookmarks
-  Manager (Firefox, Zen) have no extension API, so they still bring the browser forward and send the
-  shortcut.
+- Open Downloads, History and the Bookmarks Manager (Chrome, Edge, Brave; Firefox and Zen don't
+  let extensions open those pages, so the action says so there).
+- Nothing here sends a shortcut. Focus Address Bar, Find in Page and Save Page have no extension
+  API in any browser: use KnobDeck's Keybind action for them.
 
 ## Good for
 

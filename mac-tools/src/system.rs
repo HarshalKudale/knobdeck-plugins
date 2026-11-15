@@ -17,7 +17,7 @@
 //! crash at launch.
 
 use crate::ax::{self, Elem};
-use knobdeck_sdk::{log, Error, Result};
+use knobdeck_sdk::{Error, Result};
 use core_foundation::array::{CFArray, CFArrayRef};
 use core_foundation::base::{CFType, TCFType};
 use core_foundation::dictionary::{CFDictionary, CFDictionaryRef};
@@ -113,16 +113,11 @@ pub fn hide_others() -> Result {
 // ── Paste ────────────────────────────────────────────────────────────────────
 
 /// Press the front app's own Paste command: the menu item bound to ⌘V
-/// (whatever its title or language), else one titled Paste. Falls back to ⌘V
-/// only for apps without such a menu item.
+/// (whatever its title or language), else one titled Paste. No ⌘V keystroke:
+/// an app without a Paste menu item gets a clear error instead.
 pub fn paste() -> Result {
-    match ax::focused_app().ok().and_then(|app| app.find_menu_item(|i| i.cmd_char().as_deref() == Some("V") && i.cmd_modifiers() == Some(0), "Paste")) {
-        Some(item) => item.perform("AXPress"),
-        None => {
-            log("paste: no Paste menu item in the front app; sending ⌘V");
-            knobdeck_sdk::send_keys("cmd v")
-        }
-    }
+    let item = ax::focused_app()?.find_menu_item(|i| i.cmd_char().as_deref() == Some("V") && i.cmd_modifiers() == Some(0), "Paste");
+    item.ok_or_else(|| Error::msg("The app in front has no Paste menu item; turn off paste mode to type the text"))?.perform("AXPress")
 }
 
 // ── The user's own system shortcuts (no API exists) ──────────────────────────

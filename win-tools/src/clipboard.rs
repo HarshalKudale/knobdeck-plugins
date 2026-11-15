@@ -12,9 +12,8 @@ use std::ffi::c_void;
 use std::time::Duration;
 use windows::ApplicationModel::DataTransfer::{Clipboard, ClipboardHistoryItem};
 use windows::Win32::Foundation::{HGLOBAL, HWND};
-use windows::Win32::Foundation::{GlobalFree, HANDLE};
-use windows::Win32::System::DataExchange::{CloseClipboard, EmptyClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard, SetClipboardData};
-use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE};
+use windows::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard};
+use windows::Win32::System::Memory::{GlobalLock, GlobalSize, GlobalUnlock};
 use windows::Win32::UI::Input::KeyboardAndMouse::{SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, VIRTUAL_KEY, VK_CONTROL, VK_RETURN, VK_V};
 use windows::Win32::UI::Shell::{DragQueryFileW, HDROP};
 
@@ -303,33 +302,6 @@ pub fn type_text(text: &str) {
     }
     if !inputs.is_empty() {
         unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
-    }
-}
-
-/// Replace the live clipboard with `text` (CF_UNICODETEXT).
-pub fn set_text(text: &str) -> R<()> {
-    let wide: Vec<u16> = text.encode_utf16().chain(Some(0)).collect();
-    let bytes = wide.len() * 2;
-    unsafe {
-        OpenClipboard(HWND::default()).map_err(|e| werr("OpenClipboard", e))?;
-        let result = (|| {
-            EmptyClipboard().map_err(|e| werr("EmptyClipboard", e))?;
-            let g = GlobalAlloc(GMEM_MOVEABLE, bytes).map_err(|e| werr("GlobalAlloc", e))?;
-            let p = GlobalLock(g) as *mut u16;
-            if p.is_null() {
-                let _ = GlobalFree(g);
-                return Err(knobdeck_sdk::Error::msg("GlobalLock failed"));
-            }
-            std::ptr::copy_nonoverlapping(wide.as_ptr(), p, wide.len());
-            let _ = GlobalUnlock(g);
-            // On success the clipboard owns the memory; on failure it is still ours to free.
-            SetClipboardData(CF_UNICODETEXT, HANDLE(g.0)).map(|_| ()).map_err(|e| {
-                let _ = GlobalFree(g);
-                werr("SetClipboardData", e)
-            })
-        })();
-        let _ = CloseClipboard();
-        result
     }
 }
 

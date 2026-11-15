@@ -11,9 +11,9 @@
       "sort": 90
     },
     "browser-plugin": {
-      "version": "1.3.0",
+      "version": "1.4.0",
       "name": "Browser Controls",
-      "summary": "Shortcuts, bookmarks and history for your browser.",
+      "summary": "Tabs, zoom, bookmarks and history for your browser.",
       "tags": [
         "Browser",
         "Automation"
@@ -92,9 +92,9 @@
       "sort": 70
     },
     "linux-tools": {
-      "version": "1.3.1",
+      "version": "1.4.0",
       "name": "Linux Tools",
-      "summary": "Windows, workspaces, per-app volume, audio devices, clipboard history on GNOME and KDE.",
+      "summary": "Windows, workspaces, per-app volume, audio devices on GNOME and KDE.",
       "tags": [
         "Linux",
         "Automation"
@@ -103,9 +103,9 @@
       "sort": 42
     },
     "mac-tools": {
-      "version": "1.5.1",
+      "version": "1.6.0",
       "name": "macOS Tools",
-      "summary": "Window management, Spaces, audio devices, clipboard history, app menu commands.",
+      "summary": "Window management, Spaces, audio devices, mic, app menu commands.",
       "tags": [
         "macOS",
         "Automation"
@@ -208,9 +208,9 @@
       "sort": 85
     },
     "win-tools": {
-      "version": "1.7.1",
+      "version": "1.8.0",
       "name": "Windows Tools",
-      "summary": "Window management, audio devices, per-app volume, clipboard history.",
+      "summary": "Window management, audio devices, per-app volume, mic, system actions.",
       "tags": [
         "Windows",
         "Automation"

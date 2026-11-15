@@ -4,12 +4,13 @@ Rust plugins for KnobDeck, built on `knobdeck-sdk` (`../knobdeck-sdk`). KnobDeck
 macOS and Linux**; see README.md for the plugin list, build and packaging. SDK changes go to the
 SDK repo through git (commit and push); plugins depend on its GitHub master, never a local path.
 
-## Rule 1: keystrokes are the last resort
+## Rule 1: no keybind actions; only stable routes ship
 
-Applies to every plugin and to KnobDeck's built-in actions (`../Knobdeck/CLAUDE.md` has the host copy).
-Do **not** implement an action by sending a keyboard shortcut (`send_keys`, `ctx.send_keys`,
-`keys_button`, posting CGEvents/SendInput) when a stable OS or app route exists. Shortcuts are
-fragile:
+Applies to every plugin (`../Knobdeck/CLAUDE.md` has the host copy). A plugin action must go
+through an OS API or the target app's own interface. **A plugin never ships an action that is a
+keyboard shortcut** (`send_keys`, `ctx.send_keys`, `keys_button`, posting CGEvents/SendInput):
+KnobDeck's built-in Keybind action already sends any shortcut, and app-specific shortcuts will ship
+as predefined profiles. A smaller set of actions beats one that breaks. Shortcuts are fragile:
 
 - the app in focus may bind the same chord and swallow it (e.g. an app using Ctrl+→);
 - users remap or disable shortcuts (System Settings → Keyboard Shortcuts, PowerToys…);
@@ -32,33 +33,35 @@ Prefer, in this order:
    iTerm2 `write text`), or pressing its menu item through Accessibility (mac-tools pastes by
    pressing the front app's Edit ▸ Paste item, found by its ⌘V binding, not by sending ⌘V).
 4. **Launching the system app / URL** (`open -b <bundle id>`, `ms-settings:` URIs).
-5. **A keystroke**, only when none of the above exists. Then:
-   - say why in a comment next to the action ("no API opens the Force Quit window; ⌥⌘Esc is
-     reserved by loginwindow, so no app can capture it");
-   - for a *system* shortcut, read the user's configured binding when the OS stores it (macOS
-     `com.apple.symbolichotkeys`) and post exactly that, instead of assuming the default;
-   - prefer system-reserved chords (handled by the OS before any app) over app-level ones;
-   - use the `mod` token (⌘ on macOS, Ctrl on Windows) for cross-platform app shortcuts.
+When none of these exists, or the route only imitates the feature (resizing a window to "go
+fullscreen", restyling another app's window, a history the plugin keeps itself), the action is
+**disabled, never deleted**: its code stays and it is offered on no OS with `.platforms(&["none"])`
+(the `off()` helper in win-tools / mac-tools / linux-tools / browser-plugin). An empty `platforms`
+means "every OS", so it can't disable anything. For a plugin that can't ship at all on an OS, drop
+it from that OS in `scripts/plugins.mjs` (Zoom everywhere, Files on Linux). Desktop-specific gaps on
+Linux (GNOME has no X) can't be expressed in `platforms`: the action fails there with a clear
+error and says "(Plasma)" in its label.
 
-Keystrokes are fine when the action *is* typing (custom keybind actions the user configures, or
-text the plugin must enter), and for in-app shortcuts sent to an app that
-offers no other interface (browser tab shortcuts in Firefox/Zen).
+Exceptions, deliberately kept:
+- Text Snippet, whose job *is* entering text (macOS/Windows type it with Unicode key events; Linux
+  pastes it with Ctrl+V because Wayland offers no other way).
+- macOS previous/next Space: macOS has no API, so the user's own configured symbolic hotkey is read
+  from `com.apple.symbolichotkeys` and posted; WindowServer handles it before any app sees it.
 
-When reviewing or adding an action, check it against this rule and mention any keystroke that
-remains, with its reason.
+When reviewing or adding an action, check it against this rule.
 
 Current decisions (keep this list up to date):
 
 | Plugin | Route | Keystrokes left, and why |
 |---|---|---|
-| discord, obs, vlc, zoom, vscode, intellij, streamlabs, voicemod, elgato-lights | the app's / device's own API / pipe / websocket / HTTP | none |
+| discord, obs, vlc, vscode, intellij, streamlabs, voicemod, elgato-lights | the app's / device's own API / pipe / websocket / HTTP | none |
 | spotify | Windows SMTC, macOS AppleScript and Linux MPRIS for playback; Spotify Web API for the rest | none |
 | twitch, youtube, weather | web APIs (Helix, YouTube Data, Open-Meteo) | none |
 | clocks | none needed (time and timers only) | none |
-| mac-tools | Dock (`CoreDockSendNotification`), `SACLockScreenImmediate`, Text Input Sources, Accessibility (windows, hide, Edit ▸ Paste, Menu Command presses any menu item), Screenshot app, the `shortcuts` CLI (Run Shortcut), `osascript` (Run AppleScript / JXA), Keyboard Maestro Engine's AppleScript `do script` | Spaces ←/→ and Spotlight (no API; the user's configured system hotkey is posted), Force Quit ⌥⌘Esc (no API; reserved by loginwindow), ⌘V only for apps without a Paste menu item; Text Snippet types its text (text entry) |
-| win-tools | Win32 (windows, audio sessions and endpoints, `LockWorkStation`), undocumented `IPolicyConfig` for the default audio device (no public API; unchanged since Windows 7), `ShellExecuteW` for Task View / Show Desktop / Run (`shell:::{CLSID}`), `ms-screenclip:`, `ms-settings:`, Explorer, Task Manager | virtual desktops (no public API), Emoji Win+. (no API), Ctrl+V for clipboard history and Text Snippet paste mode (no app-independent paste call); Text Snippet types its text (text entry) |
-| linux-tools | KDE: KWin scripts over `org.kde.kwin.Scripting` (windows, desktops), KGlobalAccel `invokeShortcut` (KWin's / PowerDevil's own actions by name: Overview, Expose, Show Desktop, Turn Off Screen), KRunner, Klipper, Spectacle. GNOME: the KnobDeck Shell extension (`knobdeck-os/src/linux/gnome-extension` in the SDK repo: windows, workspaces, overview, search, screenshot UI, clipboard), `org.gnome.ScreenSaver`. Both: logind, NetworkManager, BlueZ, power-profiles-daemon, FileManager1, `pactl` | Ctrl+V for clipboard history and Text Snippet (no app-independent paste request on Linux; Wayland lets no client act on another's text field) |
-| browser-plugin | the KnobDeck Browser Companion extension (`knobdeck-companion/browser`, Chrome MV3 + Firefox MV2): the browser connects to the plugin's loopback WebSocket and runs tabs, windows, zoom, bookmarks, history, URLs, print/stop/key events through its own extension APIs, on every OS | Focus Address Bar, Find in Page, Save Page (no extension API in any browser) and Open Downloads / History / Bookmarks Manager in Firefox/Zen (extensions can't open `about:` pages): the browser is focused through `knobdeck_sdk::os::window::focus_app` and the shortcut sent. Custom Keybind is key events dispatched to the page |
+| mac-tools | Dock (`CoreDockSendNotification`), `SACLockScreenImmediate`, Text Input Sources, Accessibility (windows, hide, Edit ▸ Paste, Menu Command presses any menu item), CoreAudio (mic mute and level: the device's own controls only), `NSRunningApplication.forceTerminate` (Force Quit App), Screenshot app, the `shortcuts` CLI (Run Shortcut), `osascript` (Run AppleScript / JXA), Keyboard Maestro Engine's AppleScript `do script` | Spaces ←/→ (no API; the user's configured system hotkey is posted); Text Snippet types its text. Disabled: Spotlight, Force Quit… (⌥⌘Esc), Clipboard History |
+| win-tools | Win32 (windows, audio sessions and endpoints, `LockWorkStation`; per-monitor DPI aware), undocumented `IPolicyConfig` for the default audio device (no public API; unchanged since Windows 7), `ShellExecuteW` for Task View / Show Desktop / Run (`shell:::{CLSID}`), `ms-screenclip:`, `ms-settings:`, Explorer, Task Manager | Text Snippet types its text (no paste mode). Disabled: virtual desktops (no public API), Emoji Panel, Clipboard History, Borderless / Transparency / Set Opacity / Click-Through (restyle other apps' windows), Fullscreen (only resized the window) |
+| linux-tools | KDE: KWin scripts over `org.kde.kwin.Scripting` (windows, desktops), KGlobalAccel `invokeShortcut` (KWin's / PowerDevil's own actions by name: Overview, Expose, Show Desktop, Turn Off Screen), KRunner, Klipper, Spectacle. GNOME: the KnobDeck Shell extension (`knobdeck-os/src/linux/gnome-extension` in the SDK repo: windows, workspaces, overview, search, screenshot UI). Both: logind, NetworkManager, BlueZ, power-profiles-daemon, FileManager1, `pactl` | Ctrl+V for Text Snippet (no app-independent paste request on Linux; Wayland lets no client act on another's text field). Disabled: Clipboard History. Plasma only (clear error on GNOME): Show Desktop, Emoji Picker, Turn Off Display, Transparency / Set Opacity; GNOME New / Close Desktop need dynamic workspaces off |
+| browser-plugin | the KnobDeck Browser Companion extension (`knobdeck-companion/browser`, Chrome MV3 + Firefox MV2): the browser connects to the plugin's loopback WebSocket and runs tabs, windows, zoom, bookmarks, history, URLs, print/stop through its own extension APIs, on every OS | none. Disabled: Focus Address Bar, Find in Page, Save Page (no extension API in any browser), Custom Keybind. Open Downloads / History / Bookmarks Manager report "not possible" in Firefox/Zen (extensions can't open `about:` pages) |
 | ai-stats | providers' usage endpoints, local transcripts | none |
 | home-assistant, hue, ytmusic | the service's / device's / app's own API (HA REST, Hue Bridge local API, YTMDesktop Companion Server + its Socket.IO feed) | none |
 | files | the selection from `knobdeck_sdk::os::files` (Explorer Shell COM, Finder Apple Events, Dolphin's PRIMARY); images, PDFs and zips in Rust (`image`, `lopdf`, `zip`; HEIC through macOS `sips`); clipboard through Win32 / NSPasteboard / Klipper / the GNOME extension; terminals launched with the folder as working directory | none |
@@ -79,7 +82,8 @@ Current decisions (keep this list up to date):
 - **An app's plugin ships for Linux only when the app itself has an official Linux build** (from
   its vendor, or a distro package of that build), not a third-party client or workaround. Then
   check that the interface the plugin uses exists on Linux too. Not shipped: Streamlabs Desktop
-  and Voicemod (no Linux build), Zoom (its local meeting API isn't documented for Linux).
+  and Voicemod (no Linux build). Zoom isn't shipped anywhere (no documented local API for the
+  desktop client); Files isn't shipped for Linux (GNOME Files doesn't share its selection).
 - To ship a plugin, bump `version` in its `Cargo.toml` and in `index.json` (CI fails if they disagree) and merge to master; CI builds only plugins whose `index.json` version differs from the previous release, copies the rest over from it and publishes one release holding every plugin (see `.github/workflows/release.yml`).
 
 - A plugin that runs on both OSes keeps one action set; OS differences live behind one `cfg` seam
