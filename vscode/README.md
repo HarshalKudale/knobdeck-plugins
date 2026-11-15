@@ -31,7 +31,7 @@ KnobDeck companion plugin for **Visual Studio Code**. It talks to the **KnobDeck
 
 ## Setup
 
-1. Install the **KnobDeck VS Code Companion** extension (Visual Studio Marketplace or Open VSX; source in [knobdeck-companion](https://github.com/HarshalKudale/knobdeck-companion)).
+1. Install the **KnobDeck VS Code Companion** extension (Visual Studio Marketplace or Open VSX; source in [knobdeck-companion](https://github.com/Knobdeck/knobdeck-companion)).
 2. Optional: in VS Code **Settings → Extensions → KnobDeck VS Code Companion** set:
    - `knobdeck.port` (default 32145)
    - `knobdeck.password` (optional)

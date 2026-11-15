@@ -1,7 +1,7 @@
 # KnobDeck Plugins
 
 The first-party [KnobDeck](https://knobdeck.harshalkudale.com) plugins, written in Rust on
-[`knobdeck-sdk`](https://github.com/HarshalKudale/knobdeck-sdk). The repo is open so anyone can
+[`knobdeck-sdk`](https://github.com/Knobdeck/knobdeck-sdk). The repo is open so anyone can
 read how they work and build their own; to start a new plugin, use `knobdeck-plugin new` from the
 SDK (it includes an AI agent skill). Action ids are saved in users' layouts, so they never change.
 
@@ -42,7 +42,7 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 
 The `vscode` and `intellij` plugins talk to companions that run *inside* VS Code / JetBrains IDEs
 (an editor extension and an IDE plugin, not KnobDeck SDK plugins). They live in
-[knobdeck-companion](https://github.com/HarshalKudale/knobdeck-companion), whose CI builds these two
+[knobdeck-companion](https://github.com/Knobdeck/knobdeck-companion), whose CI builds these two
 plugins from this repo and drives them against the companions.
 
 Spotify, Twitch, Voicemod and YouTube take app credentials at build time from repository variables
@@ -53,7 +53,7 @@ secret is built into any plugin.
 ## Build
 
 ```bash
-cargo install --git https://github.com/HarshalKudale/knobdeck-sdk --bin knobdeck-plugin   # once
+cargo install --git https://github.com/Knobdeck/knobdeck-sdk --bin knobdeck-plugin   # once
 
 cd vlc
 knobdeck-plugin dev        # debug build -> dist/vlc/ ("Load Unpacked" in KnobDeck)

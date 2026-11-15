@@ -60,7 +60,7 @@ jobs:
         if: matrix.name == 'linux'
         run: sudo apt-get update && sudo apt-get install -y libarchive-tools
       - name: Install knobdeck-plugin
-        run: cargo install --git https://github.com/HarshalKudale/knobdeck-sdk --bin knobdeck-plugin --locked
+        run: cargo install --git https://github.com/Knobdeck/knobdeck-sdk --bin knobdeck-plugin --locked
       - name: Discord build-time settings
         shell: bash
         run: |
