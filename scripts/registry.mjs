@@ -58,6 +58,9 @@ const plugins = entries
       sha256: e.sha256,
       tags: meta.tags ?? [],
       platforms: e.platforms,
+      // What the plugin reads through the SDK (`window`, `selection`, `files`…), from its manifest.
+      // null (unknown) for a plugin last built before this field existed, until it is rebuilt.
+      uses: e.uses ?? null,
       featured: meta.featured ?? false,
       // Release asset names: the bundle, and the readme the website copies to readmeUrl.
       file: e.file,
