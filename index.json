@@ -92,7 +92,7 @@
       "sort": 70
     },
     "linux-tools": {
-      "version": "1.2.1",
+      "version": "1.3.0",
       "name": "Linux Tools",
       "summary": "Windows, workspaces, per-app volume, audio devices, clipboard history on GNOME and KDE.",
       "tags": [
@@ -103,7 +103,7 @@
       "sort": 42
     },
     "mac-tools": {
-      "version": "1.3.1",
+      "version": "1.4.0",
       "name": "macOS Tools",
       "summary": "Window management, Spaces, audio devices, clipboard history, app menu commands.",
       "tags": [
@@ -208,7 +208,7 @@
       "sort": 85
     },
     "win-tools": {
-      "version": "1.6.1",
+      "version": "1.7.0",
       "name": "Windows Tools",
       "summary": "Window management, audio devices, per-app volume, clipboard history.",
       "tags": [
@@ -247,6 +247,16 @@
         "Meetings"
       ],
       "sort": 60
+    },
+    "files": {
+      "version": "1.0.0",
+      "name": "Files",
+      "summary": "Convert and resize images, merge PDFs, zip, rename and copy paths for the files you've selected.",
+      "tags": [
+        "Files",
+        "Productivity"
+      ],
+      "sort": 36
     }
   }
 }
