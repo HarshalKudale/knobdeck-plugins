@@ -1,11 +1,11 @@
 [package]
 name = "win-tools"
-version = "1.5.0"
+version = "1.6.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-knobdeck-sdk = { workspace = true, features = ["os-window", "os-apps"] }
+knobdeck-sdk = { workspace = true, features = ["os-window", "os-apps", "placeholders"] }
 
 [target.'cfg(windows)'.dependencies]
 base64.workspace = true

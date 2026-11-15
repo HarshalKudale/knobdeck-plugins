@@ -784,8 +784,10 @@ mod app {
                         Ok(())
                     }),
             )
-            .action(Action::button("text-snippet", "Text Snippet").icon("text-cursor-input").inputs(vec![input::textarea("text", "Text")]).on_press(|ctx| {
-                let text = ctx.input_str("text");
+            .action(Action::button("text-snippet", "Text Snippet").icon("text-cursor-input").inputs(vec![input::textarea("text", "Text").accepts_placeholders()]).on_press(|ctx| {
+                // Placeholders ({selection}, {clipboard}, {date}…) are read before anything is
+                // typed or copied, so `{clipboard}` is the user's clipboard, not the snippet.
+                let text = ctx.expand(&ctx.input_str("text"))?;
                 if text.is_empty() {
                     ctx.set_error("Add the snippet's text first");
                     return Ok(());

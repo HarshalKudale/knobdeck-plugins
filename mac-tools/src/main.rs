@@ -581,7 +581,9 @@ mod app {
             .action(keys_button("force-quit", "Force Quit…", "circle-x", "cmd alt esc"))
             .action(Action::button("lock-screen", "Lock Screen").icon("lock").on_press(|_| system::lock_screen()))
             .action(Action::button("text-snippet", "Text Snippet").icon("text-cursor-input").inputs(snippet_inputs()).on_press(|ctx| {
-                let text = ctx.input_str("text");
+                // Placeholders ({selection}, {clipboard}, {date}…) are read before anything is
+                // typed or copied, so `{clipboard}` is the user's clipboard, not the snippet.
+                let text = ctx.expand(&ctx.input_str("text"))?;
                 if text.is_empty() {
                     ctx.set_error("Add the snippet's text first");
                     Ok(())
@@ -745,7 +747,7 @@ mod app {
     }
 
     fn snippet_inputs() -> Vec<Value> {
-        vec![input::textarea("text", "Text"), input::checkbox("paste", "Paste mode (copy to the clipboard and paste instead of typing)")]
+        vec![input::textarea("text", "Text").accepts_placeholders(), input::checkbox("paste", "Paste mode (copy to the clipboard and paste instead of typing)")]
     }
 
     fn center_button(id: &str, label: &str) -> Action {

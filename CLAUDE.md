@@ -93,6 +93,9 @@ Current decisions (keep this list up to date):
   the frontmost window that isn't KnobDeck's, so window actions reach the app under the dial even while a
   slider keeps the dial focused. A window's `app_id` is the exe name on Windows, the bundle id on macOS and
   the window class / app id on Linux.
+- User-written text (snippets, commands, URLs) goes through `ctx.expand` (SDK feature `placeholders`) and
+  its input is marked `.accepts_placeholders()`: one `{selection}` / `{clipboard}` / `{date}` syntax across
+  KnobDeck and every plugin. Don't invent another.
 
 ## Rule 3: verify, don't assume
 
