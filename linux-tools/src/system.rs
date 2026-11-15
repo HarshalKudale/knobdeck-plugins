@@ -9,12 +9,12 @@ use zbus::zvariant::OwnedValue;
 /// bound to it.
 pub fn kde_action(component: &str, name: &str) -> Result {
     let conn = bus::session()?;
-    bus::call0(&conn, "org.kde.kglobalaccel", &format!("/component/{component}"), "org.kde.kglobalaccel.Component", "invokeShortcut", &(name,))
+    Ok(bus::call0(&conn, "org.kde.kglobalaccel", &format!("/component/{component}"), "org.kde.kglobalaccel.Component", "invokeShortcut", &(name,))?)
 }
 
 /// A Shell action through the KnobDeck GNOME extension.
 fn gnome(cmd: &str) -> Result {
-    linux_desktop::gnome::call(cmd, &json!({})).map(|_| ())
+    Ok(linux_desktop::gnome::call(cmd, &json!({})).map(|_| ())?)
 }
 
 fn launch_first(programs: &[&'static str], what: &str) -> Result {
@@ -53,7 +53,7 @@ pub fn app_launcher() -> Result {
 /// KRunner on Plasma, the overview's search on GNOME.
 pub fn search() -> Result {
     match desktop() {
-        Desktop::Kde => bus::call0(&bus::session()?, "org.kde.krunner", "/App", "org.kde.krunner.App", "display", &()),
+        Desktop::Kde => Ok(bus::call0(&bus::session()?, "org.kde.krunner", "/App", "org.kde.krunner.App", "display", &())?),
         Desktop::Gnome => gnome("search"),
         Desktop::Other => Err(linux_desktop::unsupported()),
     }
@@ -103,7 +103,7 @@ pub fn lock_screen() -> Result {
     if logind.is_ok() {
         return Ok(());
     }
-    bus::call0(&bus::session()?, "org.freedesktop.ScreenSaver", "/org/freedesktop/ScreenSaver", "org.freedesktop.ScreenSaver", "Lock", &())
+    Ok(bus::call0(&bus::session()?, "org.freedesktop.ScreenSaver", "/org/freedesktop/ScreenSaver", "org.freedesktop.ScreenSaver", "Lock", &())?)
 }
 
 /// Turn the displays off: PowerDevil's own action on Plasma; GNOME blanks through its
@@ -111,7 +111,7 @@ pub fn lock_screen() -> Result {
 pub fn sleep_display() -> Result {
     match desktop() {
         Desktop::Kde => kde_action("org_kde_powerdevil", "Turn Off Screen"),
-        Desktop::Gnome => bus::call0(&bus::session()?, "org.gnome.ScreenSaver", "/org/gnome/ScreenSaver", "org.gnome.ScreenSaver", "SetActive", &(true,)),
+        Desktop::Gnome => Ok(bus::call0(&bus::session()?, "org.gnome.ScreenSaver", "/org/gnome/ScreenSaver", "org.gnome.ScreenSaver", "SetActive", &(true,))?),
         Desktop::Other => Err(linux_desktop::unsupported()),
     }
 }
@@ -152,7 +152,7 @@ pub fn power_profiles() -> Result<Vec<String>> {
 
 pub fn active_profile() -> Result<String> {
     let (name, path) = ppd()?;
-    bus::get::<String>(&bus::system()?, name, path, name, "ActiveProfile")
+    Ok(bus::get::<String>(&bus::system()?, name, path, name, "ActiveProfile")?)
 }
 
 pub fn set_profile(id: &str) -> Result {
@@ -160,7 +160,7 @@ pub fn set_profile(id: &str) -> Result {
         return Err(Error::msg("Choose a power profile first"));
     }
     let (name, path) = ppd()?;
-    bus::set(&bus::system()?, name, path, name, "ActiveProfile", id)
+    Ok(bus::set(&bus::system()?, name, path, name, "ActiveProfile", id)?)
 }
 
 // ── Wi-Fi (NetworkManager) and Bluetooth (BlueZ) ──
@@ -181,7 +181,7 @@ pub fn radio_on(kind: &str) -> Result<bool> {
     let conn = bus::system()?;
     if kind == "bluetooth" {
         let path = bluetooth_adapter()?;
-        bus::get::<bool>(&conn, "org.bluez", &path, "org.bluez.Adapter1", "Powered")
+        Ok(bus::get::<bool>(&conn, "org.bluez", &path, "org.bluez.Adapter1", "Powered")?)
     } else {
         bus::get::<bool>(&conn, NM, "/org/freedesktop/NetworkManager", NM, "WirelessEnabled").map_err(|_| Error::msg("Wi-Fi needs NetworkManager"))
     }

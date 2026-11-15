@@ -19,8 +19,8 @@ pub fn history() -> Result<Vec<String>> {
 
 pub fn set_text(text: &str) -> Result {
     match desktop() {
-        Desktop::Kde => bus::call0(&bus::session()?, KLIPPER.0, KLIPPER.1, KLIPPER.2, "setClipboardContents", &(text,)),
-        Desktop::Gnome => linux_desktop::gnome::call("clipboard-set", &json!({ "text": text })).map(|_| ()),
+        Desktop::Kde => Ok(bus::call0(&bus::session()?, KLIPPER.0, KLIPPER.1, KLIPPER.2, "setClipboardContents", &(text,))?),
+        Desktop::Gnome => Ok(linux_desktop::gnome::call("clipboard-set", &json!({ "text": text })).map(|_| ())?),
         Desktop::Other => Err(linux_desktop::unsupported()),
     }
 }

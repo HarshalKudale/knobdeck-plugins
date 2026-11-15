@@ -10,19 +10,7 @@ pub struct Entry {
     pub icon: String,
 }
 
-/// `$XDG_DATA_HOME` then `$XDG_DATA_DIRS` (Flatpak exports included when the session lists them).
-pub fn data_dirs() -> Vec<PathBuf> {
-    let home = PathBuf::from(std::env::var_os("HOME").unwrap_or_default());
-    let mut dirs = vec![std::env::var_os("XDG_DATA_HOME").map(PathBuf::from).filter(|p| p.is_absolute()).unwrap_or_else(|| home.join(".local/share"))];
-    let sys = std::env::var("XDG_DATA_DIRS").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| "/usr/local/share:/usr/share".into());
-    dirs.extend(sys.split(':').filter(|d| !d.is_empty()).map(PathBuf::from));
-    for extra in [home.join(".local/share/flatpak/exports/share"), PathBuf::from("/var/lib/flatpak/exports/share")] {
-        if !dirs.contains(&extra) {
-            dirs.push(extra);
-        }
-    }
-    dirs
-}
+pub use knobdeck_sdk::os::linux::desktop::data_dirs;
 
 fn parse(path: &Path) -> Option<(Entry, String)> {
     let text = std::fs::read_to_string(path).ok()?;

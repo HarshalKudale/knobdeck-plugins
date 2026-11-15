@@ -7,7 +7,7 @@ mod data;
 mod native;
 
 use knobdeck_sdk::input::{self, InputExt};
-use knobdeck_sdk::{focus_app, json, send_keys, Action, Ctx, Error, Plugin, Result, Value};
+use knobdeck_sdk::{json, os, send_keys, Action, Ctx, Error, Plugin, Result, Value};
 use browsers::{detect_key, ensure_executable, meta, selection, Family, KEYS};
 use std::collections::HashMap;
 use std::process::Command;
@@ -42,25 +42,21 @@ fn label_for(browser: &str) -> &'static str {
 
 fn activate_browser(browser: &str) -> Result {
     let exe = ensure_executable(browser)?;
-    // KDE Plasma / GNOME: focus through the compositor (works for Wayland windows, which the
-    // host can only reach on Hyprland and X11). Other desktops fall through to the host.
+    if os::window::focus_app(&exe, None)? {
+        return Ok(());
+    }
+    // Linux: the exe name often differs from the window class / app id (`google-chrome-stable`
+    // vs `google-chrome`, Flatpak ids), so try the browser's known classes too.
     #[cfg(target_os = "linux")]
     {
         let key = if KEYS.contains(&browser) { Some(browser) } else { detect_key(&Value::String(browser.into())) };
-        if let Some(key) = key {
-            if linux_desktop::desktop() != linux_desktop::Desktop::Other {
-                return match linux_desktop::wm::activate_app(browsers::window_classes(key)) {
-                    Ok(true) => Ok(()),
-                    Ok(false) => Err(Error::msg(format!("{} window is not open", label_for(browser)))),
-                    Err(e) => Err(e),
-                };
+        for class in key.map(browsers::window_classes).unwrap_or(&[]) {
+            if os::window::focus_app(class, None)? {
+                return Ok(());
             }
         }
     }
-    if !focus_app(&exe)? {
-        return Err(Error::msg(format!("{} window is not open", label_for(browser))));
-    }
-    Ok(())
+    Err(Error::msg(format!("{} window is not open", label_for(browser))))
 }
 
 fn send_browser_keys(browser: &str, keys: &str) -> Result {
@@ -383,8 +379,9 @@ fn main() {
         .action(link_wheel("history-wheel", "Recent History", "history", "history", "history", "No recent {} history items were found", data::history))
         .query("installed_browser", |ctx| {
             let mut apps: Vec<Value> = ctx
-                .installed_apps()?
+                .installed_apps()
                 .into_iter()
+                .map(|app| json!(app))
                 .filter(|app| {
                     let value = app["value"].as_str().unwrap_or("");
                     std::path::Path::new(value).is_absolute() && detect_key(app).is_some()

@@ -122,6 +122,16 @@ impl Elem {
         (!r.is_null()).then(|| Elem(r))
     }
 
+    /// The AX element of a `knobdeck_sdk::os::window` window (retained), when Accessibility is granted.
+    pub fn of_window(id: &knobdeck_sdk::os::window::WindowId) -> Option<Elem> {
+        let r = id.ax_element()? as AXUIElementRef;
+        if r.is_null() {
+            return None;
+        }
+        unsafe { CFRetain(r) };
+        Some(Elem(r))
+    }
+
     pub fn app(pid: i32) -> Elem {
         let e = Elem(unsafe { AXUIElementCreateApplication(pid) });
         // A hung app would otherwise block each call for the 6 s default.
@@ -312,13 +322,14 @@ impl Elem {
     }
 }
 
-/// The focused app (system-wide AX), as an app element.
-/// The app the user is working in. Accessibility's focused application first;
-/// while KnobDeck's own dial / deck is involved that lookup fails or returns
-/// KnobDeck, so fall back to the owner of the frontmost normal window that isn't
-/// KnobDeck's (window-server order, front to back).
+/// The app the user is working in: the owner of the target window (the frontmost one that
+/// isn't KnobDeck's, `os::window::target()`). Without one, Accessibility's focused
+/// application, then the owner of the frontmost normal window that isn't KnobDeck's.
 pub fn focused_app() -> Result<Elem> {
     ensure_trusted()?;
+    if let Some(w) = knobdeck_sdk::os::window::target() {
+        return Ok(Elem::app(w.id.app_pid()));
+    }
     let sys = Elem::from_owned(unsafe { AXUIElementCreateSystemWide() }).ok_or_else(|| Error::msg("Accessibility is unavailable"))?;
     if let Some(app) = sys.elem_attr("AXFocusedApplication") {
         if app.pid().is_some_and(|pid| !crate::windows::is_knobdeck_pid(pid)) {
@@ -328,8 +339,13 @@ pub fn focused_app() -> Result<Elem> {
     crate::windows::frontmost_app_pid().map(Elem::app).ok_or_else(|| Error::msg("No app with a window is in front"))
 }
 
-/// The focused window of the frontmost app.
+/// The window an action acts on: the target window (the frontmost one that isn't KnobDeck's),
+/// else the focused window of the front app.
 pub fn focused_window() -> Result<Elem> {
+    ensure_trusted()?;
+    if let Some(e) = knobdeck_sdk::os::window::target().and_then(|w| Elem::of_window(&w.id)) {
+        return Ok(e);
+    }
     let app = focused_app()?;
     app.elem_attr("AXFocusedWindow")
         .or_else(|| app.elem_attr("AXMainWindow"))

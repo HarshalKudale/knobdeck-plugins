@@ -1,16 +1,10 @@
 [package]
 name = "linux-desktop"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
-description = "KDE Plasma / GNOME window bridge and freedesktop helpers shared by the Linux plugins (not a plugin)."
+description = "KDE Plasma / GNOME window commands and desktop entry icons shared by the Linux plugins (not a plugin); a layer over knobdeck_sdk::os::linux."
 
 [dependencies]
-knobdeck-sdk.workspace = true
+knobdeck-sdk = { workspace = true, features = ["os-window"] }
 base64.workspace = true
-
-serde = "1"
-serde_json.workspace = true
-
-[target.'cfg(target_os = "linux")'.dependencies]
-zbus.workspace = true
