@@ -117,7 +117,7 @@ mod imp {
     }
 
     fn call(method: &str) -> Result<()> {
-        bus::call0(&bus::session()?, &player()?, PATH, PLAYER, method, &())
+        Ok(bus::call0(&bus::session()?, &player()?, PATH, PLAYER, method, &())?)
     }
 
     pub fn play_pause() -> Result<()> {

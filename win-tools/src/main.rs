@@ -121,7 +121,58 @@ mod app {
 
     // ── Action builders ──────────────────────────────────────────────────────
 
-    /// A button that runs `op` against the foreground window.
+    // ── Focus App ────────────────────────────────────────────────────────────
+
+    /// A combobox value: a plain string, or `{label, value}`.
+    fn combo_value(v: &Value) -> (String, String) {
+        match v {
+            Value::Object(o) => (o.get("value").and_then(Value::as_str).unwrap_or("").into(), o.get("label").and_then(Value::as_str).unwrap_or("").into()),
+            Value::String(s) => (s.clone(), String::new()),
+            _ => (String::new(), String::new()),
+        }
+    }
+
+    /// Apps with an open window first, then every installed app.
+    fn focus_app_options() -> Result<Value> {
+        let mut seen: Vec<String> = vec![];
+        let mut opts = vec![];
+        for w in win32::list_open_windows() {
+            if let Some(exe) = w.exe_name.filter(|e| !seen.iter().any(|s| s.eq_ignore_ascii_case(e))) {
+                seen.push(exe.clone());
+                opts.push(json!({"value": exe, "label": format!("{exe} (open)")}));
+            }
+        }
+        for a in knobdeck_sdk::os::apps::rescan() {
+            opts.push(json!({"value": a.value, "label": a.label}));
+        }
+        Ok(Value::Array(opts))
+    }
+
+    /// Bring an app's frontmost window to the front. Launching stays the built-in Launch action's job.
+    fn focus_app_action() -> Action {
+        Action::button("focus-app", "Focus App")
+            .icon("app-window")
+            .inputs(vec![
+                input::query_combobox("app", "App", "get-focus-apps"),
+                input::text("hint", "Window title hint (optional)").placeholder("Part of the window title, for Store apps"),
+            ])
+            .on_press(|ctx| {
+                let (app, label) = combo_value(&ctx.inputs["app"]);
+                if app.trim().is_empty() {
+                    return ctx.fail("Choose an app first");
+                }
+                let hint = ctx.input_str("hint");
+                let hint = if hint.trim().is_empty() { label.trim_end_matches(" (open)").to_string() } else { hint };
+                if knobdeck_sdk::os::window::focus_app(&app, Some(hint.as_str()).filter(|h| !h.is_empty()))? {
+                    Ok(())
+                } else {
+                    let name = if hint.is_empty() { app } else { hint };
+                    ctx.fail(format!("{name} has no open window"))
+                }
+            })
+    }
+
+    /// A button that runs `op` against the target window.
     fn window_button(id: &str, label: &str, icon: &str, op: fn(Option<win32::Hwnd>) -> Result) -> Action {
         Action::button(id, label).icon(icon).on_press(move |_| op(None))
     }
@@ -141,7 +192,7 @@ mod app {
 
     fn snap_button(id: &str, label: &str, icon: &str, region: Region) -> Action {
         Action::button(id, label).icon(icon).inputs(vec![monitor_input()]).on_press(move |ctx| {
-            let hwnd = win32::foreground_window()?;
+            let hwnd = win32::target_window()?;
             win32::move_to_region(hwnd, work_of(hwnd, &ctx.inputs)?, region);
             Ok(())
         })
@@ -248,8 +299,6 @@ mod app {
             .description("Advanced window management: snap, resize, transparency, always-on-top, per-app volume, and more.")
             .icon("app-window")
             .platforms(&["windows"])
-            // Several actions derive their state from the currently focused window.
-            .subscribe(&["focus_changed"])
             // ── Queries ──
             .query("get-monitors", |ctx| {
                 ctx.log("query get-monitors");
@@ -269,17 +318,17 @@ mod app {
             // Current window position/size, to auto-fill the custom-position fields. X/Y are relative to
             // the selected monitor's work-area top-left so the value can be pasted straight back in.
             .query("get-window-x", |ctx| {
-                let hwnd = win32::foreground_window()?;
+                let hwnd = win32::target_window()?;
                 let mon = win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?;
                 Ok(json!((win32::window_rect(hwnd)?.x - mon.work.x).to_string()))
             })
             .query("get-window-y", |ctx| {
-                let hwnd = win32::foreground_window()?;
+                let hwnd = win32::target_window()?;
                 let mon = win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?;
                 Ok(json!((win32::window_rect(hwnd)?.y - mon.work.y).to_string()))
             })
-            .query("get-window-w", |_| Ok(json!(win32::window_rect(win32::foreground_window()?)?.width.to_string())))
-            .query("get-window-h", |_| Ok(json!(win32::window_rect(win32::foreground_window()?)?.height.to_string())))
+            .query("get-window-w", |_| Ok(json!(win32::window_rect(win32::target_window()?)?.width.to_string())))
+            .query("get-window-h", |_| Ok(json!(win32::window_rect(win32::target_window()?)?.height.to_string())))
             // ── Current Window ──
             .action(window_button("minimize", "Minimize", "minus", win32::minimize))
             .action(window_button("maximize", "Maximize", "square", win32::maximize))
@@ -513,10 +562,11 @@ mod app {
                             ctx.set_error("That window is no longer available");
                             return Ok(());
                         };
-                        win32::bring_window_to_front(hwnd);
-                        Ok(())
+                        win32::bring_window_to_front(hwnd)
                     }),
             )
+            .action(focus_app_action())
+            .query("get-focus-apps", |_| focus_app_options())
             // ── Position ──
             .action(window_button("move-next-monitor", "Move to Next Monitor", "monitor-up", win32::move_to_next_monitor))
             .action(center_button("center-window", "Center Window"))
@@ -530,11 +580,11 @@ mod app {
             .action(snap_button("move-bottom-right", "Move Bottom Right", "move-down-right", reg(0.5, 0.5, 0.5, 0.5)))
             .action(center_button("move-center", "Move Center"))
             .action(Action::button("fullscreen", "Fullscreen").icon("fullscreen").inputs(vec![monitor_input()]).on_press(|ctx| {
-                let hwnd = win32::foreground_window()?;
+                let hwnd = win32::target_window()?;
                 win32::make_fullscreen(hwnd, win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?.monitor);
                 Ok(())
             }))
-            .action(Action::button("custom-position", "Custom Position").icon("move").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(win32::foreground_window()?, &ctx.inputs)))
+            .action(Action::button("custom-position", "Custom Position").icon("move").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(win32::target_window()?, &ctx.inputs)))
             // ── A named app's window (not just the focused one), like Windows Mover & Resizer ──
             .query("get-open-apps", |_| {
                 let mut seen: Vec<String> = vec![];
@@ -569,7 +619,7 @@ mod app {
                     }
                 }
                 if ctx.input_bool("focus") {
-                    win32::bring_window_to_front(hwnd);
+                    win32::bring_window_to_front(hwnd)?;
                 }
                 Ok(())
             }));
@@ -932,7 +982,7 @@ mod app {
 
     fn center_button(id: &str, label: &str) -> Action {
         Action::button(id, label).icon("focus").inputs(vec![monitor_input()]).on_press(|ctx| {
-            let hwnd = win32::foreground_window()?;
+            let hwnd = win32::target_window()?;
             win32::center_window(hwnd, work_of(hwnd, &ctx.inputs)?)
         })
     }

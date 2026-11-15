@@ -300,6 +300,76 @@ mod app {
         Ok(slices)
     }
 
+    /// Switch to Window: slice id → window, focused through `os::window::focus`.
+    static SWITCH: Mutex<Option<HashMap<String, knobdeck_sdk::os::window::WindowId>>> = Mutex::new(None);
+
+    fn switch_slices() -> Result<Vec<Value>> {
+        ax::ensure_trusted()?;
+        let list = windows::list_open_windows();
+        if list.is_empty() {
+            return Err(Error::msg("No open windows found"));
+        }
+        let mut map = HashMap::new();
+        let slices = list
+            .into_iter()
+            .take(16)
+            .enumerate()
+            .map(|(i, w)| {
+                let child = format!("w{i}");
+                let icon = w.app.bundle.as_deref().and_then(icon::app_icon).unwrap_or_else(|| "app-window".into());
+                let label = if w.title.is_empty() { w.app.name.clone() } else { format!("{} — {}", w.title, w.app.name) };
+                let label = if w.elem.is_minimized() { format!("{label} (minimized)") } else { label };
+                map.insert(child.clone(), w.id);
+                json!({"id": child, "label": label, "icon": icon})
+            })
+            .collect();
+        *SWITCH.lock().unwrap() = Some(map);
+        Ok(slices)
+    }
+
+    // ── Focus App ────────────────────────────────────────────────────────────
+
+    /// Apps with an open window first, then every installed app.
+    fn focus_app_options() -> Result<Value> {
+        let mut seen: Vec<String> = vec![];
+        let mut opts = vec![];
+        for w in knobdeck_sdk::os::window::list().unwrap_or_default() {
+            if !w.app_id.is_empty() && !seen.iter().any(|s| s.eq_ignore_ascii_case(&w.app_id)) {
+                seen.push(w.app_id.clone());
+                opts.push(json!({"value": w.app_id, "label": format!("{} (open)", w.app_name.unwrap_or_else(|| w.app_id.clone()))}));
+            }
+        }
+        for a in knobdeck_sdk::os::apps::rescan() {
+            opts.push(json!({"value": a.value, "label": a.label}));
+        }
+        Ok(Value::Array(opts))
+    }
+
+    /// Bring an app's frontmost window to the front. Launching stays the built-in Launch action's job.
+    fn focus_app_action() -> Action {
+        Action::button("focus-app", "Focus App")
+            .icon("app-window")
+            .inputs(vec![
+                input::query_combobox("app", "App", "get-focus-apps"),
+                input::text("hint", "Name hint (optional)").placeholder("The app's name, when it can't be matched by its bundle"),
+            ])
+            .on_press(|ctx| {
+                let app = combo_value(&ctx.inputs["app"]);
+                if app.trim().is_empty() {
+                    return ctx.fail("Choose an app first");
+                }
+                let label = combo_label(&ctx.inputs["app"]);
+                let hint = ctx.input_str("hint");
+                let hint = if hint.trim().is_empty() { label.trim_end_matches(" (open)").to_string() } else { hint };
+                if knobdeck_sdk::os::window::focus_app(&app, Some(hint.as_str()).filter(|h| !h.is_empty()))? {
+                    Ok(())
+                } else {
+                    let name = if hint.is_empty() { app } else { hint };
+                    ctx.fail(format!("{name} has no open window"))
+                }
+            })
+    }
+
     fn picked_window(wheel_id: &str, ctx: &Ctx) -> Option<Elem> {
         PICKERS.lock().unwrap().as_ref()?.get(wheel_id)?.get(ctx.child_id.as_deref()?).cloned()
     }
@@ -398,8 +468,6 @@ mod app {
             .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system shortcuts, live stats, audio devices, mic mute, clipboard history and app menu commands.")
             .icon("app-window")
             .platforms(&["macos"])
-            // Several toggles derive their state from the focused window.
-            .subscribe(&["focus_changed"])
             .on_ready(|_| {
                 clipboard::start();
                 Ok(())
@@ -440,15 +508,20 @@ mod app {
             .action(
                 Action::wheel("switch-window-wheel", "Switch to Window")
                     .icon("layout-grid")
-                    .on_open(|ctx| window_slices("switch-window-wheel").or_else(|e| ctx.fail(e.message().to_string())))
-                    .on_child_press(|ctx| match picked_window("switch-window-wheel", ctx) {
-                        Some(w) => w.bring_to_front(),
-                        None => {
-                            ctx.set_error("That window is no longer available");
-                            Ok(())
+                    .on_open(|ctx| switch_slices().or_else(|e| ctx.fail(e.message().to_string())))
+                    .on_child_press(|ctx| {
+                        let picked = ctx.child_id.as_deref().and_then(|c| SWITCH.lock().unwrap().as_ref()?.get(c).cloned());
+                        match picked {
+                            Some(id) => Ok(knobdeck_sdk::os::window::focus(&id)?),
+                            None => {
+                                ctx.set_error("That window is no longer available");
+                                Ok(())
+                            }
                         }
                     }),
             )
+            .action(focus_app_action())
+            .query("get-focus-apps", |_| focus_app_options())
             // ── Position ──
             .action(window_button("move-next-monitor", "Move to Next Display", "monitor-up", move_to_next_display))
             .action(center_button("center-window", "Center Window"))
@@ -605,6 +678,11 @@ mod app {
             Value::String(s) => s.clone(),
             _ => String::new(),
         }
+    }
+
+    /// The picked option's label (empty for typed text).
+    fn combo_label(v: &Value) -> String {
+        v.get("label").and_then(Value::as_str).unwrap_or("").to_string()
     }
 
     fn menu_command_inputs() -> Vec<Value> {

@@ -21,7 +21,7 @@ Prefer, in this order:
 1. **An OS API.** Windows: Win32 / COM / WinRT through the `windows` crate (window management,
    `LockWorkStation`, audio endpoints, clipboard). macOS: public frameworks (Accessibility
    `AXUIElement`, CoreAudio, CoreGraphics, AppKit, Text Input Sources, IOKit). Linux: the
-   compositor (KWin scripting, the KnobDeck GNOME Shell extension, via `linux-desktop`) and
+   compositor (KWin scripting, the KnobDeck GNOME Shell extension, via `knobdeck_sdk::os::linux` and `linux-desktop`) and
    D-Bus services (KGlobalAccel, KRunner, Klipper, logind, NetworkManager, BlueZ,
    power-profiles-daemon, MPRIS, FileManager1).
 2. **A long-stable private OS entry point**, resolved with `dlsym` / `GetProcAddress` at call time
@@ -57,8 +57,8 @@ Current decisions (keep this list up to date):
 | clocks | none needed (time and timers only) | none |
 | mac-tools | Dock (`CoreDockSendNotification`), `SACLockScreenImmediate`, Text Input Sources, Accessibility (windows, hide, Edit ▸ Paste, Menu Command presses any menu item), Screenshot app | Spaces ←/→ and Spotlight (no API; the user's configured system hotkey is posted), Force Quit ⌥⌘Esc (no API; reserved by loginwindow), ⌘V only for apps without a Paste menu item; Text Snippet types its text (text entry) |
 | win-tools | Win32 (windows, audio sessions and endpoints, `LockWorkStation`), undocumented `IPolicyConfig` for the default audio device (no public API; unchanged since Windows 7), `ShellExecuteW` for Task View / Show Desktop / Run (`shell:::{CLSID}`), `ms-screenclip:`, `ms-settings:`, Explorer, Task Manager | virtual desktops (no public API), Emoji Win+. (no API), Ctrl+V for clipboard history and Text Snippet paste mode (no app-independent paste call); Text Snippet types its text (text entry) |
-| linux-tools | KDE: KWin scripts over `org.kde.kwin.Scripting` (windows, desktops), KGlobalAccel `invokeShortcut` (KWin's / PowerDevil's own actions by name: Overview, Expose, Show Desktop, Turn Off Screen), KRunner, Klipper, Spectacle. GNOME: the KnobDeck Shell extension (`linux-desktop/gnome-extension`: windows, workspaces, overview, search, screenshot UI, clipboard), `org.gnome.ScreenSaver`. Both: logind, NetworkManager, BlueZ, power-profiles-daemon, FileManager1, `pactl` | Ctrl+V for clipboard history and Text Snippet (no app-independent paste request on Linux; Wayland lets no client act on another's text field) |
-| browser-plugin | Linux KDE/GNOME: focusing the browser through the compositor (`linux-desktop`), URLs via the browser's program or `gio launch`. macOS Chromium (Chrome/Edge/Brave): AppleScript for tabs, navigation, windows, incognito, history/downloads/bookmarks pages; URLs via `open -a` / the browser exe | Firefox/Zen (no scripting interface), all browsers on Windows and Linux (no control interface without a debug flag), and page commands with no scripting equivalent (find, print, save, zoom, hard reload, reopen tab, full screen) |
+| linux-tools | KDE: KWin scripts over `org.kde.kwin.Scripting` (windows, desktops), KGlobalAccel `invokeShortcut` (KWin's / PowerDevil's own actions by name: Overview, Expose, Show Desktop, Turn Off Screen), KRunner, Klipper, Spectacle. GNOME: the KnobDeck Shell extension (`knobdeck-os/src/linux/gnome-extension` in the SDK repo: windows, workspaces, overview, search, screenshot UI, clipboard), `org.gnome.ScreenSaver`. Both: logind, NetworkManager, BlueZ, power-profiles-daemon, FileManager1, `pactl` | Ctrl+V for clipboard history and Text Snippet (no app-independent paste request on Linux; Wayland lets no client act on another's text field) |
+| browser-plugin | Focusing the browser through `knobdeck_sdk::os::window::focus_app` (Linux: the compositor bridge / Hyprland / X11), URLs via the browser's program or `gio launch`. macOS Chromium (Chrome/Edge/Brave): AppleScript for tabs, navigation, windows, incognito, history/downloads/bookmarks pages; URLs via `open -a` / the browser exe | Firefox/Zen (no scripting interface), all browsers on Windows and Linux (no control interface without a debug flag), and page commands with no scripting equivalent (find, print, save, zoom, hard reload, reopen tab, full screen) |
 | ai-stats | providers' usage endpoints, local transcripts | none |
 | home-assistant, hue, ytmusic | the service's / device's / app's own API (HA REST, Hue Bridge local API, YTMDesktop Companion Server + its Socket.IO feed) | none |
 | game-launcher | the launchers' own files (Steam `libraryfolders.vdf` / `appmanifest_*.acf`, Epic manifests) and URL schemes (`steam://rungameid/…`, `com.epicgames.launcher://apps/…`) | none |
@@ -70,9 +70,10 @@ Current decisions (keep this list up to date):
   (`format!("<name>-{}", std::env::consts::OS)`), `.platforms(&[std::env::consts::OS])` (actions
   inherit it). CI builds each on its own OS; `scripts/plugins.mjs` lists which plugins ship where.
 - **Linux scope:** Debian/Ubuntu and Arch based distributions (not Fedora yet); KDE Plasma 6 and
-  GNOME 45+, Wayland and X11. Window and desktop work goes through `linux-desktop` (one command set
-  implemented in `kwin.js` and the GNOME extension; keep them in step and bump the extension's
-  `version` in `metadata.json` when it changes). Other desktops get a clear "needs GNOME or KDE
+  GNOME 45+, Wayland and X11. Window and desktop work goes through `linux-desktop`, a thin layer over
+  `knobdeck_sdk::os::linux` (the `knobdeck-os` crate in the SDK repo owns `kwin.js` and the GNOME
+  extension; keep them in step there and bump the extension's `version` in `metadata.json` when it
+  changes). Other desktops get a clear "needs GNOME or KDE
   Plasma" error, never a silent no-op.
 - **An app's plugin ships for Linux only when the app itself has an official Linux build** (from
   its vendor, or a distro package of that build), not a third-party client or workaround. Then
@@ -87,7 +88,11 @@ Current decisions (keep this list up to date):
 - Don't regress one OS while working on another. Before finishing, run
   `./scripts/check-windows-from-mac.sh` (Windows type-check, no warnings; from Linux also
   `TARGET=aarch64-apple-darwin` for macOS) and `cargo test --workspace`.
-- `fg_process` is the exe name on Windows, the bundle id on macOS and the window class / app id on Linux.
+- OS context (the target window, window list, focus, installed apps) comes from `knobdeck_sdk::os` (features
+  `os-window`, `os-apps`), read in the plugin's own process; the host sends none. `os::window::target()` is
+  the frontmost window that isn't KnobDeck's, so window actions reach the app under the dial even while a
+  slider keeps the dial focused. A window's `app_id` is the exe name on Windows, the bundle id on macOS and
+  the window class / app id on Linux.
 
 ## Rule 3: verify, don't assume
 

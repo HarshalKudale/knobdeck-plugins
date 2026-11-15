@@ -1,16 +1,17 @@
 //! Win32 window management helpers. Every operation takes an optional window
-//! handle (raw `isize`) defaulting to the foreground window, so the same code
-//! drives the "current window" actions and the window-picker wheels.
+//! handle (raw `isize`) defaulting to the target window (the frontmost one that isn't
+//! KnobDeck's), so the same code drives the "current window" actions and the window-picker
+//! wheels. Finding, listing and focusing windows go through `knobdeck_sdk::os::window`.
 
+use knobdeck_sdk::os::window;
 use knobdeck_sdk::{Error, Result};
 use std::collections::HashMap;
 use std::ffi::c_void;
 use windows::core::PWSTR;
 use windows::Win32::Foundation::{CloseHandle, BOOL, COLORREF, HWND, LPARAM, RECT, TRUE, WPARAM};
-use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_CLOAKED};
 use windows::Win32::Graphics::Gdi::{EnumDisplayMonitors, GetMonitorInfoW, MonitorFromWindow, HDC, HMONITOR, MONITORINFO, MONITOR_DEFAULTTONEAREST};
 use windows::Win32::System::Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS};
-use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION};
+use windows::Win32::System::Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 pub type Hwnd = isize;
@@ -47,8 +48,6 @@ const WS_MAXIMIZEBOX: u32 = 0x0001_0000;
 const WS_EX_TOPMOST: u32 = 0x0000_0008;
 const WS_EX_LAYERED: u32 = 0x0008_0000;
 const WS_EX_TRANSPARENT: u32 = 0x0000_0020;
-const WS_EX_TOOLWINDOW: u32 = 0x0000_0080;
-const WS_EX_APPWINDOW: u32 = 0x0004_0000;
 
 fn h(hwnd: Hwnd) -> HWND {
     HWND(hwnd as *mut c_void)
@@ -60,16 +59,14 @@ fn win_err(what: &str, e: windows::core::Error) -> Error {
 
 // ── Low-level helpers ────────────────────────────────────────────────────────
 
-pub fn foreground_window() -> Result<Hwnd> {
-    let w = unsafe { GetForegroundWindow() };
-    if w.0.is_null() {
-        return Err(Error::msg("No foreground window"));
-    }
-    Ok(w.0 as isize)
+/// The window an action acts on: the frontmost one that isn't KnobDeck's, so a slider held
+/// on the dial still reaches the app under it.
+pub fn target_window() -> Result<Hwnd> {
+    window::target().map(|w| w.id.hwnd()).ok_or_else(|| Error::msg("No window to act on"))
 }
 
 fn target(hwnd: Option<Hwnd>) -> Result<Hwnd> {
-    hwnd.map_or_else(foreground_window, Ok)
+    hwnd.map_or_else(target_window, Ok)
 }
 
 pub fn window_rect(hwnd: Hwnd) -> Result<Rect> {
@@ -187,88 +184,20 @@ pub fn process_exe_path(pid: u32) -> Option<String> {
     ok.then(|| String::from_utf16_lossy(&buf[..size as usize]))
 }
 
-// ── Open-window enumeration ──────────────────────────────────────────────────
+// ── Open windows ─────────────────────────────────────────────────────────────
 
-fn window_title(hwnd: Hwnd) -> String {
-    let len = unsafe { GetWindowTextLengthW(h(hwnd)) };
-    if len == 0 {
-        return String::new();
-    }
-    let mut buf = vec![0u16; len as usize + 1];
-    let n = unsafe { GetWindowTextW(h(hwnd), &mut buf) };
-    String::from_utf16_lossy(&buf[..n.max(0) as usize])
-}
-
-/// DWM-cloaked windows (suspended UWP frames etc.) report visible but are invisible to the user.
-fn is_cloaked(hwnd: Hwnd) -> bool {
-    let mut cloaked = 0u32;
-    unsafe { DwmGetWindowAttribute(h(hwnd), DWMWA_CLOAKED, &mut cloaked as *mut _ as *mut c_void, 4) }.map_or(false, |_| cloaked != 0)
-}
-
-/// Visible, top-level, not owned, not a bare tool window, not cloaked — the shape the taskbar groups by.
-fn is_open_window(hwnd: Hwnd) -> bool {
-    if !unsafe { IsWindowVisible(h(hwnd)) }.as_bool() {
-        return false;
-    }
-    if unsafe { GetWindow(h(hwnd), GW_OWNER) }.map_or(false, |o| !o.0.is_null()) {
-        return false;
-    }
-    let ex = ex_style(hwnd);
-    if ex & WS_EX_TOOLWINDOW != 0 && ex & WS_EX_APPWINDOW == 0 {
-        return false;
-    }
-    !is_cloaked(hwnd)
-}
-
-unsafe extern "system" fn window_cb(hwnd: HWND, data: LPARAM) -> BOOL {
-    (*(data.0 as *mut Vec<Hwnd>)).push(hwnd.0 as isize);
-    TRUE
-}
-
-// KnobDeck's own helper windows (overlay, tray…) must not list themselves as switch targets.
-// Dev builds run `knobdeck-app.exe`; installed Tauri builds are named after productName.
-const KNOBDECK_EXE_NAMES: [&str; 2] = ["knobdeck-app.exe", "KnobDeck.exe"];
-const KNOBDECK_MAIN_WINDOW_TITLE: &str = "KnobDeck — Wheel Editor";
-
-/// Every open top-level window, in Z-order (topmost first).
+/// Every open top-level window, in Z-order (topmost first), without KnobDeck's own.
 pub fn list_open_windows() -> Vec<OpenWindow> {
-    let mut hwnds: Vec<Hwnd> = vec![];
-    let _ = unsafe { EnumWindows(Some(window_cb), LPARAM(&mut hwnds as *mut _ as isize)) };
-    let names = snapshot_process_names();
-    hwnds
+    window::list()
+        .unwrap_or_default()
         .into_iter()
-        .filter(|&w| is_open_window(w))
-        .filter_map(|hwnd| {
-            let title = window_title(hwnd);
-            if title.is_empty() {
-                return None;
-            }
-            let pid = window_process_id(hwnd);
-            let exe_name = names.get(&pid).cloned();
-            let internal = exe_name.as_deref().map_or(false, |e| KNOBDECK_EXE_NAMES.iter().any(|n| e.eq_ignore_ascii_case(n))) && title != KNOBDECK_MAIN_WINDOW_TITLE;
-            (!internal).then_some(OpenWindow { hwnd, title, pid, exe_name })
-        })
+        .map(|w| OpenWindow { hwnd: w.id.hwnd(), title: w.title.unwrap_or_default(), pid: w.pid, exe_name: Some(w.app_id).filter(|e| !e.is_empty()) })
         .collect()
 }
 
-/// Restore (if minimized) and foreground `hwnd`. A bare SetForegroundWindow from a
-/// background process only flashes the taskbar button, so borrow the current
-/// foreground thread's input state via AttachThreadInput for the duration.
-pub fn bring_window_to_front(hwnd: Hwnd) {
-    unsafe {
-        let cur_thread = GetCurrentThreadId();
-        let fg = GetForegroundWindow();
-        let fg_thread = if fg.0.is_null() { 0 } else { GetWindowThreadProcessId(fg, None) };
-        let attached = fg_thread != 0 && fg_thread != cur_thread && AttachThreadInput(cur_thread, fg_thread, true).as_bool();
-        if IsIconic(h(hwnd)).as_bool() {
-            let _ = ShowWindow(h(hwnd), SW_RESTORE);
-        }
-        let _ = BringWindowToTop(h(hwnd));
-        let _ = SetForegroundWindow(h(hwnd));
-        if attached {
-            let _ = AttachThreadInput(cur_thread, fg_thread, false);
-        }
-    }
+/// Restore (if minimized), raise and focus `hwnd`.
+pub fn bring_window_to_front(hwnd: Hwnd) -> Result {
+    Ok(window::focus(&window::WindowId::from_hwnd(hwnd))?)
 }
 
 // ── High-level window operations ─────────────────────────────────────────────

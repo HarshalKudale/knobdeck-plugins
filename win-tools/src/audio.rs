@@ -144,9 +144,9 @@ pub fn toggle_app_mute(exe: &str) -> R<Option<bool>> {
     Ok(Some(!cur))
 }
 
-/// Exe name that owns the current foreground window.
+/// Exe name that owns the target window (the frontmost one that isn't KnobDeck's).
 pub fn foreground_exe_name() -> R<Option<String>> {
-    let hwnd = win32::foreground_window()?;
+    let hwnd = win32::target_window()?;
     Ok(win32::process_exe_name(win32::window_process_id(hwnd)))
 }
 

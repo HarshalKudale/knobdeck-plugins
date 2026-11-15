@@ -21,6 +21,7 @@ const ON_SCREEN_ONLY: u32 = 1;
 const EXCLUDE_DESKTOP: u32 = 16;
 
 pub struct OpenWindow {
+    pub id: knobdeck_sdk::os::window::WindowId,
     pub elem: Elem,
     pub title: String,
     pub app: AppInfo,
@@ -108,26 +109,18 @@ pub fn knobdeck_app_pid() -> Option<i32> {
     window_owner_pids(true).into_iter().find(|&pid| is_knobdeck_pid(pid) && !Elem::app(pid).windows().is_empty())
 }
 
-/// Every standard window, frontmost app first (minimised windows included).
+/// Every standard window, front to back (minimised windows included), without KnobDeck's,
+/// from `knobdeck_sdk::os::window::list()`.
 pub fn list_open_windows() -> Vec<OpenWindow> {
-    let mut pids = window_owner_pids(true);
-    for p in window_owner_pids(false) {
-        if !pids.contains(&p) {
-            pids.push(p);
-        }
-    }
-    let mut out = vec![];
-    for pid in pids {
-        let app = app_info(pid);
-        if is_knobdeck(&app) {
-            continue;
-        }
-        for elem in Elem::app(pid).windows() {
-            let title = elem.title();
-            out.push(OpenWindow { elem, title, app: app.clone() });
-        }
-    }
-    out
+    knobdeck_sdk::os::window::list()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|w| {
+            let elem = Elem::of_window(&w.id)?;
+            let app = app_info(w.id.app_pid());
+            Some(OpenWindow { elem, title: w.title.unwrap_or_default(), app, id: w.id })
+        })
+        .collect()
 }
 
 #[cfg(test)]

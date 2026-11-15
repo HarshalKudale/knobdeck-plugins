@@ -31,6 +31,7 @@ fn main() {
 mod app {
     use crate::{audio, clipboard, stats, system};
     use knobdeck_sdk::input::{self, InputExt};
+    use knobdeck_sdk::os::window as oswin;
     use knobdeck_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Value, Visual};
     use linux_desktop::wm::{self, Output, Rect, Window};
     use std::collections::HashMap;
@@ -207,11 +208,15 @@ mod app {
     static ICONS: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
 
     fn app_icon(w: &Window) -> String {
-        let key = format!("{}|{}", w.desktop_file, w.app);
+        icon_for(&w.desktop_file, &w.app)
+    }
+
+    fn icon_for(desktop_file: &str, app: &str) -> String {
+        let key = format!("{desktop_file}|{app}");
         if let Some(i) = ICONS.lock().unwrap().as_ref().and_then(|m| m.get(&key).cloned()) {
             return i;
         }
-        let icon = linux_desktop::apps::find(&w.desktop_file, &w.app).and_then(|e| linux_desktop::apps::icon_data_uri(&e.icon)).unwrap_or_else(|| "app-window".into());
+        let icon = linux_desktop::apps::find(desktop_file, app).and_then(|e| linux_desktop::apps::icon_data_uri(&e.icon)).unwrap_or_else(|| "app-window".into());
         ICONS.lock().unwrap().get_or_insert_with(HashMap::new).insert(key, icon.clone());
         icon
     }
@@ -236,6 +241,86 @@ mod app {
             .collect();
         PICKERS.lock().unwrap().get_or_insert_with(HashMap::new).insert(wheel_id.to_string(), map);
         Ok(slices)
+    }
+
+    /// Switch to Window: slice id → window, from `os::window::list()` (works on Hyprland and X11
+    /// too, not only through the KDE / GNOME bridge).
+    static SWITCH: Mutex<Option<HashMap<String, oswin::WindowId>>> = Mutex::new(None);
+
+    fn switch_slices() -> Result<Vec<Value>> {
+        let windows = oswin::list()?;
+        if windows.is_empty() {
+            return Err(Error::msg("No open windows found"));
+        }
+        let mut map = HashMap::new();
+        let slices = windows
+            .iter()
+            .take(16)
+            .enumerate()
+            .map(|(i, w)| {
+                let child = format!("w{i}");
+                map.insert(child.clone(), w.id.clone());
+                let app = w.app_name.clone().unwrap_or_else(|| w.app_id.clone());
+                let label = w.title.clone().filter(|t| !t.is_empty()).unwrap_or(app);
+                let label = if w.state.minimized { format!("{label} (minimized)") } else { label };
+                let icon = icon_for(w.desktop_id.as_deref().unwrap_or(""), &w.app_id);
+                json!({"id": child, "label": label, "icon": icon})
+            })
+            .collect();
+        *SWITCH.lock().unwrap() = Some(map);
+        Ok(slices)
+    }
+
+    // ── Focus App ───────────────────────────────────────────────────────────
+
+    /// A combobox value: a plain string, or `{label, value}`.
+    fn combo_value(v: &Value) -> (String, String) {
+        match v {
+            Value::Object(o) => (o.get("value").and_then(Value::as_str).unwrap_or("").into(), o.get("label").and_then(Value::as_str).unwrap_or("").into()),
+            Value::String(s) => (s.clone(), String::new()),
+            _ => (String::new(), String::new()),
+        }
+    }
+
+    /// Apps with an open window first, then every installed app.
+    fn focus_app_options() -> Result<Value> {
+        let mut seen: Vec<String> = vec![];
+        let mut opts = vec![];
+        for w in oswin::list().unwrap_or_default() {
+            let value = w.desktop_id.clone().unwrap_or_else(|| w.app_id.clone());
+            if !value.is_empty() && !seen.iter().any(|s| s.eq_ignore_ascii_case(&value)) {
+                seen.push(value.clone());
+                opts.push(json!({"value": value, "label": format!("{} (open)", w.app_name.unwrap_or(w.app_id))}));
+            }
+        }
+        for a in knobdeck_sdk::os::apps::rescan() {
+            opts.push(json!({"value": a.value, "label": a.label}));
+        }
+        Ok(Value::Array(opts))
+    }
+
+    /// Bring an app's frontmost window to the front. Launching stays the built-in Launch action's job.
+    fn focus_app_action() -> Action {
+        Action::button("focus-app", "Focus App")
+            .icon("app-window")
+            .inputs(vec![
+                input::query_combobox("app", "App", "get-focus-apps"),
+                input::text("hint", "Name hint (optional)").placeholder("App name, when its window class differs (Flatpak, Snap)"),
+            ])
+            .on_press(|ctx| {
+                let (app, label) = combo_value(&ctx.inputs["app"]);
+                if app.trim().is_empty() {
+                    return ctx.fail("Choose an app first");
+                }
+                let hint = ctx.input_str("hint");
+                let hint = if hint.trim().is_empty() { label.trim_end_matches(" (open)").to_string() } else { hint };
+                if oswin::focus_app(&app, Some(hint.as_str()).filter(|h| !h.is_empty()))? {
+                    Ok(())
+                } else {
+                    let name = if hint.is_empty() { app } else { hint };
+                    ctx.fail(format!("{name} has no open window"))
+                }
+            })
     }
 
     fn picked_window(wheel_id: &str, ctx: &Ctx) -> Option<String> {
@@ -464,7 +549,6 @@ mod app {
             .description("Window management, workspaces, per-app volume, audio devices, clipboard history and system actions for GNOME and KDE Plasma.")
             .icon("app-window")
             .platforms(&["linux"])
-            .subscribe(&["focus_changed"])
             .on_ready(|_| {
                 log(format!("desktop: {:?}", linux_desktop::desktop()));
                 prepare_gnome();
@@ -499,6 +583,7 @@ mod app {
                 }
                 Ok(system::options(seen))
             })
+            .query("get-focus-apps", |_| focus_app_options())
             .query("get-audio-apps", |_| {
                 let mut opts = vec![json!({"value": "__foreground__", "label": "Current Window (focused app)"})];
                 opts.extend(audio::stream_apps()?.into_iter().map(|(v, l)| json!({"value": v, "label": l})));
@@ -583,12 +668,16 @@ mod app {
             .action(
                 Action::wheel("switch-window-wheel", "Switch to Window")
                     .icon("layout-grid")
-                    .on_open(|ctx| window_slices("switch-window-wheel").or_else(|e| ctx.fail(e.message().to_string())))
-                    .on_child_press(|ctx| match picked_window("switch-window-wheel", ctx) {
-                        Some(w) => wm::op("activate", Some(&w)),
-                        None => ctx.fail("That window is no longer available"),
+                    .on_open(|ctx| switch_slices().or_else(|e| ctx.fail(e.message().to_string())))
+                    .on_child_press(|ctx| {
+                        let picked = ctx.child_id.as_deref().and_then(|c| SWITCH.lock().unwrap().as_ref()?.get(c).cloned());
+                        match picked {
+                            Some(id) => Ok(oswin::focus(&id)?),
+                            None => ctx.fail("That window is no longer available"),
+                        }
                     }),
-            );
+            )
+            .action(focus_app_action());
 
         // ── Dynamic Window Actions: window-picker wheels ──
         p = p

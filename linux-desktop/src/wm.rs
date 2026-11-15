@@ -18,9 +18,11 @@
 //! | `desktop` | `dir`: `next`/`prev`/`new`/`close` | null |
 //! | `show-desktop` | | null |
 //!
-//! A missing `id` means the focused window.
+//! A missing `id` means the target window: the frontmost one that isn't KnobDeck's
+//! (`os::window::target()`), so a slider acts on the app under the dial while the dial has focus.
+//! The commands themselves run in `knobdeck_sdk::os::linux::bridge`.
 
-use crate::{desktop, gnome, kwin, Desktop};
+use knobdeck_sdk::os::{linux, window};
 use knobdeck_sdk::{json, Error, Result, Value};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -102,15 +104,17 @@ impl Window {
 
 /// Run one bridge command on the running desktop.
 pub fn call(cmd: &str, args: Value) -> Result<Value> {
-    match desktop() {
-        Desktop::Kde => kwin::call(cmd, &args),
-        Desktop::Gnome => gnome::call(cmd, &args),
-        Desktop::Other => Err(Error::msg("Window actions need GNOME or KDE Plasma")),
-    }
+    Ok(linux::bridge(cmd, &args)?)
 }
 
+/// The bridge id of the target window (the frontmost one that isn't KnobDeck's).
+pub fn target_id() -> Option<String> {
+    window::target().and_then(|w| w.id.bridge_id().map(String::from))
+}
+
+/// Command args for `id`, else the target window, else (no target known) the focused one.
 fn target(id: Option<&str>) -> Value {
-    match id {
+    match id.map(String::from).or_else(target_id) {
         Some(id) => json!({ "id": id }),
         None => json!({}),
     }
@@ -149,8 +153,15 @@ pub fn list() -> Result<Vec<Window>> {
     Ok(call("list", json!({}))?.as_array().map(|a| a.iter().map(Window::from).collect()).unwrap_or_default())
 }
 
-/// The focused window.
+/// The target window (the frontmost one that isn't KnobDeck's), else the focused one.
 pub fn active() -> Result<Window> {
+    if let Some(id) = target_id() {
+        if let Ok(v) = call("info", json!({ "id": id })) {
+            if !v.is_null() {
+                return Ok(Window::from(&v));
+            }
+        }
+    }
     let v = call("active", json!({}))?;
     if v.is_null() {
         return Err(Error::msg("No window has focus"));
@@ -201,17 +212,6 @@ pub fn output_of(w: &Window, outputs: &[Output]) -> Option<usize> {
     w.output.filter(|i| *i < outputs.len()).or_else(|| outputs.iter().position(|o| o.frame.contains(w.frame.center())))
 }
 
-/// Focus the first window whose class or desktop entry matches one of `apps` (case-insensitive;
-/// `org.mozilla.firefox` matches `firefox`). Returns whether one was found.
-pub fn activate_app(apps: &[&str]) -> Result<bool> {
-    let windows = list()?;
-    let hit = windows.iter().find(|w| apps.iter().any(|a| app_matches(w, a)));
-    match hit {
-        Some(w) => op("activate", Some(&w.id)).map(|_| true),
-        None => Ok(false),
-    }
-}
-
 /// Whether a window belongs to `app` (a class, desktop id or executable name).
 pub fn app_matches(w: &Window, app: &str) -> bool {
     let app = app.trim().to_ascii_lowercase();
@@ -255,7 +255,7 @@ mod tests {
     #[test]
     #[ignore]
     fn live_read_only() {
-        eprintln!("desktop: {:?}", desktop());
+        eprintln!("desktop: {:?}", linux::desktop());
         for o in outputs().unwrap() {
             eprintln!("{o:?}");
         }
@@ -307,7 +307,6 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_millis(300));
             assert_eq!(output_of(&info(id).unwrap(), &outs), Some(to));
         }
-        assert!(activate_app(&["kitty"]).unwrap());
         op("close", id).unwrap();
         std::thread::sleep(std::time::Duration::from_millis(500));
         assert!(info(id).is_err(), "window should be gone");
