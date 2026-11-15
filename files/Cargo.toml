@@ -1,0 +1,22 @@
+[package]
+name = "files"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true, features = ["os-files", "placeholders"] }
+serde_json.workspace = true
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
+lopdf = { version = "0.38", default-features = false }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_Foundation", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Ole"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-foundation = { version = "0.3", features = ["NSString"] }
+objc2-app-kit = { version = "0.3", features = ["NSPasteboard"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+linux-desktop = { path = "../linux-desktop" }
