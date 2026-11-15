@@ -27,7 +27,7 @@ for (const dir of dirs) {
   }
   entries.push({
     dir, id: m.id, version: m.version, description: m.description ?? "", author: m.author ?? null,
-    icon: m.icon ?? null, platforms: m.platforms, file, readmeFile,
+    icon: m.icon ?? null, platforms: m.platforms, uses: m.uses ?? [], file, readmeFile,
     sha256: createHash("sha256").update(readFileSync(join("out", file))).digest("hex"),
   });
   console.log(`${m.id} ${m.version}`);
