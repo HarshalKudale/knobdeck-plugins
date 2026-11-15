@@ -1,142 +1,83 @@
-//! Shared Chrome / Edge / Brave / Firefox / Zen browser controls for KnobDeck:
-//! shortcuts (sent to the focused browser via the host), URL opening, hold-to-repeat
-//! tab cycling and zoom, a page-zoom slider, and bookmark / history wheels.
+//! Shared Chrome / Edge / Brave / Firefox / Zen browser controls for KnobDeck. The actions run
+//! through the KnobDeck browser extension (knobdeck-companion/browser) that each browser connects
+//! to this plugin: tabs, windows, zoom, bookmarks and history are the browser's own APIs, not
+//! shortcuts sent to whichever window has focus.
 
 mod browsers;
-mod data;
-mod native;
+mod ext;
 
+use browsers::{ensure_executable, family_of, label, Family, KEYS};
+use ext::CallError;
 use knobdeck_sdk::input::{self, InputExt};
-use knobdeck_sdk::{json, os, send_keys, Action, Ctx, Error, Plugin, Result, Value};
-use browsers::{detect_key, ensure_executable, meta, selection, Family, KEYS};
+use knobdeck_sdk::{json, load_env, os, send_keys, Action, Error, Plugin, Result, Value};
 use std::collections::HashMap;
-use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-static WHEEL_ITEMS: Mutex<Option<HashMap<String, (String, String)>>> = Mutex::new(None); // childId → (browser key, url)
-static ZOOM_STATE: Mutex<Option<HashMap<String, i64>>> = Mutex::new(None);
+static WHEEL_ITEMS: Mutex<Option<HashMap<String, (String, String)>>> = Mutex::new(None); // childId → (browser id, url)
 static REPEATS: Mutex<Option<HashMap<String, Arc<AtomicBool>>>> = Mutex::new(None);
 
 fn browser_input() -> Value {
-    input::query_combobox("browser", "Browser", "installed_browser")
+    input::query_combobox("browser", "Browser", "connected_browser")
 }
 
-/// The selected browser value (exe path / app id), or "".
-fn browser_value(inputs: &Value) -> String {
-    selection(&inputs["browser"]).1
-}
-
-fn browser_key(inputs: &Value) -> Result<&'static str> {
-    detect_key(&inputs["browser"]).ok_or_else(|| Error::msg("Select an installed browser first"))
-}
-
-fn label_for(browser: &str) -> &'static str {
-    if KEYS.contains(&browser) {
-        meta(browser).label
-    } else {
-        detect_key(&Value::String(browser.into())).map_or("Chrome", |k| meta(k).label)
+/// The id of the selected connected browser, or "".
+fn browser_id(inputs: &Value) -> String {
+    match &inputs["browser"] {
+        Value::Object(o) => o.get("value").and_then(Value::as_str).unwrap_or("").to_string(),
+        Value::String(s) => s.clone(),
+        _ => String::new(),
     }
 }
 
-fn activate_browser(browser: &str) -> Result {
-    let exe = ensure_executable(browser)?;
+/// The selected browser, which must be connected right now.
+fn target(inputs: &Value) -> Result<ext::Info> {
+    let id = browser_id(inputs);
+    if id.is_empty() {
+        return Err(Error::msg("Select a connected browser first"));
+    }
+    ext::info(&id).ok_or_else(|| Error::msg("That browser is not connected. Open it and check the KnobDeck extension is installed and enabled."))
+}
+
+fn call(inputs: &Value, action: &str, params: Value) -> Result<Value> {
+    ext::call(&target(inputs)?.id, action, params).map_err(|e| match e {
+        CallError::Failed(m) => Error::msg(m),
+        CallError::Unsupported => Error::msg("This browser's extension can't do that action"),
+    })
+}
+
+fn activate_browser(key: &str) -> Result {
+    let exe = ensure_executable(key)?;
     if os::window::focus_app(&exe, None)? {
         return Ok(());
     }
     // Linux: the exe name often differs from the window class / app id (`google-chrome-stable`
     // vs `google-chrome`, Flatpak ids), so try the browser's known classes too.
     #[cfg(target_os = "linux")]
-    {
-        let key = if KEYS.contains(&browser) { Some(browser) } else { detect_key(&Value::String(browser.into())) };
-        for class in key.map(browsers::window_classes).unwrap_or(&[]) {
-            if os::window::focus_app(class, None)? {
-                return Ok(());
+    for class in browsers::window_classes(key) {
+        if os::window::focus_app(class, None)? {
+            return Ok(());
+        }
+    }
+    Err(Error::msg(format!("{} window is not open", label(key))))
+}
+
+/// Run `action` in the browser through its extension. Only when the browser has no extension API
+/// for it (`fallback` is the shortcut) is the browser brought to the front and the shortcut sent:
+/// the last resort of CLAUDE.md rule 1.
+fn browser_action(inputs: &Value, action: &str, fallback: Option<&str>) -> Result {
+    let browser = target(inputs)?;
+    match ext::call(&browser.id, action, json!({})) {
+        Ok(_) => Ok(()),
+        Err(CallError::Failed(m)) => Err(Error::msg(m)),
+        Err(CallError::Unsupported) => match fallback {
+            Some(keys) if KEYS.contains(&browser.key.as_str()) => {
+                activate_browser(&browser.key)?;
+                send_keys(keys)
             }
-        }
-    }
-    Err(Error::msg(format!("{} window is not open", label_for(browser))))
-}
-
-fn send_browser_keys(browser: &str, keys: &str) -> Result {
-    activate_browser(browser)?;
-    send_keys(keys)
-}
-
-/// Run `action` through the browser's own interface when it has one
-/// (`native.rs`), else press `keys`. Shortcuts are the last resort (CLAUDE.md).
-fn browser_action(browser: &str, action: &str, keys: &str) -> Result {
-    activate_browser(browser)?;
-    if native::try_run(browser, action) {
-        return Ok(());
-    }
-    send_keys(keys)
-}
-
-fn open_in_browser(browser: &str, url: &str) -> Result {
-    let exe = ensure_executable(browser)?;
-    let target = url.trim();
-    if target.is_empty() {
-        return Err(Error::msg("URL is required"));
-    }
-    #[cfg(windows)]
-    let mut cmd = {
-        use std::os::windows::process::CommandExt;
-        let mut cmd = Command::new(exe);
-        cmd.arg(target);
-        cmd.creation_flags(0x0800_0000 | 0x0000_0008); // CREATE_NO_WINDOW | DETACHED_PROCESS
-        cmd
-    };
-    // macOS: `exe` is a `.app` bundle; `open -a` launches it or hands the URL to the running one.
-    #[cfg(target_os = "macos")]
-    let mut cmd = {
-        let mut cmd = Command::new("/usr/bin/open");
-        cmd.arg("-a").arg(exe).arg(target);
-        cmd
-    };
-    // Linux: the browser's own program (it hands the URL to a running instance), or its desktop
-    // entry through `gio launch` when only that was found. Own process group, so the browser
-    // outlives the plugin.
-    #[cfg(target_os = "linux")]
-    let mut cmd = {
-        use std::os::unix::process::CommandExt;
-        let mut cmd = if exe.ends_with(".desktop") {
-            let mut c = Command::new("gio");
-            c.arg("launch").arg(&exe);
-            c
-        } else {
-            Command::new(&exe)
-        };
-        cmd.arg(target).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).process_group(0);
-        cmd
-    };
-    let mut child = cmd.spawn()?;
-    // Reap the child so it doesn't linger as a zombie (`open`/`gio` exit at once; a browser
-    // started fresh runs until closed). On Windows it is intentionally not waited on.
-    #[cfg(not(windows))]
-    std::thread::spawn(move || {
-        let _ = child.wait();
-    });
-    #[cfg(windows)]
-    let _ = &mut child;
-    Ok(())
-}
-
-#[derive(Clone, Copy)]
-enum Zoom {
-    Reset,
-    In,
-    Out,
-}
-
-fn zoom_sequence(browser: &str, dir: Zoom, count: usize) -> Result {
-    match dir {
-        Zoom::Reset => send_browser_keys(browser, "mod 0"),
-        Zoom::In | Zoom::Out => {
-            let key = if matches!(dir, Zoom::In) { "mod equals" } else { "mod minus" };
-            (0..count).try_for_each(|_| send_browser_keys(browser, key))
-        }
+            _ => Err(Error::msg(format!("{} can't do that from the extension", browser.label))),
+        },
     }
 }
 
@@ -159,24 +100,14 @@ fn stop_repeat(instance_id: &str) {
     }
 }
 
-fn zoom_key(ctx: &Ctx, browser: &str) -> String {
-    format!("{}::{browser}", ctx.instance_id)
-}
+/// Shortcut for the browsers whose extension API can't do an action (`None`: it can).
+type Fallback = fn(Family) -> Option<&'static str>;
 
-fn current_zoom(ctx: &Ctx, browser: &str) -> i64 {
-    ZOOM_STATE.lock().unwrap().as_ref().and_then(|m| m.get(&zoom_key(ctx, browser)).copied()).or_else(|| ctx.state.as_deref().and_then(|s| s.trim().parse().ok())).unwrap_or(100)
-}
-
-fn set_zoom_state(ctx: &Ctx, browser: &str, value: i64) {
-    let clamped = value.clamp(25, 300);
-    ZOOM_STATE.lock().unwrap().get_or_insert_with(HashMap::new).insert(zoom_key(ctx, browser), clamped);
-    ctx.set_state(clamped);
-}
-
-/// A button that focuses the chosen browser and sends one key chord.
-fn basic_button(id: &'static str, label: &str, icon: &str, shortcut: fn(&Value) -> Result<String>) -> Action {
+/// A button that runs one action in the chosen browser.
+fn basic_button(id: &'static str, label: &str, icon: &str, fallback: Fallback) -> Action {
     Action::button(id, label).icon(icon).inputs(vec![browser_input()]).on_press(move |ctx| {
-        browser_action(&browser_value(&ctx.inputs), id, &shortcut(&ctx.inputs)?)
+        let family = family_of(&target(&ctx.inputs)?.key);
+        browser_action(&ctx.inputs, id, fallback(family))
     })
 }
 
@@ -189,7 +120,7 @@ fn hold_repeat(id: &str, label: &str, icon: &str, released: (&str, &str), held: 
         .held(held.0, held.1)
         .on_hold_start(move |ctx| {
             let result: Result = (|| {
-                browser_key(&ctx.inputs)?;
+                target(&ctx.inputs)?;
                 step(&ctx.inputs)?;
                 let inputs = ctx.inputs.clone();
                 start_repeat(&ctx.instance_id, move || step(&inputs));
@@ -209,25 +140,25 @@ fn hold_repeat(id: &str, label: &str, icon: &str, released: (&str, &str), held: 
         })
 }
 
-fn tab_step(action: &'static str, keys: &'static str) -> impl Fn(&Value) -> Result {
-    move |inputs| browser_action(&browser_value(inputs), action, keys)
-}
+/// Page zoom changes by this many percentage points per hold tick.
+const ZOOM_TICK: i64 = 10;
 
-fn zoom_step(dir: Zoom) -> impl Fn(&Value) -> Result {
-    move |inputs| zoom_sequence(browser_key(inputs)?, dir, 1)
+/// The page zoom (percent) in the answer to `zoom-set` / `zoom-by`.
+fn zoom_percent(answer: &Value) -> Option<i64> {
+    answer["percent"].as_f64().map(|p| p.round() as i64)
 }
 
 /// A wheel listing recent bookmarks / history; pressing a child opens it.
-fn link_wheel(id: &str, label: &str, icon: &str, child_prefix: &'static str, child_icon: &'static str, empty: &'static str, load: fn(&str) -> Result<Vec<data::Item>>) -> Action {
+fn link_wheel(id: &str, label: &str, icon: &str, action: &'static str, child_prefix: &'static str, child_icon: &'static str, empty: &'static str) -> Action {
     Action::wheel(id, label)
         .icon(icon)
         .inputs(vec![browser_input()])
         .on_open(move |ctx| {
             let result: Result<Vec<Value>> = (|| {
-                let browser = browser_key(&ctx.inputs)?;
-                let items = load(browser)?;
+                let browser = target(&ctx.inputs)?;
+                let items = ext::items(&call(&ctx.inputs, action, json!({}))?);
                 if items.is_empty() {
-                    return Err(Error::msg(empty.replace("{}", meta(browser).label)));
+                    return Err(Error::msg(empty.replace("{}", &browser.label)));
                 }
                 let mut map = WHEEL_ITEMS.lock().unwrap();
                 let map = map.get_or_insert_with(HashMap::new);
@@ -237,7 +168,7 @@ fn link_wheel(id: &str, label: &str, icon: &str, child_prefix: &'static str, chi
                     .enumerate()
                     .map(|(i, item)| {
                         let child = format!("{child_prefix}-{i}");
-                        map.insert(child.clone(), (browser.to_string(), item.url.clone()));
+                        map.insert(child.clone(), (browser.id.clone(), item.url.clone()));
                         json!({"id": child, "label": item.title.chars().take(80).collect::<String>(), "icon": child_icon})
                     })
                     .collect::<Vec<_>>())
@@ -248,70 +179,60 @@ fn link_wheel(id: &str, label: &str, icon: &str, child_prefix: &'static str, chi
             let child = ctx.child_id.clone().unwrap_or_default();
             let item = WHEEL_ITEMS.lock().unwrap().as_ref().and_then(|m| m.get(&child).cloned());
             let (browser, url) = item.ok_or_else(|| Error::msg("That item is no longer available"))?;
-            open_in_browser(&browser, &url)
+            ext::call(&browser, "open-url", json!({"url": url})).map(|_| ()).map_err(|e| match e {
+                CallError::Failed(m) => Error::msg(m),
+                CallError::Unsupported => Error::msg("This browser's extension can't open links"),
+            })
         })
 }
 
-/// `windows` on Windows and Linux (browsers use the same chords on both), `mac` on macOS.
-const fn per_os(windows: &'static str, mac: &'static str) -> &'static str {
-    if cfg!(target_os = "macos") {
-        mac
-    } else {
-        windows
-    }
-}
-
-/// Windows/Linux chord (same in every browser), or the macOS chord for the selected browser's family.
-fn per_family(inputs: &Value, windows: &'static str, mac_chromium: &'static str, mac_firefox: &'static str) -> Result<&'static str> {
-    if !cfg!(target_os = "macos") {
-        return Ok(windows);
-    }
-    Ok(match meta(browser_key(inputs)?).family {
-        Family::Chromium => mac_chromium,
-        Family::Firefox => mac_firefox,
-    })
-}
-
-// Ctrl+Tab works in every macOS browser; Ctrl+PgDn needs fn on Mac keyboards.
-const NEXT_TAB: &str = per_os("ctrl pgdn", "ctrl tab");
-const PREV_TAB: &str = per_os("ctrl pgup", "ctrl shift tab");
-
 fn main() {
+    load_env();
+    ext::serve();
     let mut plugin = Plugin::new(&format!("browser-plugin-{}", std::env::consts::OS), "BrowserPlugin")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
-        .description("Shared Chrome, Edge, Brave, Firefox and Zen controls, wheels, and zoom actions on Windows, macOS and Linux.")
+        .description("Shared Chrome, Edge, Brave, Firefox and Zen controls, wheels, and zoom actions on Windows, macOS and Linux, through the KnobDeck browser extension.")
         .icon("globe")
         .ack_timeout_ms(5000);
 
-    // (id, label, icon, shortcut). `mod` is Ctrl on Windows and ⌘ on macOS; the
-    // chords that differ by more than that are picked per OS / browser family.
-    type Shortcut = fn(&Value) -> Result<String>;
-    let basics: Vec<(&str, &str, &str, Shortcut)> = vec![
-        ("new-tab", "New Tab", "notebook-tabs", |_| Ok("mod t".into())),
-        ("new-window", "New Window", "app-window", |_| Ok("mod n".into())),
-        ("new-private-window", "New Private / Incognito Window", "app-window", |i| Ok(meta(browser_key(i)?).private_shortcut.into())),
-        ("close-tab", "Close Tab", "notebook-tabs", |_| Ok("mod w".into())),
-        ("reopen-closed-tab", "Reopen Closed Tab", "notebook-tabs", |_| Ok("mod shift t".into())),
-        ("next-tab", "Next Tab", "notebook-tabs", |_| Ok(NEXT_TAB.into())),
-        ("previous-tab", "Previous Tab", "notebook-tabs", |_| Ok(PREV_TAB.into())),
-        ("reload-tab", "Reload Tab", "refresh-cw", |_| Ok("mod r".into())),
-        ("hard-reload-tab", "Hard Reload", "refresh-cw", |i| Ok(meta(browser_key(i)?).hard_reload_shortcut.into())),
-        ("go-back", "Back", "arrow-left", |_| Ok(per_os("alt left", "cmd lbracket").into())),
-        ("go-forward", "Forward", "arrow-right", |_| Ok(per_os("alt right", "cmd rbracket").into())),
-        ("focus-address-bar", "Focus Address Bar", "search", |_| Ok("mod l".into())),
-        ("open-downloads", "Open Downloads", "download", |i| Ok(per_family(i, "ctrl j", "cmd shift j", "cmd j")?.into())),
-        ("open-history", "Open History", "history", |i| Ok(per_family(i, "ctrl h", "cmd y", "cmd shift h")?.into())),
-        ("open-bookmarks-manager", "Open Bookmarks Manager", "bookmark", |i| Ok(per_family(i, "ctrl shift o", "cmd alt b", "cmd shift o")?.into())),
-        ("bookmark-page", "Bookmark Page", "bookmark", |_| Ok("mod d".into())),
-        ("find-in-page", "Find in Page", "search", |_| Ok("mod f".into())),
-        ("print-page", "Print Page", "printer", |_| Ok("mod p".into())),
-        ("save-page", "Save Page", "save", |_| Ok("mod s".into())),
-        ("toggle-fullscreen", "Toggle Fullscreen", "maximize", |_| Ok(per_os("f11", "ctrl cmd f").into())),
+    // Every action runs in the extension. Only these have no extension API in some browser, so
+    // they keep a shortcut (`mod` is Ctrl on Windows/Linux and ⌘ on macOS): the address bar, find
+    // and save have none in any browser; Firefox/Zen refuse extension tabs on their internal pages
+    // (about:downloads, about:history, the bookmarks manager).
+    let none: Fallback = |_| None;
+    let address_bar: Fallback = |_| Some("mod l");
+    let find: Fallback = |_| Some("mod f");
+    let save: Fallback = |_| Some("mod s");
+    let downloads: Fallback = |f| (f == Family::Firefox).then_some(if cfg!(target_os = "macos") { "cmd j" } else { "ctrl j" });
+    let history: Fallback = |f| (f == Family::Firefox).then_some(if cfg!(target_os = "macos") { "cmd shift h" } else { "ctrl h" });
+    let bookmarks_manager: Fallback = |f| (f == Family::Firefox).then_some(if cfg!(target_os = "macos") { "cmd shift o" } else { "ctrl shift o" });
+    let basics: Vec<(&'static str, &str, &str, Fallback)> = vec![
+        ("new-tab", "New Tab", "notebook-tabs", none),
+        ("new-window", "New Window", "app-window", none),
+        ("new-private-window", "New Private / Incognito Window", "app-window", none),
+        ("close-tab", "Close Tab", "notebook-tabs", none),
+        ("reopen-closed-tab", "Reopen Closed Tab", "notebook-tabs", none),
+        ("next-tab", "Next Tab", "notebook-tabs", none),
+        ("previous-tab", "Previous Tab", "notebook-tabs", none),
+        ("reload-tab", "Reload Tab", "refresh-cw", none),
+        ("hard-reload-tab", "Hard Reload", "refresh-cw", none),
+        ("go-back", "Back", "arrow-left", none),
+        ("go-forward", "Forward", "arrow-right", none),
+        ("focus-address-bar", "Focus Address Bar", "search", address_bar),
+        ("open-downloads", "Open Downloads", "download", downloads),
+        ("open-history", "Open History", "history", history),
+        ("open-bookmarks-manager", "Open Bookmarks Manager", "bookmark", bookmarks_manager),
+        ("bookmark-page", "Bookmark Page", "bookmark", none),
+        ("find-in-page", "Find in Page", "search", find),
+        ("print-page", "Print Page", "printer", none),
+        ("save-page", "Save Page", "save", save),
+        ("toggle-fullscreen", "Toggle Fullscreen", "maximize", none),
+        ("stop-loading", "Stop Loading", "circle-stop", none),
     ];
-    for (id, label, icon, shortcut) in basics {
-        plugin = plugin.action(basic_button(id, label, icon, shortcut));
+    for (id, label, icon, fallback) in basics {
+        plugin = plugin.action(basic_button(id, label, icon, fallback));
     }
 
     plugin
@@ -324,27 +245,25 @@ fn main() {
                     if keys.is_empty() {
                         return Err(Error::msg("Keys are required"));
                     }
-                    send_browser_keys(&browser_value(&ctx.inputs), &keys)
+                    call(&ctx.inputs, "custom-keybind", json!({"keys": keys})).map(|_| ())
                 }),
         )
-        .action(Action::button("stop-loading", "Stop Loading").icon("circle-stop").inputs(vec![browser_input()]).on_press(|ctx| {
-            // Fire-and-forget like the JS plugin: a failed Esc is logged, not surfaced.
-            let key = browser_key(&ctx.inputs)?;
-            if let Err(e) = browser_action(key, "stop-loading", "esc") {
-                ctx.log(format!("stop-loading: {e}"));
-            }
-            Ok(())
-        }))
         .action(
             Action::button("open-url", "Open URL")
                 .icon("link")
                 .inputs(vec![browser_input(), input::text("url", "URL").placeholder("https://example.com")])
-                .on_press(|ctx| open_in_browser(&browser_value(&ctx.inputs), &ctx.input_str("url"))),
+                .on_press(|ctx| {
+                    let url = ctx.input_str("url").trim().to_string();
+                    if url.is_empty() {
+                        return Err(Error::msg("URL is required"));
+                    }
+                    call(&ctx.inputs, "open-url", json!({"url": url})).map(|_| ())
+                }),
         )
-        .action(hold_repeat("hold-next-tab", "Hold Next Tab", "notebook-tabs", ("Idle", "chevron-right"), ("Cycling", "chevrons-right"), |i| tab_step("next-tab", NEXT_TAB)(i)))
-        .action(hold_repeat("hold-previous-tab", "Hold Previous Tab", "notebook-tabs", ("Idle", "chevron-left"), ("Cycling", "chevrons-left"), |i| tab_step("previous-tab", PREV_TAB)(i)))
-        .action(hold_repeat("hold-zoom-in", "Hold Zoom In", "zoom-in", ("Idle", "zoom-in"), ("Zooming", "zoom-in"), |i| zoom_step(Zoom::In)(i)))
-        .action(hold_repeat("hold-zoom-out", "Hold Zoom Out", "zoom-in", ("Idle", "zoom-out"), ("Zooming", "zoom-out"), |i| zoom_step(Zoom::Out)(i)))
+        .action(hold_repeat("hold-next-tab", "Hold Next Tab", "notebook-tabs", ("Idle", "chevron-right"), ("Cycling", "chevrons-right"), |i| call(i, "next-tab", json!({})).map(|_| ())))
+        .action(hold_repeat("hold-previous-tab", "Hold Previous Tab", "notebook-tabs", ("Idle", "chevron-left"), ("Cycling", "chevrons-left"), |i| call(i, "previous-tab", json!({})).map(|_| ())))
+        .action(hold_repeat("hold-zoom-in", "Hold Zoom In", "zoom-in", ("Idle", "zoom-in"), ("Zooming", "zoom-in"), |i| call(i, "zoom-by", json!({"percent": ZOOM_TICK})).map(|_| ())))
+        .action(hold_repeat("hold-zoom-out", "Hold Zoom Out", "zoom-in", ("Idle", "zoom-out"), ("Zooming", "zoom-out"), |i| call(i, "zoom-by", json!({"percent": -ZOOM_TICK})).map(|_| ())))
         .action(
             Action::slider("page-zoom", "Page Zoom", 25.0, 300.0)
                 .icon("zoom-in")
@@ -353,52 +272,40 @@ fn main() {
                 .inputs(vec![browser_input()])
                 .initial(100)
                 .on_adjust(|ctx| {
-                    let browser = browser_key(&ctx.inputs)?;
-                    let current = current_zoom(ctx, browser);
-                    if let Some(v) = ctx.value {
+                    let answer = if let Some(v) = ctx.value {
                         let target = (((v / 5.0).round() as i64) * 5).clamp(25, 300);
-                        if target == 100 {
-                            zoom_sequence(browser, Zoom::Reset, 1)?;
-                        } else if target != current {
-                            let dir = if target > current { Zoom::In } else { Zoom::Out };
-                            zoom_sequence(browser, dir, (((target - current).abs() as f64 / 5.0).round() as usize).max(1))?;
-                        }
-                        set_zoom_state(ctx, browser, target);
-                        return Ok(());
+                        call(&ctx.inputs, "zoom-set", json!({"percent": target}))?
+                    } else {
+                        let Some(delta) = ctx.delta else { return Ok(()) };
+                        let step = ctx.input_str("step").trim().parse::<i64>().ok().filter(|s| *s != 0).map_or(5, |s| s.abs());
+                        call(&ctx.inputs, "zoom-by", json!({"percent": delta as i64 * step}))?
+                    };
+                    if let Some(percent) = zoom_percent(&answer) {
+                        ctx.set_state(percent.clamp(25, 300));
                     }
-                    let Some(delta) = ctx.delta else { return Ok(()) };
-                    let step = ctx.input_str("step").trim().parse::<i64>().ok().filter(|s| *s != 0).map_or(5, |s| s.abs());
-                    let target = (current + delta as i64 * step).clamp(25, 300);
-                    let dir = if target > current { Zoom::In } else { Zoom::Out };
-                    zoom_sequence(browser, dir, (((target - current).abs() as f64 / 5.0).round() as usize).max(1))?;
-                    set_zoom_state(ctx, browser, target);
                     Ok(())
                 }),
         )
-        .action(link_wheel("bookmarks-wheel", "Bookmarks", "bookmark", "bookmark", "bookmark", "No {} bookmarks were found", data::bookmarks))
-        .action(link_wheel("history-wheel", "Recent History", "history", "history", "history", "No recent {} history items were found", data::history))
-        .query("installed_browser", |ctx| {
-            let mut apps: Vec<Value> = ctx
-                .installed_apps()
-                .into_iter()
-                .map(|app| json!(app))
-                .filter(|app| {
-                    let value = app["value"].as_str().unwrap_or("");
-                    std::path::Path::new(value).is_absolute() && detect_key(app).is_some()
-                })
-                .map(|app| {
-                    let value = app["value"].as_str().unwrap_or("").to_string();
-                    let label = app["label"].as_str().map(String::from).unwrap_or_else(|| value.clone());
-                    let family = match detect_key(&app).map(|k| meta(k).family) {
-                        Some(Family::Firefox) => "firefox",
-                        _ => "chromium",
-                    };
-                    let keywords: Vec<&str> = [label.as_str(), value.as_str(), family].into_iter().filter(|s| !s.is_empty()).collect();
-                    json!({"label": label, "value": value, "keywords": keywords})
-                })
-                .collect();
-            apps.sort_by_key(|a| a["label"].as_str().unwrap_or("").to_lowercase());
-            Ok(Value::Array(apps))
+        .action(link_wheel("bookmarks-wheel", "Bookmarks", "bookmark", "bookmarks", "bookmark", "bookmark", "No {} bookmarks were found"))
+        .action(link_wheel("history-wheel", "Recent History", "history", "history", "history", "history", "No recent {} history items were found"))
+        .query("connected_browser", |_ctx| {
+            let browsers = ext::connected();
+            let mut seen: HashMap<String, usize> = HashMap::new();
+            Ok(Value::Array(
+                browsers
+                    .iter()
+                    .map(|b| {
+                        // Two windows of the same browser (profiles) get told apart by a number.
+                        let same = browsers.iter().filter(|o| o.label == b.label).count();
+                        let n = seen.entry(b.label.clone()).or_insert(0);
+                        *n += 1;
+                        let label = if same > 1 { format!("{} ({})", b.label, n) } else { b.label.clone() };
+                        let family = if family_of(&b.key) == Family::Firefox { "firefox" } else { "chromium" };
+                        json!({"label": label, "value": b.id, "keywords": [b.label, b.key, family]})
+                    })
+                    .collect(),
+            ))
         })
         .run()
 }
+
