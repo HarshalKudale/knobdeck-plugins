@@ -1,4 +1,6 @@
-//! VS Code setup: verify the companion is reachable, then save the settings (password in the OS credential store).
+//! VS Code setup: settings for the extension's HTTP action server (older setups), checked when it is
+//! reachable, saved either way (password in the OS credential store). Windows that link through
+//! KnobDeck's companion hub need none of it.
 
 use std::time::Duration;
 
@@ -28,11 +30,9 @@ fn main() {
             Ok(_) => {}
             Err(ureq::Error::Status(401 | 403, _)) => return ctx.fail("The VS Code companion rejected the configured password."),
             Err(ureq::Error::Status(code, _)) => return ctx.fail(format!("The VS Code companion returned HTTP {code}.")),
-            Err(e) => {
-                return ctx.fail(format!(
-                    "Could not reach the VS Code companion at {base}. Install the KnobDeck VS Code companion extension and enable its action server. ({e})"
-                ))
-            }
+            // Current KnobDeck reaches VS Code through its companion hub, which needs none of this:
+            // an unreachable action server is fine. The settings are for older setups.
+            Err(e) => ctx.log(format!("[setup] no action server at {base} ({e}); VS Code windows link through KnobDeck's companion hub")),
         }
 
         // Host and port are settings; the password goes to the OS credential store.

@@ -187,7 +187,7 @@
       "sort": 26
     },
     "vscode": {
-      "version": "1.2.0",
+      "version": "1.3.0",
       "name": "Visual Studio Code",
       "summary": "Editor commands through the KnobDeck VS Code extension.",
       "tags": [
