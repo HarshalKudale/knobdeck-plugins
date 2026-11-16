@@ -9,22 +9,23 @@ Every cross-platform plugin ships as one package per OS (`<id>-windows`, `<id>-m
 
 **Linux** (Debian/Ubuntu and Arch based; KDE Plasma 6 and GNOME 45+, Wayland and X11): an app's
 plugin ships for Linux only when the app has an official Linux build. Streamlabs Desktop and
-Voicemod have none; Zoom's client does, but the local meeting API the plugin uses isn't documented
-for it, so Zoom stays Windows/macOS for now. `linux-desktop` is a shared library crate (not a
+Voicemod have none. Files on Linux works only with Dolphin (experimental; GNOME Files doesn't
+share its selection).
+`linux-desktop` is a shared library crate (not a
 plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries.
 
 | Plugin | Description | OS |
 |--------|-------------|----|
 | [discord](./discord) | Discord voice controls over the desktop client's local RPC (named pipe on Windows, unix socket on macOS and Linux) | Windows, macOS, Linux |
-| [browser-plugin](./browser-plugin) | Chrome / Edge / Brave / Firefox / Zen shortcuts, wheels, bookmarks, history (per-OS install paths, profiles and shortcuts) | Windows, macOS, Linux |
+| [browser-plugin](./browser-plugin) | Chrome / Edge / Brave / Firefox / Zen tabs, windows, zoom, wheels, bookmarks, history through the KnobDeck browser extension | Windows, macOS, Linux |
 | [intellij](./intellij) | JetBrains IDE actions via the KnobDeck IntelliJ companion plugin | Windows, macOS, Linux |
 | [obs](./obs) | OBS Studio control via obs-websocket v5 (own client, reconnecting) | Windows, macOS, Linux |
 | [vscode](./vscode) | VS Code controls via the KnobDeck VS Code companion extension | Windows, macOS, Linux |
 | [vlc](./vlc) | VLC media controls via its HTTP interface | Windows, macOS, Linux |
-| [zoom](./zoom) | Zoom meeting controls via the local API | Windows, macOS |
-| [win-tools](./win-tools) | Window management, per-app volume, clipboard history (`windows` crate) | Windows |
-| [mac-tools](./mac-tools) | Window management (Accessibility API), window switcher, Spaces/system shortcuts, stats, audio devices + mic mute, clipboard history | macOS |
-| [linux-tools](./linux-tools) | Window management (KWin scripting / KnobDeck GNOME extension), workspaces, desktop actions, stats, per-app volume, audio devices, power profiles, Wi-Fi/Bluetooth, clipboard history | Linux (KDE, GNOME) |
+| [zoom](./zoom) | Zoom meeting controls. **Not shipped:** Zoom has no documented local API for its desktop client | — |
+| [win-tools](./win-tools) | Window management, per-app volume, audio devices + mic, system actions (`windows` crate) | Windows |
+| [mac-tools](./mac-tools) | Window management (Accessibility API), window switcher, Spaces/system actions, stats, audio devices + mic mute and level, Menu Command, automation | macOS |
+| [linux-tools](./linux-tools) | Window management (KWin scripting / KnobDeck GNOME extension), workspaces, desktop actions, stats, per-app volume, audio devices, power profiles, Wi-Fi/Bluetooth | Linux (KDE, GNOME) |
 | [ai-stats](./ai-stats) | Claude and Codex plan limits (5 h / weekly gauges) and 30-day token usage, from the CLIs' local logins and transcripts | Windows, macOS, Linux |
 | [elgato-lights](./elgato-lights) | Key Light, Ring Light and Light Strip over their local HTTP API, found by mDNS | Windows, macOS, Linux |
 | [weather](./weather) | Current weather, 7-day and hourly forecast, air quality (Open-Meteo, no key) | Windows, macOS, Linux |
@@ -36,7 +37,7 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [youtube](./youtube) | YouTube Data API: viewers, chat, ads, dashboard, go live / end stream | Windows, macOS, Linux |
 | [home-assistant](./home-assistant) | Home Assistant REST API: toggle entities, scenes and scripts, sensor states, level dial, any service, entities wheel | Windows, macOS, Linux |
 | [hue](./hue) | Philips Hue Bridge local API: power, brightness, color temperature, color, scenes (mDNS discovery, link-button pairing) | Windows, macOS, Linux |
-| [files](./files) | Act on the files selected in File Explorer, Finder or Dolphin: convert, resize, rotate and clean images; merge and split PDFs; zip, unzip, rename, move, copy paths, new file; a wheel that fits the selection | Windows, macOS, Linux |
+| [files](./files) | Act on the files selected in File Explorer, Finder or Dolphin: convert, resize, rotate and clean images; merge and split PDFs; zip, unzip, rename, move, copy paths, new file; a wheel that fits the selection | Windows, macOS, Linux (Dolphin only, experimental) |
 | [game-launcher](./game-launcher) | Launch installed Steam games (every OS) and Epic Games Store games (Windows, macOS) from a key or wheel; launcher pages | Windows, macOS, Linux |
 | [ytmusic](./ytmusic) | YouTube Music Desktop App (YTMDesktop 2.x) Companion Server: playback, likes, volume, repeat, queue, playlists | Windows, macOS, Linux |
 | [slides](./slides) | Slide shows: PowerPoint (COM on Windows, AppleScript on macOS), Keynote (macOS), LibreOffice Impress (Impress Remote protocol, every OS) | Windows, macOS, Linux |

@@ -179,15 +179,13 @@ mod app {
         }
         match take_saved(w) {
             Some(r) => w.set_frame(r),
-            None => Ok(()),
+            None => Err(Error::msg("Nothing to restore: this window wasn't moved by KnobDeck")),
         }
     }
 
     fn toggle_fill(w: &Elem) -> Result<&'static str> {
         if is_filled(w) {
-            let work = work_area(w)?;
-            // Never filled by us: shrink to a centred 70% so the toggle still does something.
-            let back = take_saved(w).unwrap_or(Rect { x: work.x + work.w * 0.15, y: work.y + work.h * 0.15, w: work.w * 0.7, h: work.h * 0.7 });
+            let back = take_saved(w).ok_or_else(|| Error::msg("No earlier size to go back to: this window wasn't filled by KnobDeck"))?;
             w.set_frame(back)?;
             Ok("normal")
         } else {
@@ -408,6 +406,14 @@ mod app {
             })
     }
 
+    /// Actions kept in the code but offered on no OS (CLAUDE.md rule 1): keybind-based, or not
+    /// reliable for every app. An empty `platforms` means "every OS", so this names none.
+    const DISABLED: &[&str] = &["none"];
+
+    fn off(a: Action) -> Action {
+        a.platforms(DISABLED)
+    }
+
     /// A button that presses a shortcut through the host. Last resort only:
     /// use it when no OS call does the job (see CLAUDE.md).
     fn keys_button(id: &str, label: &str, icon: &str, keys: &'static str) -> Action {
@@ -465,18 +471,15 @@ mod app {
     }
 
     static CLIPBOARD_IDS: Mutex<Option<HashMap<String, u64>>> = Mutex::new(None);
+    static FORCE_QUIT_PIDS: Mutex<Option<HashMap<String, i32>>> = Mutex::new(None);
 
     pub fn run() -> ! {
         let mut p = Plugin::new("mac-tools", "Mac Tools")
             .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
-            .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system shortcuts, live stats, audio devices, mic mute, clipboard history, app menu commands, and Shortcuts, AppleScript and Keyboard Maestro actions.")
+            .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system actions, live stats, audio devices, mic mute and level, app menu commands, and Shortcuts, AppleScript and Keyboard Maestro actions.")
             .icon("app-window")
             .platforms(&["macos"])
-            .on_ready(|_| {
-                clipboard::start();
-                Ok(())
-            })
             // ── Queries ──
             .query("get-monitors", |ctx| {
                 ctx.log("query get-monitors");
@@ -510,7 +513,7 @@ mod app {
             .action(window_toggle("toggle-max-restore", "Fill / Restore", "maximize-2", [("normal", "Windowed", "minimize-2"), ("maximized", "Filled", "maximize-2")], is_filled, toggle_fill))
             .action(window_toggle("toggle-fullscreen", "Full Screen", "fullscreen", [("windowed", "Windowed", "minimize-2"), ("fullscreen", "Full Screen", "maximize")], Elem::is_fullscreen, toggle_fullscreen))
             // ── Switch Window ──
-            .action(
+            .action(off(
                 Action::wheel("switch-window-wheel", "Switch to Window")
                     .icon("layout-grid")
                     .on_open(|ctx| switch_slices().or_else(|e| ctx.fail(e.message().to_string())))
@@ -524,8 +527,8 @@ mod app {
                             }
                         }
                     }),
-            )
-            .action(focus_app_action())
+            ))
+            .action(off(focus_app_action()))
             .query("get-focus-apps", |_| focus_app_options())
             // ── Position ──
             .action(window_button("move-next-monitor", "Move to Next Display", "monitor-up", move_to_next_display))
@@ -576,14 +579,45 @@ mod app {
             .action(Action::button("mission-control", "Mission Control").icon("layout-grid").on_press(|_| system::dock(Dock::MissionControl)))
             .action(Action::button("app-windows", "App Exposé").icon("app-window").on_press(|_| system::dock(Dock::AppExpose)))
             .action(Action::button("show-desktop", "Show Desktop").icon("monitor").on_press(|_| system::dock(Dock::ShowDesktop)))
-            .action(Action::button("spotlight", "Spotlight").icon("search").on_press(|_| system::system_hotkey(Hotkey::Spotlight)))
+            .action(off(Action::button("spotlight", "Spotlight").icon("search").on_press(|_| system::system_hotkey(Hotkey::Spotlight))))
             .action(open_button("screen-snip", "Screenshot", "scissors", "com.apple.screenshot.launcher"))
             .action(Action::button("emoji-panel", "Emoji & Symbols").icon("smile").on_press(|_| system::character_viewer()))
             .action(Action::button("hide-others", "Hide Others").icon("eye-off").on_press(|_| system::hide_others()))
             // Presses the item through Accessibility like a click, not its shortcut.
             .action(Action::button("menu-command", "Menu Command").icon("menu").inputs(menu_command_inputs()).on_press(|ctx| press_menu_command(&ctx.inputs)))
             // No API opens the Force Quit window; ⌥⌘Esc is reserved by loginwindow, so no app can capture it.
-            .action(keys_button("force-quit", "Force Quit…", "circle-x", "cmd alt esc"))
+            .action(off(keys_button("force-quit", "Force Quit…", "circle-x", "cmd alt esc")))
+            // Force-quits the picked app through NSRunningApplication, the call the Force Quit window makes.
+            .action(
+                Action::wheel("force-quit-wheel", "Force Quit App")
+                    .icon("circle-x")
+                    .on_open(|ctx| {
+                        let apps = menus::running_apps();
+                        if apps.is_empty() {
+                            return ctx.fail("No apps are running");
+                        }
+                        let mut map = FORCE_QUIT_PIDS.lock().unwrap();
+                        let map = map.get_or_insert_with(HashMap::new);
+                        map.clear();
+                        Ok(apps
+                            .into_iter()
+                            .take(16)
+                            .enumerate()
+                            .map(|(i, a)| {
+                                let child = format!("q{i}");
+                                map.insert(child.clone(), a.pid);
+                                json!({"id": child, "label": a.name, "icon": "circle-x"})
+                            })
+                            .collect())
+                    })
+                    .on_child_press(|ctx| {
+                        let pid = FORCE_QUIT_PIDS.lock().unwrap().as_ref().and_then(|m| m.get(ctx.child_id.as_deref().unwrap_or("")).copied());
+                        match pid {
+                            Some(pid) => menus::force_quit(pid),
+                            None => ctx.fail("That app is no longer running"),
+                        }
+                    }),
+            )
             .action(Action::button("lock-screen", "Lock Screen").icon("lock").on_press(|_| system::lock_screen()))
             .action(Action::button("text-snippet", "Text Snippet").icon("text-cursor-input").inputs(snippet_inputs()).on_press(|ctx| {
                 // Placeholders ({selection}, {clipboard}, {date}…) are read before anything is
@@ -680,11 +714,31 @@ mod app {
                         Ok(())
                     }),
             )
+            // The default microphone's input level (System Settings ▸ Sound ▸ Input).
+            .action(
+                Action::slider("mic-level", "Microphone Level", 0.0, 100.0)
+                    .icon("mic")
+                    .unit("%")
+                    .volatile()
+                    .inputs(vec![input::text("step", "Step (%)").placeholder("5").default_value("5")])
+                    .initial_with(|_| audio::mic_level().map(|v| v.to_string()))
+                    .on_adjust(|ctx| {
+                        let target = match ctx.value {
+                            Some(v) => v,
+                            None => {
+                                let step = parse_int(&str_input(&ctx.inputs, "step")).unwrap_or(5) as f64;
+                                audio::mic_level().unwrap_or(0) as f64 + step * ctx.delta.unwrap_or(0.0)
+                            }
+                        };
+                        ctx.fan_out(audio::set_mic_level(target)?);
+                        Ok(())
+                    }),
+            )
             .action(device_wheel("output-device-wheel", "Output Device", "speaker", false))
             .action(device_wheel("input-device-wheel", "Input Device", "mic", true));
 
         // ── Clipboard History ──
-        p.action(
+        p.action(off(
             Action::wheel("clipboard-history-wheel", "Clipboard History")
                 .icon("clipboard-list")
                 .on_open(|ctx| {
@@ -716,7 +770,7 @@ mod app {
                     // Paste into whatever has focus (the dial never takes it), through its Edit ▸ Paste.
                     system::paste()
                 }),
-        )
+        ))
         .run()
     }
 

@@ -1,5 +1,9 @@
 # Files
 
+> **Linux: experimental.** On Linux this only works with Dolphin (KDE), which shares its
+> selection through the accessibility interface (AT-SPI). Other file managers (GNOME Files, Nemo…)
+> don't, and the plugin says so.
+
 Act on the files you've selected in File Explorer (or on the desktop), Finder or Dolphin. Select
 the files, then press a key or open the Files wheel.
 
@@ -34,13 +38,12 @@ allow it, or later in System Settings ▸ Privacy & Security ▸ Automation.
 ## How it works
 
 The selection comes from the KnobDeck SDK (`os-files`): the Shell's own COM objects for File
-Explorer (the active tab) and the desktop, Finder's Apple Events, and Dolphin's accessibility
-tree on Linux. Images, PDFs and zip files are processed in
+Explorer (the active tab) and the desktop, Finder's Apple Events, and on Linux Dolphin's
+accessibility tree (AT-SPI: the front tab's folder and selected items; accessibility is switched
+on for the session when it is off, as a screen reader does). Images, PDFs and zip files are processed in
 Rust inside the plugin (`image`, `lopdf`, `zip`); HEIC is read with macOS's `sips`. No keyboard
 shortcuts are used.
 
-On Linux the plugin reads Dolphin's selection through the desktop's accessibility service (it
-switches it on the first time, as a screen reader does). Other file managers (Files, Nemo) don't
-share their selection; the plugin then says so. KnobDeck can't hide a trigger key from the app on
-Linux, so open the dial with a chord Dolphin doesn't use: Ctrl+Alt+Space toggles Dolphin's
-selection before the plugin reads it.
+On Linux, only Dolphin shares its selection. Other file managers (GNOME Files, Nemo) don't; the plugin then says so.
+KnobDeck can't hide a trigger key from the app on Linux, so open the dial with a chord Dolphin
+doesn't use: Ctrl+Alt+Space toggles Dolphin's selection before the plugin reads it.

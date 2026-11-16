@@ -1,12 +1,11 @@
-//! CoreAudio: list / switch the default output and input device, and mute the
-//! microphone. (Per-app volume, which Win Tools offers, needs an audio driver
+//! CoreAudio: list / switch the default output and input device, mute the
+//! microphone and set its input level. (Per-app volume, which Win Tools offers, needs an audio driver
 //! on macOS, so it is not part of Mac Tools.)
 
 use knobdeck_sdk::{Error, Result};
 use core_foundation::base::TCFType;
 use core_foundation::string::{CFString, CFStringRef};
 use std::ffi::c_void;
-use std::sync::Mutex;
 
 const fn fourcc(s: &[u8; 4]) -> u32 {
     ((s[0] as u32) << 24) | ((s[1] as u32) << 16) | ((s[2] as u32) << 8) | s[3] as u32
@@ -131,10 +130,9 @@ pub fn set_default(input: bool, id: u32) -> Result {
     Ok(())
 }
 
-// ── Microphone mute ──
-
-/// Input volume before a volume-based mute, per device (for mics without a mute control).
-static SAVED_VOLUME: Mutex<Vec<(u32, f32)>> = Mutex::new(Vec::new());
+// ── Microphone mute and input level ──
+// Only the device's own controls are used: a mic without a mute control (many USB mics) can't be
+// muted here, rather than being faked by setting its level to 0.
 
 /// Elements that carry the control: the main element, else channels 1 and 2.
 fn control_elements(id: u32, selector: u32) -> Vec<u32> {
@@ -148,45 +146,46 @@ fn mic() -> Result<u32> {
     default_device(true).ok_or_else(|| Error::msg("No microphone is selected"))
 }
 
-/// Whether the default microphone is muted (mute control on, or volume at 0).
+/// Whether the default microphone's mute control is on (`None`: no mic, or it has no mute control).
 pub fn mic_muted() -> Option<bool> {
     let id = default_device(true)?;
-    if let Some(&el) = control_elements(id, MUTE).first() {
-        return get::<u32>(id, &addr(MUTE, SCOPE_INPUT, el)).map(|m| m != 0);
-    }
-    let el = *control_elements(id, VOLUME).first()?;
-    get::<f32>(id, &addr(VOLUME, SCOPE_INPUT, el)).map(|v| v <= 0.0001)
+    let el = *control_elements(id, MUTE).first()?;
+    get::<u32>(id, &addr(MUTE, SCOPE_INPUT, el)).map(|m| m != 0)
 }
 
-/// Flip the default microphone's mute; returns the new muted state.
+/// Flip the default microphone's mute control; returns the new muted state.
 pub fn toggle_mic_mute() -> Result<bool> {
     let id = mic()?;
-    let target = !mic_muted().unwrap_or(false);
     let mutes = control_elements(id, MUTE);
-    if !mutes.is_empty() {
-        for el in mutes {
-            set(id, &addr(MUTE, SCOPE_INPUT, el), target as u32)?;
-        }
-        return Ok(target);
+    if mutes.is_empty() {
+        return Err(Error::msg("This microphone has no mute control macOS can switch"));
     }
-    // No mute control (many USB mics): mute by volume, restoring it afterwards.
-    let vols = control_elements(id, VOLUME);
-    if vols.is_empty() {
-        return Err(Error::msg("This microphone can't be muted from software"));
-    }
-    let mut saved = SAVED_VOLUME.lock().unwrap();
-    let level = if target {
-        let cur = get::<f32>(id, &addr(VOLUME, SCOPE_INPUT, vols[0])).unwrap_or(1.0);
-        saved.retain(|(d, _)| *d != id);
-        saved.push((id, cur.max(0.05)));
-        0.0
-    } else {
-        saved.iter().find(|(d, _)| *d == id).map_or(0.75, |(_, v)| *v)
-    };
-    for el in vols {
-        set(id, &addr(VOLUME, SCOPE_INPUT, el), level)?;
+    let target = !mic_muted().unwrap_or(false);
+    for el in mutes {
+        set(id, &addr(MUTE, SCOPE_INPUT, el), target as u32)?;
     }
     Ok(target)
+}
+
+/// The default microphone's input level in percent (`None`: no mic, or no level control).
+pub fn mic_level() -> Option<i64> {
+    let id = default_device(true)?;
+    let el = *control_elements(id, VOLUME).first()?;
+    get::<f32>(id, &addr(VOLUME, SCOPE_INPUT, el)).map(|v| (v as f64 * 100.0).round() as i64)
+}
+
+/// Set the default microphone's input level (0–100); returns the level set.
+pub fn set_mic_level(percent: f64) -> Result<i64> {
+    let id = mic()?;
+    let els = control_elements(id, VOLUME);
+    if els.is_empty() {
+        return Err(Error::msg("This microphone's input level can't be changed from macOS"));
+    }
+    let p = percent.round().clamp(0.0, 100.0);
+    for el in els {
+        set(id, &addr(VOLUME, SCOPE_INPUT, el), (p / 100.0) as f32)?;
+    }
+    Ok(p as i64)
 }
 
 #[cfg(test)]
