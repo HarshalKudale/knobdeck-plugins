@@ -1,4 +1,4 @@
-//! The link to the KnobDeck browser extension (knobdeck-companion/browser).
+//! The link to the KnobDeck browser extension (Knobdeck/knobdeck-browser-companion).
 //!
 //! The plugin listens on `127.0.0.1` for WebSocket connections from the extension (a browser
 //! extension can dial out but not listen). Each connected browser says who it is (`hello`),

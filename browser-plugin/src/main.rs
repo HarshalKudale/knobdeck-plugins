@@ -1,5 +1,5 @@
 //! Shared Chrome / Edge / Brave / Firefox / Zen browser controls for KnobDeck. The actions run
-//! through the KnobDeck browser extension (knobdeck-companion/browser) that each browser connects
+//! through the KnobDeck browser extension (Knobdeck/knobdeck-browser-companion) that each browser connects
 //! to this plugin: tabs, windows, zoom, bookmarks and history are the browser's own APIs, not
 //! shortcuts sent to whichever window has focus.
 

@@ -2,7 +2,8 @@
 
 Shared browser controls for KnobDeck across Chrome, Edge, Brave, Firefox and Zen, on Windows, macOS
 and Linux. The actions run through the **KnobDeck Browser Companion**, a small extension you install
-in each browser ([knobdeck-companion/browser](https://github.com/Knobdeck/knobdeck-companion/tree/master/browser)).
+in each browser: Chrome Web Store for Chrome, Edge, Brave and other Chromium browsers;
+addons.mozilla.org for Firefox and Zen (source and builds: [knobdeck-browser-companion](https://github.com/Knobdeck/knobdeck-browser-companion)).
 The extension connects to this plugin on `127.0.0.1:32147` (`BROWSER_PORT` in the plugin's `.env`
 changes it), so the **Browser** choice lists the browsers that are connected right now, and an
 action reaches the browser's own tabs, windows and zoom without focusing it or sending shortcuts.
