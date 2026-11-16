@@ -1,8 +1,14 @@
-//! VS Code plugin for KnobDeck — drives VS Code through the KnobDeck VS Code
-//! companion extension's local action server.
+//! VS Code plugin for KnobDeck — drives VS Code through the KnobDeck VS Code companion extension.
+//!
+//! Two routes, the first that works:
+//! 1. KnobDeck's companion hub: every VS Code window links to KnobDeck and says when it gains
+//!    focus; actions go to the window focused last. No port, no password.
+//! 2. The extension's HTTP action server, for an extension older than 1.1 (or one with the hub
+//!    link off), on `VSCODE_PORT` with an optional password.
 
 use knobdeck_sdk::input::{self, InputExt};
-use knobdeck_sdk::{env_or, json, load_env, Action, Error, Plugin, Result, Value};
+use knobdeck_sdk::{companion, env_or, json, load_env, Action, Error, Plugin, Result, Value};
+use std::sync::Mutex;
 use std::time::Duration;
 
 const NAME: &str = "VS Code companion";
@@ -56,17 +62,75 @@ fn get(path: &str, inputs: &Value, params: &[(&str, &str)]) -> Result<ureq::Resp
             let detail = r.into_json::<Value>().ok().and_then(|b| b["error"].as_str().map(|e| format!(" {e}"))).unwrap_or_default();
             Err(Error::msg(format!("{NAME} returned HTTP {code}.{detail}")))
         }
-        Err(e) => Err(Error::msg(format!("{NAME} is not reachable on port {port}. ({e})"))),
+        Err(e) => Err(Error::msg(format!(
+            "No VS Code window is linked to KnobDeck. Install or update the KnobDeck VS Code companion extension (or start its action server on port {port}). ({e})"
+        ))),
     }
 }
 
+// ── The companion hub ──────────────────────────────────────────────────────────
+
+/// Linked VS Code windows (link ids, oldest first) and the one that had focus last.
+static LINKS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+static FOCUSED: Mutex<Option<String>> = Mutex::new(None);
+
+/// How long a hub request may take; the extension answers `pending` after 4.5 s.
+const HUB_TIMEOUT_MS: u64 = 8000;
+
+/// The window to drive: the one focused last, else the newest link.
+fn target_link() -> Option<String> {
+    let links = LINKS.lock().unwrap();
+    let focused = FOCUSED.lock().unwrap().clone().filter(|f| links.contains(f));
+    focused.or_else(|| links.last().cloned())
+}
+
+/// Keep LINKS / FOCUSED in step with the hub's events.
+fn on_companion(update: companion::Update) {
+    let mut links = LINKS.lock().unwrap();
+    match update {
+        companion::Update::Connected(l) => {
+            links.retain(|x| x != &l.link);
+            links.push(l.link);
+        }
+        companion::Update::Disconnected(g) => {
+            links.retain(|x| x != &g.link);
+            let mut focused = FOCUSED.lock().unwrap();
+            if focused.as_deref() == Some(&g.link) {
+                *focused = None;
+            }
+        }
+        companion::Update::Event(e) if e.event == "window_focused" => *FOCUSED.lock().unwrap() = Some(e.link),
+        companion::Update::Event(_) => {}
+    }
+}
+
+/// Run `action` in the target window through the hub. `None` when no window is linked (then the
+/// HTTP route is tried).
+fn hub_call(action: &str, params: Value) -> Option<Result<Value>> {
+    let link = target_link()?;
+    Some(match companion::request_with_timeout(Some(&link), action, params, Some(HUB_TIMEOUT_MS)) {
+        Ok(answer) => companion::check(answer).map_err(|e| Error::msg(format!("VS Code: {}", e.message()))),
+        Err(e) => Err(Error::msg(format!("VS Code didn't answer: {}", e.message()))),
+    })
+}
+
+fn params_object(params: &[(&str, &str)]) -> Value {
+    Value::Object(params.iter().filter(|(_, v)| !v.is_empty()).map(|(k, v)| (k.to_string(), json!(v))).collect())
+}
+
 fn execute_command(command_id: &str, inputs: &Value, params: &[(&str, &str)]) -> Result {
+    if let Some(r) = hub_call(command_id, params_object(params)) {
+        return r.map(|_| ());
+    }
     get(&format!("/api/action/{}", enc(command_id)), inputs, params).map(|_| ())
 }
 
-/// `[{ value, label }]` from the companion's `/api/query/<name>`.
+/// `[{ value, label }]` from the companion's `query` (hub) or `/api/query/<name>` (HTTP).
 fn fetch_options(name: &str, inputs: &Value) -> Result<Vec<Value>> {
-    let data: Value = get(&format!("/api/query/{name}"), inputs, &[])?.into_json().unwrap_or(json!({}));
+    let data: Value = match hub_call("query", json!({ "name": name })) {
+        Some(r) => r?,
+        None => get(&format!("/api/query/{name}"), inputs, &[])?.into_json().unwrap_or(json!({})),
+    };
     Ok(data["items"]
         .as_array()
         .map(|items| items.iter().map(|i| json!({"value": i["value"], "label": i["label"]})).collect())
@@ -166,5 +230,54 @@ fn main() {
         .query("vscode-get-launch-configs", |ctx| Ok(Value::Array(fetch_options("launch-configs", &ctx.inputs)?)))
         .query("vscode-get-terminals", |ctx| Ok(Value::Array(fetch_options("terminals", &ctx.inputs)?)))
         .query("vscode-get-open-editors", |ctx| Ok(Value::Array(fetch_options("open-editors", &ctx.inputs)?)))
+        // Windows link through KnobDeck's companion hub; this keeps track of them.
+        .companions()
+        .on_event(|ev, _| {
+            if let Some(update) = companion::parse(ev) {
+                on_companion(update);
+            }
+            Ok(())
+        })
+        .on_ready(|rt| {
+            // Windows that linked before this process started (a plugin restart): ask the hub.
+            if rt.has_feature(knobdeck_sdk::protocol::features::COMPANION_HUB) {
+                if let Ok(links) = companion::links() {
+                    *LINKS.lock().unwrap() = links.into_iter().map(|l| l.link).collect();
+                }
+            }
+            Ok(())
+        })
         .run()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn link(id: &str) -> companion::Link {
+        companion::Link { link: id.into(), instance: id.into(), app: "vscode".into(), app_version: None, name: None, version: None, features: vec![] }
+    }
+
+    #[test]
+    fn the_last_focused_window_is_driven_and_closed_ones_are_forgotten() {
+        LINKS.lock().unwrap().clear();
+        *FOCUSED.lock().unwrap() = None;
+        assert_eq!(target_link(), None, "no window: the HTTP route");
+        on_companion(companion::Update::Connected(link("a")));
+        on_companion(companion::Update::Connected(link("b")));
+        assert_eq!(target_link().as_deref(), Some("b"), "nothing focused yet: the newest window");
+        on_companion(companion::Update::Event(companion::LinkEvent { link: "a".into(), event: "window_focused".into(), payload: json!({}) }));
+        assert_eq!(target_link().as_deref(), Some("a"));
+        on_companion(companion::Update::Connected(link("c")));
+        assert_eq!(target_link().as_deref(), Some("a"), "a new window doesn't steal focus");
+        on_companion(companion::Update::Disconnected(companion::LinkGone { link: "a".into() }));
+        assert_eq!(target_link().as_deref(), Some("c"), "the focused window closed: the newest one");
+        on_companion(companion::Update::Event(companion::LinkEvent { link: "b".into(), event: "something_else".into(), payload: json!({}) }));
+        assert_eq!(target_link().as_deref(), Some("c"));
+    }
+
+    #[test]
+    fn params_drop_empty_values() {
+        assert_eq!(params_object(&[("name", "build"), ("uri", "")]), json!({"name": "build"}));
+    }
 }
