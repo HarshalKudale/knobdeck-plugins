@@ -133,6 +133,21 @@ mod app {
         wm::move_to(Some(&w.id), Rect { x, y, w: width, h: height })
     }
 
+    /// KnobDeck's own config window, for the custom-position "Get current" buttons: the user
+    /// places the config window where they want, then captures its frame. `wm::active` can't be
+    /// used, it skips KnobDeck on purpose. The focused window when it is KnobDeck's (the button
+    /// was just clicked there), else KnobDeck's frontmost unminimized window.
+    fn knobdeck_window() -> Result<Window> {
+        let missing = || Error::msg("KnobDeck's window isn't open");
+        let host = knobdeck_sdk::host_process_id().ok_or_else(missing)?;
+        if let Ok(v) = wm::call("active", json!({})) {
+            if v["pid"].as_u64() == Some(host as u64) {
+                return wm::info(v["id"].as_str());
+            }
+        }
+        wm::list()?.into_iter().find(|w| w.pid == host && !w.minimized).ok_or_else(missing)
+    }
+
     fn custom_position_inputs() -> Vec<Value> {
         let keep = |key: &str, label: &str| input::text(key, label).placeholder("(keep current)").with("queryLabel", "Get current");
         vec![
@@ -579,16 +594,18 @@ mod app {
                 }
                 Ok(Value::Array(opts))
             })
+            // "Get current" on the custom-position inputs reads KnobDeck's own config window
+            // (placed where the user wants it), not the app behind it.
             .query("get-window-x", |ctx| {
-                let w = wm::active()?;
+                let w = knobdeck_window()?;
                 Ok(json!(((w.frame.x - resolve_output(&w, &ctx.inputs)?.work.x).round() as i64).to_string()))
             })
             .query("get-window-y", |ctx| {
-                let w = wm::active()?;
+                let w = knobdeck_window()?;
                 Ok(json!(((w.frame.y - resolve_output(&w, &ctx.inputs)?.work.y).round() as i64).to_string()))
             })
-            .query("get-window-w", |_| Ok(json!((wm::active()?.frame.w.round() as i64).to_string())))
-            .query("get-window-h", |_| Ok(json!((wm::active()?.frame.h.round() as i64).to_string())))
+            .query("get-window-w", |_| Ok(json!((knobdeck_window()?.frame.w.round() as i64).to_string())))
+            .query("get-window-h", |_| Ok(json!((knobdeck_window()?.frame.h.round() as i64).to_string())))
             .query("get-open-apps", |_| {
                 let mut seen: Vec<(String, String)> = vec![];
                 for w in wm::list()? {

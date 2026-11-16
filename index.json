@@ -92,7 +92,7 @@
       "sort": 70
     },
     "linux-tools": {
-      "version": "1.4.1",
+      "version": "1.4.2",
       "name": "Linux Tools",
       "summary": "Windows, workspaces, per-app volume, audio devices on GNOME and KDE.",
       "tags": [
@@ -208,7 +208,7 @@
       "sort": 85
     },
     "win-tools": {
-      "version": "1.8.1",
+      "version": "1.8.2",
       "name": "Windows Tools",
       "summary": "Window management, audio devices, per-app volume, mic, system actions.",
       "tags": [

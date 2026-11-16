@@ -48,6 +48,7 @@ const WS_MAXIMIZEBOX: u32 = 0x0001_0000;
 const WS_EX_TOPMOST: u32 = 0x0000_0008;
 const WS_EX_LAYERED: u32 = 0x0008_0000;
 const WS_EX_TRANSPARENT: u32 = 0x0000_0020;
+const WS_EX_TOOLWINDOW: u32 = 0x0000_0080;
 
 fn h(hwnd: Hwnd) -> HWND {
     HWND(hwnd as *mut c_void)
@@ -63,6 +64,34 @@ fn win_err(what: &str, e: windows::core::Error) -> Error {
 /// on the dial still reaches the app under it.
 pub fn target_window() -> Result<Hwnd> {
     window::target().map(|w| w.id.hwnd()).ok_or_else(|| Error::msg("No window to act on"))
+}
+
+/// KnobDeck's own config window. The custom-position "Get current" buttons read this one: the
+/// user places the config window where they want, then captures its frame. `target_window`
+/// can't be used, it skips KnobDeck on purpose. The foreground window when it is KnobDeck's
+/// (the button was just clicked there), else KnobDeck's first visible top-level app window.
+pub fn knobdeck_window() -> Result<Hwnd> {
+    let missing = || Error::msg("KnobDeck's window isn't open");
+    let host = knobdeck_sdk::host_process_id().ok_or_else(missing)?;
+    if let Some(w) = window::foreground().filter(|w| w.pid == host) {
+        return Ok(w.id.hwnd());
+    }
+    let mut found: (u32, Option<Hwnd>) = (host, None);
+    let _ = unsafe { EnumWindows(Some(knobdeck_window_cb), LPARAM(&mut found as *mut _ as isize)) };
+    found.1.ok_or_else(missing)
+}
+
+unsafe extern "system" fn knobdeck_window_cb(hwnd: HWND, data: LPARAM) -> BOOL {
+    let found = &mut *(data.0 as *mut (u32, Option<Hwnd>));
+    let raw = hwnd.0 as Hwnd;
+    let app_window = IsWindowVisible(hwnd).as_bool()
+        && GetWindow(hwnd, GW_OWNER).map_or(true, |o| o.is_invalid())
+        && ex_style(raw) & WS_EX_TOOLWINDOW == 0;
+    if app_window && window_process_id(raw) == found.0 {
+        found.1 = Some(raw);
+        return BOOL(0);
+    }
+    TRUE
 }
 
 fn target(hwnd: Option<Hwnd>) -> Result<Hwnd> {

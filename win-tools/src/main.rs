@@ -321,17 +321,17 @@ mod app {
             // Current window position/size, to auto-fill the custom-position fields. X/Y are relative to
             // the selected monitor's work-area top-left so the value can be pasted straight back in.
             .query("get-window-x", |ctx| {
-                let hwnd = win32::target_window()?;
+                let hwnd = win32::knobdeck_window()?;
                 let mon = win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?;
                 Ok(json!((win32::window_rect(hwnd)?.x - mon.work.x).to_string()))
             })
             .query("get-window-y", |ctx| {
-                let hwnd = win32::target_window()?;
+                let hwnd = win32::knobdeck_window()?;
                 let mon = win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?;
                 Ok(json!((win32::window_rect(hwnd)?.y - mon.work.y).to_string()))
             })
-            .query("get-window-w", |_| Ok(json!(win32::window_rect(win32::target_window()?)?.width.to_string())))
-            .query("get-window-h", |_| Ok(json!(win32::window_rect(win32::target_window()?)?.height.to_string())))
+            .query("get-window-w", |_| Ok(json!(win32::window_rect(win32::knobdeck_window()?)?.width.to_string())))
+            .query("get-window-h", |_| Ok(json!(win32::window_rect(win32::knobdeck_window()?)?.height.to_string())))
             // ── Current Window ──
             .action(window_button("minimize", "Minimize", "minus", win32::minimize))
             .action(window_button("maximize", "Maximize", "square", win32::maximize))
