@@ -1,6 +1,6 @@
 //! Files plugin for KnobDeck: act on the files selected in File Explorer, Finder or Dolphin.
 //! Images (convert, resize, rotate, remove metadata), PDFs (merge, split, images to PDF), zip and
-//! unzip, copy paths, rename, move or copy to a folder, new file, terminal here, and a Files wheel
+//! unzip, copy paths, rename, move or copy to a folder, new file, and a Files wheel
 //! that shows only what fits the selection. All work happens in this process, in Rust; outputs go
 //! next to the inputs and never overwrite a file.
 
@@ -187,9 +187,6 @@ fn new_item(ctx: &Ctx) -> Result {
         std::fs::create_dir(&target).map_err(paths::io)?;
     } else {
         std::fs::OpenOptions::new().write(true).create_new(true).open(&target).map_err(paths::io)?;
-        if ctx.input_bool("open") {
-            knobdeck_sdk::open_url(&target.to_string_lossy())?;
-        }
     }
     Ok(())
 }
@@ -237,7 +234,6 @@ fn run(op: &str, ctx: &Ctx) -> Result {
         }
         "move-copy" => to_folder(ctx, &files?),
         "new-item" => new_item(ctx),
-        "terminal" => sys::terminal(&work_folder(ctx)?),
         _ => Err(Error::msg(format!("Unknown file action {op}"))),
     }
 }
@@ -263,7 +259,6 @@ fn wheel_items(files: &[PathBuf]) -> Vec<(&'static str, &'static str, &'static s
     if !files.is_empty() {
         v.extend([("zip", "Zip", "archive"), ("copy-path", "Copy path", "clipboard-copy"), ("copy-names", "Copy name", "clipboard-copy")]);
     }
-    v.push(("terminal", "Terminal here", "terminal"));
     v
 }
 
@@ -309,9 +304,7 @@ fn main() {
         .action(files_action("new-item", "New File in Folder", "file-plus").inputs(vec![
             input::select("kind", "Create", &[("file", "File"), ("folder", "Folder")]).default_value("file"),
             input::text("name", "Name").default_value("New file.txt").accepts_placeholders(),
-            input::checkbox("open", "Open it").default_value(false),
         ]))
-        .action(files_action("terminal", "Terminal Here", "terminal"))
         .action(
             Action::wheel("files-wheel", "Files Wheel")
                 .icon("files")

@@ -13,8 +13,11 @@ use std::path::{Path, PathBuf};
 /// JPEG quality for re-encoded photos.
 const QUALITY: u8 = 90;
 
-/// Extensions read as images.
+/// Extensions read as images. HEIC only on macOS, where the system decodes it.
+#[cfg(target_os = "macos")]
 pub const READS: &[&str] = &["png", "jpg", "jpeg", "webp", "gif", "bmp", "tif", "tiff", "heic", "heif"];
+#[cfg(not(target_os = "macos"))]
+pub const READS: &[&str] = &["png", "jpg", "jpeg", "webp", "gif", "bmp", "tif", "tiff"];
 
 pub fn is_image(p: &Path) -> bool {
     READS.contains(&paths::ext(p).as_str())
@@ -53,7 +56,7 @@ fn open_heic(p: &Path) -> Result<DynamicImage> {
 
 #[cfg(not(target_os = "macos"))]
 fn open_heic(_: &Path) -> Result<DynamicImage> {
-    Err(Error::msg("HEIC images can be read on macOS only"))
+    Err(Error::msg("HEIC images can be read on macOS only")) // not offered: READS leaves them out
 }
 
 /// What an image is saved as.

@@ -10,7 +10,7 @@ the files, then press a key or open the Files wheel.
 ## What it does
 
 - **Convert Images**: to PNG, JPEG or WebP (lossless). Reads PNG, JPEG, WebP, GIF, BMP and TIFF,
-  and HEIC on macOS.
+  and HEIC on macOS (other systems can't decode it, so HEIC files aren't offered there).
 - **Resize Images**: to a longest edge in pixels (never enlarges) or by a percentage.
 - **Rotate Images**: 90° right, 180°, 90° left.
 - **Remove Image Metadata**: a copy without EXIF (camera, location), XMP, IPTC and comments.
@@ -24,8 +24,6 @@ the files, then press a key or open the Files wheel.
   the pattern has `{ext}`.
 - **Move or Copy to Folder**: a folder you choose (`~` is your home folder).
 - **New File in Folder**: a file or folder in the folder you're looking at.
-- **Terminal Here**: Windows Terminal (or Command Prompt), Terminal, Konsole or GNOME Console in
-  that folder.
 - **Files Wheel**: only the actions that fit the selection (image actions for images, Merge for
   two or more PDFs…).
 
@@ -47,3 +45,5 @@ Rust inside the plugin (`image`, `lopdf`, `zip`); HEIC is read with macOS's `sip
 shortcuts are used.
 
 On Linux, only Dolphin shares its selection. Other file managers (GNOME Files, Nemo) don't; the plugin then says so.
+KnobDeck can't hide a trigger key from the app on Linux, so open the dial with a chord Dolphin
+doesn't use: Ctrl+Alt+Space toggles Dolphin's selection before the plugin reads it.
