@@ -9,7 +9,8 @@ Every cross-platform plugin ships as one package per OS (`<id>-windows`, `<id>-m
 
 **Linux** (Debian/Ubuntu and Arch based; KDE Plasma 6 and GNOME 45+, Wayland and X11): an app's
 plugin ships for Linux only when the app has an official Linux build. Streamlabs Desktop and
-Voicemod have none. Files isn't shipped for Linux (GNOME Files doesn't share its selection).
+Voicemod have none. Files on Linux works only with Dolphin (experimental; GNOME Files doesn't
+share its selection).
 `linux-desktop` is a shared library crate (not a
 plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries.
 
@@ -36,7 +37,7 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [youtube](./youtube) | YouTube Data API: viewers, chat, ads, dashboard, go live / end stream | Windows, macOS, Linux |
 | [home-assistant](./home-assistant) | Home Assistant REST API: toggle entities, scenes and scripts, sensor states, level dial, any service, entities wheel | Windows, macOS, Linux |
 | [hue](./hue) | Philips Hue Bridge local API: power, brightness, color temperature, color, scenes (mDNS discovery, link-button pairing) | Windows, macOS, Linux |
-| [files](./files) | Act on the files selected in File Explorer, Finder or Dolphin: convert, resize, rotate and clean images; merge and split PDFs; zip, unzip, rename, move, copy paths; a wheel that fits the selection | Windows, macOS |
+| [files](./files) | Act on the files selected in File Explorer, Finder or Dolphin: convert, resize, rotate and clean images; merge and split PDFs; zip, unzip, rename, move, copy paths; a wheel that fits the selection | Windows, macOS, Linux (Dolphin only, experimental) |
 | [game-launcher](./game-launcher) | Launch installed Steam games (every OS) and Epic Games Store games (Windows, macOS) from a key or wheel; launcher pages | Windows, macOS, Linux |
 | [ytmusic](./ytmusic) | YouTube Music Desktop App (YTMDesktop 2.x) Companion Server: playback, likes, volume, repeat, queue, playlists | Windows, macOS, Linux |
 | [slides](./slides) | Slide shows: PowerPoint (COM on Windows, AppleScript on macOS), Keynote (macOS), LibreOffice Impress (Impress Remote protocol, every OS) | Windows, macOS, Linux |

@@ -38,7 +38,7 @@ fullscreen", restyling another app's window, a history the plugin keeps itself),
 **disabled, never deleted**: its code stays and it is offered on no OS with `.platforms(&["none"])`
 (the `off()` helper in win-tools / mac-tools / linux-tools / browser-plugin). An empty `platforms`
 means "every OS", so it can't disable anything. For a plugin that can't ship at all on an OS, drop
-it from that OS in `scripts/plugins.mjs` (Zoom everywhere, Files on Linux). Desktop-specific gaps on
+it from that OS in `scripts/plugins.mjs` (Zoom everywhere). Desktop-specific gaps on
 Linux (GNOME has no X) can't be expressed in `platforms`: the action fails there with a clear
 error and says "(Plasma)" in its label.
 
@@ -64,7 +64,7 @@ Current decisions (keep this list up to date):
 | browser-plugin | the KnobDeck Browser Companion extension (`knobdeck-companion/browser`, Chrome MV3 + Firefox MV2): the browser connects to the plugin's loopback WebSocket and runs tabs, windows, zoom, bookmarks, history, URLs, print/stop through its own extension APIs, on every OS | none. Disabled: Focus Address Bar, Find in Page, Save Page (no extension API in any browser), Custom Keybind. Open Downloads / History / Bookmarks Manager report "not possible" in Firefox/Zen (extensions can't open `about:` pages) |
 | ai-stats | providers' usage endpoints, local transcripts | none |
 | home-assistant, hue, ytmusic | the service's / device's / app's own API (HA REST, Hue Bridge local API, YTMDesktop Companion Server + its Socket.IO feed) | none |
-| files | the selection from `knobdeck_sdk::os::files` (Explorer Shell COM, Finder Apple Events, Dolphin's PRIMARY); images, PDFs and zips in Rust (`image`, `lopdf`, `zip`; HEIC through macOS `sips`); clipboard through Win32 / NSPasteboard / Klipper / the GNOME extension; terminals launched with the folder as working directory | none |
+| files | the selection from `knobdeck_sdk::os::files` (Explorer Shell COM, Finder Apple Events, Dolphin's AT-SPI tree); images, PDFs and zips in Rust (`image`, `lopdf`, `zip`; HEIC through macOS `sips`); clipboard through Win32 / NSPasteboard / Klipper / the GNOME extension; terminals launched with the folder as working directory | none |
 | game-launcher | the launchers' own files (Steam `libraryfolders.vdf` / `appmanifest_*.acf`, Epic manifests) and URL schemes (`steam://rungameid/…`, `com.epicgames.launcher://apps/…`) | none |
 | slides | Windows PowerPoint COM (`SlideShowWindows(1).View`), macOS PowerPoint and Keynote AppleScript, LibreOffice Impress Remote protocol (TCP 1599) | none; Keynote has no blank-screen command, so Black/White Screen report that instead of sending B/W |
 
@@ -83,7 +83,8 @@ Current decisions (keep this list up to date):
   its vendor, or a distro package of that build), not a third-party client or workaround. Then
   check that the interface the plugin uses exists on Linux too. Not shipped: Streamlabs Desktop
   and Voicemod (no Linux build). Zoom isn't shipped anywhere (no documented local API for the
-  desktop client); Files isn't shipped for Linux (GNOME Files doesn't share its selection).
+  desktop client). Files ships for Linux as experimental: only Dolphin shares its selection
+  (through AT-SPI); GNOME Files doesn't.
 - To ship a plugin, bump `version` in its `Cargo.toml` and in `index.json` (CI fails if they disagree) and merge to master; CI builds only plugins whose `index.json` version differs from the previous release, copies the rest over from it and publishes one release holding every plugin (see `.github/workflows/release.yml`).
 
 - A plugin that runs on both OSes keeps one action set; OS differences live behind one `cfg` seam

@@ -1,5 +1,9 @@
 # Files
 
+> **Linux: experimental.** On Linux this only works with Dolphin (KDE), which shares its
+> selection through the accessibility interface (AT-SPI). Other file managers (GNOME Files, Nemo…)
+> don't, and the plugin says so.
+
 Act on the files you've selected in File Explorer (or on the desktop), Finder or Dolphin. Select
 the files, then press a key or open the Files wheel.
 
@@ -36,9 +40,10 @@ allow it, or later in System Settings ▸ Privacy & Security ▸ Automation.
 ## How it works
 
 The selection comes from the KnobDeck SDK (`os-files`): the Shell's own COM objects for File
-Explorer (the active tab) and the desktop, Finder's Apple Events, and on Linux the PRIMARY
-selection that Dolphin fills with the selected files. Images, PDFs and zip files are processed in
+Explorer (the active tab) and the desktop, Finder's Apple Events, and on Linux Dolphin's
+accessibility tree (AT-SPI: the front tab's folder and selected items; accessibility is switched
+on for the session when it is off, as a screen reader does). Images, PDFs and zip files are processed in
 Rust inside the plugin (`image`, `lopdf`, `zip`); HEIC is read with macOS's `sips`. No keyboard
 shortcuts are used.
 
-On Linux, Dolphin shares its selection. Other file managers (Files, Nemo) may not; the plugin then says so.
+On Linux, only Dolphin shares its selection. Other file managers (GNOME Files, Nemo) don't; the plugin then says so.

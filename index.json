@@ -249,7 +249,7 @@
       "sort": 60
     },
     "files": {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "name": "Files",
       "summary": "Convert and resize images, merge PDFs, zip, rename and copy paths for the files you've selected.",
       "tags": [
