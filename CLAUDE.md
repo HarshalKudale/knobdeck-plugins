@@ -91,7 +91,7 @@ Current decisions (keep this list up to date):
   and Voicemod (no Linux build). Zoom isn't shipped anywhere (no documented local API for the
   desktop client). Files ships for Linux as experimental: only Dolphin shares its selection
   (through AT-SPI); GNOME Files doesn't.
-- To ship a plugin, bump `version` in its `Cargo.toml` and in `index.json` (CI fails if they disagree) and merge to master; CI builds only plugins whose `index.json` version differs from the previous release, copies the rest over from it and publishes one release holding every plugin (see `.github/workflows/release.yml`).
+- To ship a plugin, bump `version` in its `Cargo.toml` (the only place it is written; `index.json` holds display text only and CI fails if it has a `version`) and merge to master. CI builds only plugins whose version differs from the previous snapshot release and publishes a release per plugin, tagged `<dir>-v<version>` (notes: the top section of `<dir>/CHANGELOG.md`, if any), which the catalog in `knobdeck-registry` lists. Until the catalog serves `/plugins/registry.json` it also publishes the date-tagged snapshot release holding every plugin (see `.github/workflows/release.yml`).
 
 - A plugin that runs on both OSes keeps one action set; OS differences live behind one `cfg` seam
   per concern (e.g. `win-tools`-style `win.rs` / `mac.rs` behind `mod os`).
@@ -123,7 +123,8 @@ Current decisions (keep this list up to date):
 ## Rule 4: a change to a plugin bumps its version
 
 - Any code change to a plugin bumps its `version` in `Cargo.toml`.
-- Put the same version in `index.json`. CI builds only plugins whose `index.json` version differs from the previous release's `registry.json` and copies every other plugin's artifact over from that release, so without the bump your change is not published.
+- CI builds only plugins whose `Cargo.toml` version differs from the previous release's `registry.json`, so without the bump your change is not published. A released version is never rebuilt: its `<dir>-v<version>` release stays as it is.
+- Optionally add a `## <version>` section at the top of `<dir>/CHANGELOG.md`; it becomes the release notes.
 - Icons are not release assets: the registry links `<dir>/icons/<icon>` by raw GitHub URL, so changing an icon file needs no version bump.
 
 ## Rule 5: secrets live in the OS credential store
