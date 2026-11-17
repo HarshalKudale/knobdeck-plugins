@@ -1,19 +1,15 @@
 # Bump a plugin's `version` in its Cargo.toml (the only place it is written) and merge to master to
-# ship it. Every push builds the plugins whose version differs from the previous snapshot release
-# (scripts/plan.mjs), each on its own OS, with the org's reusable workflow
-# (Knobdeck/.github/.github/workflows/build-plugin.yml), then publishes:
-#  1. one release per built plugin, tagged <dir>-v<version> (scripts/release-plugins.mjs), never
-#     marked Latest; the catalog in knobdeck-registry reads these;
-#  2. the date-tagged snapshot release (v2026.11.02-2341) holding every plugin, unchanged ones
-#     copied over from the previous one (scripts/registry.mjs). Kept until the catalog serves
-#     /plugins/registry.json (PLUGIN_INFRA_PLAN.md §10), then dropped;
-#  3. a `plugin-released` dispatch to knobdeck-registry so the catalog updates right away (needs
+# ship it. Every push builds the plugins that have no <dir>-v<version> release yet (scripts/plan.mjs),
+# each on its own OS, with the org's reusable workflow
+# (Knobdeck/.github/.github/workflows/build-plugin.yml), then:
+#  1. publishes one release per built plugin, tagged <dir>-v<version> (scripts/release-plugins.mjs),
+#     never marked Latest; the catalog in knobdeck-registry is the only "latest";
+#  2. sends a `plugin-released` dispatch to knobdeck-registry so the catalog updates right away (needs
 #     the KnobDeck Catalog GitHub App: variable CATALOG_APP_ID + secret CATALOG_APP_PRIVATE_KEY;
 #     without them the catalog's nightly run picks the release up).
 # Linux packages build on ubuntu-22.04 (glibc 2.35) so they run on Debian 12+, Ubuntu 22.04+ and Arch.
-# Pull requests only build. Running it by hand (Actions > release > Run workflow) rebuilds every
-# plugin into a new snapshot release (e.g. after changing a build-time variable); per-plugin
-# releases that already exist are not touched.
+# Pull requests only build. Running it by hand retries plugins whose release is missing (a released
+# version is never rebuilt: bump the version to ship a new build, e.g. after changing a build-time variable).
 name: release
 on:
   push:
@@ -32,29 +28,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
-      tag: ${{ steps.plan.outputs.tag }}
-      prev: ${{ steps.plan.outputs.prev }}
     steps:
       - uses: actions/checkout@v4
       - id: plan
         run: |
-          # The previous snapshot release (date tag); per-plugin releases (<dir>-v<version>) are never Latest.
-          prev=$(gh release view --json tagName -q .tagName 2>/dev/null || true)
-          mkdir prev
-          # A release without registry.json (made before this scheme) counts as no previous release.
-          if [ -n "$prev" ]; then gh release download "$prev" -p registry.json -D prev || true; fi
-          if [ ! -f prev/registry.json ]; then prev=""; fi
-          echo "prev=$prev" >> "$GITHUB_OUTPUT"
-          # A manual run plans against no previous registry, so every plugin is built.
-          if [ "${{ github.event_name }}" = workflow_dispatch ]; then reg=none; else reg=prev/registry.json; fi
-          matrix=$(node scripts/plan.mjs $reg)
+          gh release list --limit 1000 --json tagName -q '.[].tagName' > tags.txt
+          matrix=$(node scripts/plan.mjs tags.txt)
           # A pull request that bumps nothing still builds one small plugin on every OS, so changes to
           # the workflows themselves get exercised.
           if [ "${{ github.event_name }}" = pull_request ] && [ "$matrix" = '{"include":[]}' ]; then
             matrix='{"include":[{"os":"windows-latest","name":"windows","plugins":"clocks"},{"os":"macos-latest","name":"macos","plugins":"clocks"},{"os":"ubuntu-22.04","name":"linux","plugins":"clocks"}]}'
           fi
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          echo "tag=v$(date -u +%Y.%m.%d-%H%M)" >> "$GITHUB_OUTPUT"
   build:
     needs: plan
     if: needs.plan.outputs.matrix != '{"include":[]}'
@@ -83,19 +68,6 @@ jobs:
         with: { pattern: "bundles-*", path: out, merge-multiple: true }
       - name: Per-plugin releases
         run: node scripts/release-plugins.mjs "$GITHUB_SHA"
-      - name: Build registry.json (adds the unchanged plugins from the previous release)
-        run: |
-          if [ -n "${{ needs.plan.outputs.prev }}" ]; then
-            mkdir prev
-            gh release download "${{ needs.plan.outputs.prev }}" -p registry.json -D prev
-            node scripts/registry.mjs "${{ needs.plan.outputs.tag }}" "${{ needs.plan.outputs.prev }}" prev/registry.json
-          else
-            node scripts/registry.mjs "${{ needs.plan.outputs.tag }}"
-          fi
-      - name: Snapshot release
-        run: |
-          mv out/released.json released.json
-          gh release create "${{ needs.plan.outputs.tag }}" out/* --target "$GITHUB_SHA" --generate-notes --latest
       - name: Catalog app token
         id: app
         if: vars.CATALOG_APP_ID != ''
@@ -106,10 +78,10 @@ jobs:
           owner: Knobdeck
           repositories: knobdeck-registry
       - name: Tell the catalog
-        if: steps.app.outputs.token != ''
+        if: steps.app.outputs.token != '' && hashFiles('out/released.json') != ''
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
         run: |
-          jq -n --slurpfile r released.json --arg repo "$GITHUB_REPOSITORY" \
+          jq -n --slurpfile r out/released.json --arg repo "$GITHUB_REPOSITORY" \
             '{event_type: "plugin-released", client_payload: {repo: $repo, plugins: $r[0]}}' |
             gh api repos/Knobdeck/knobdeck-registry/dispatches --input -

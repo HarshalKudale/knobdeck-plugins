@@ -1,4 +1,4 @@
-// Shared by plan.mjs, registry.mjs and release-plugins.mjs.
+// Shared by plan.mjs and release-plugins.mjs.
 import { readFileSync } from "node:fs";
 
 /** Plugin folders that ship on each OS. */
@@ -35,5 +35,3 @@ export const readIndex = () => {
   return plugins;
 };
 
-/** The registry entry of `dir` on `os` in a registry.json plugin list (the id is the dir, or dir-os for cross-platform plugins). */
-export const findEntry = (entries, dir, os) => entries.find((e) => e.id === dir || e.id === `${dir}-${os}`);
