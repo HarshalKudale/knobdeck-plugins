@@ -73,6 +73,10 @@ Current decisions (keep this list up to date):
 | coding-agents | Claude Code hooks and Codex `notify` (setup adds them to the agents' own configs); the hook is this plugin's binary in hook mode, writing small files in the data folder; Codex activity from its session logs | none. No focusing a session's terminal and no starting sessions (KnobDeck doesn't focus other apps; terminals differ per machine) |
 | ai-actions | the user's model over its HTTP API (Anthropic Messages, Chat Completions, Ollama); the selection from `knobdeck_sdk::os` | Entering the answer in place of the selection, like Text Snippet (its job is entering text): Windows and Linux paste it (clipboard + Ctrl+V), macOS types it as Unicode key events |
 | web-requests | HTTP(S) to the user's own URLs | none |
+| now-playing | Windows SMTC (every session), Linux MPRIS (every player), macOS Music and Spotify AppleScript (macOS 15.4 closed MediaRemote to other apps) | none |
+| docker | Docker Engine API over the local Unix socket / `docker_engine` named pipe / `DOCKER_HOST` (Podman serves the same API) | none |
+| speedtest | Cloudflare's speed test endpoints; latency is a TCP connect time | none |
+| nanoleaf, govee | the devices' own local APIs (Nanoleaf OpenAPI; Govee LAN UDP API), Govee's cloud API with the user's key | none |
 
 ## Rule 2: every OS stays working
 

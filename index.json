@@ -55,6 +55,15 @@
       "featured": true,
       "sort": 10
     },
+    "docker": {
+      "name": "Docker",
+      "summary": "Start, stop and restart containers and Compose projects; see what is running.",
+      "tags": [
+        "Developer tools",
+        "Automation"
+      ],
+      "sort": 46
+    },
     "elgato-lights": {
       "name": "Elgato Lights",
       "summary": "Key Light, Ring Light and Light Strip: power, brightness, temperature, color.",
@@ -81,6 +90,15 @@
         "Launcher"
       ],
       "sort": 35
+    },
+    "govee": {
+      "name": "Govee",
+      "summary": "Govee lights: power, brightness, color, color temperature, scenes. LAN or API key.",
+      "tags": [
+        "Lighting",
+        "Smart home"
+      ],
+      "sort": 29
     },
     "home-assistant": {
       "name": "Home Assistant",
@@ -129,6 +147,24 @@
       "featured": true,
       "sort": 41
     },
+    "nanoleaf": {
+      "name": "Nanoleaf",
+      "summary": "Nanoleaf panels and lightstrips: power, brightness, color temperature, color, effects.",
+      "tags": [
+        "Lighting",
+        "Smart home"
+      ],
+      "sort": 29
+    },
+    "now-playing": {
+      "name": "Now Playing",
+      "summary": "What any player is playing, with its cover: play/pause, next, previous, position.",
+      "tags": [
+        "Music",
+        "Media"
+      ],
+      "sort": 17
+    },
     "obs": {
       "name": "OBS Studio",
       "summary": "Scenes, sources, recording and streaming.",
@@ -147,6 +183,15 @@
         "Presentations"
       ],
       "sort": 65
+    },
+    "speedtest": {
+      "name": "Speed Test",
+      "summary": "Internet speed test on a key, and live latency to any host.",
+      "tags": [
+        "Network",
+        "Information"
+      ],
+      "sort": 87
     },
     "spotify": {
       "name": "Spotify",
