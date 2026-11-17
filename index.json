@@ -203,6 +203,15 @@
       "featured": true,
       "sort": 15
     },
+    "streamerbot": {
+      "name": "Streamer.bot",
+      "summary": "Run Streamer.bot actions and code triggers, an action wheel, and global variables on keys.",
+      "tags": [
+        "Streaming",
+        "Automation"
+      ],
+      "sort": 23
+    },
     "streamlabs": {
       "name": "Streamlabs Desktop",
       "summary": "Go live, record, replay buffer, scenes, sources and audio.",
@@ -230,6 +239,15 @@
         "Playback"
       ],
       "sort": 80
+    },
+    "voicemeeter": {
+      "name": "Voicemeeter",
+      "summary": "Strip and bus gain on a dial, mute, A1–B3 routing, Macro Buttons and configurations.",
+      "tags": [
+        "Audio",
+        "Streaming"
+      ],
+      "sort": 24
     },
     "voicemod": {
       "name": "Voicemod",
