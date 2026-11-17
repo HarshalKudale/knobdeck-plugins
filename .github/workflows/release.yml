@@ -47,7 +47,13 @@ jobs:
           echo "prev=$prev" >> "$GITHUB_OUTPUT"
           # A manual run plans against no previous registry, so every plugin is built.
           if [ "${{ github.event_name }}" = workflow_dispatch ]; then reg=none; else reg=prev/registry.json; fi
-          echo "matrix=$(node scripts/plan.mjs $reg)" >> "$GITHUB_OUTPUT"
+          matrix=$(node scripts/plan.mjs $reg)
+          # A pull request that bumps nothing still builds one small plugin on every OS, so changes to
+          # the workflows themselves get exercised.
+          if [ "${{ github.event_name }}" = pull_request ] && [ "$matrix" = '{"include":[]}' ]; then
+            matrix='{"include":[{"os":"windows-latest","name":"windows","plugins":"clocks"},{"os":"macos-latest","name":"macos","plugins":"clocks"},{"os":"ubuntu-22.04","name":"linux","plugins":"clocks"}]}'
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           echo "tag=v$(date -u +%Y.%m.%d-%H%M)" >> "$GITHUB_OUTPUT"
   build:
     needs: plan
