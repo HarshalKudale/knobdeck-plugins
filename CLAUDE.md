@@ -77,6 +77,8 @@ Current decisions (keep this list up to date):
 | docker | Docker Engine API over the local Unix socket / `docker_engine` named pipe / `DOCKER_HOST` (Podman serves the same API) | none |
 | speedtest | Cloudflare's speed test endpoints; latency is a TCP connect time | none |
 | nanoleaf, govee | the devices' own local APIs (Nanoleaf OpenAPI; Govee LAN UDP API), Govee's cloud API with the user's key | none |
+| voicemeeter | Voicemeeter's Remote API (`VoicemeeterRemote64.dll`, loaded at run time from the install folder in its uninstall registry entry) | none |
+| streamerbot | Streamer.bot's WebSocket server (`GetActions`, `DoAction`, `ExecuteCodeTrigger`, `GetGlobal`; SHA-256 challenge auth) | none. No setting globals: the server has no request for it (an action can) |
 
 ## Rule 2: every OS stays working
 
@@ -91,11 +93,11 @@ Current decisions (keep this list up to date):
   Plasma" error, never a silent no-op.
 - **An app's plugin ships for Linux only when the app itself has an official Linux build** (from
   its vendor, or a distro package of that build), not a third-party client or workaround. Then
-  check that the interface the plugin uses exists on Linux too. Not shipped: Streamlabs Desktop
-  and Voicemod (no Linux build). Zoom isn't shipped anywhere (no documented local API for the
+  check that the interface the plugin uses exists on Linux too. Not shipped: Streamlabs Desktop,
+  Voicemod, Voicemeeter and Streamer.bot (no Linux build). Zoom isn't shipped anywhere (no documented local API for the
   desktop client). Files ships for Linux as experimental: only Dolphin shares its selection
   (through AT-SPI); GNOME Files doesn't.
-- To ship a plugin, bump `version` in its `Cargo.toml` (the only place it is written; `index.json` holds display text only and CI fails if it has a `version`) and merge to master. CI builds only plugins that have no `<dir>-v<version>` release yet and publishes one release per plugin under that tag (notes: the top section of `<dir>/CHANGELOG.md`, if any); the catalog in `knobdeck-registry` lists it (see `.github/workflows/release.yml`).
+- To ship a plugin, bump `version` in its `Cargo.toml` (the only place it is written; `index.json` holds display text only and CI fails if it has a `version`) and merge to master. CI builds only plugins that have no `<dir>-v<version>` release yet and publishes one release per plugin under that tag (notes: the top section of `<dir>/CHANGELOG.md`, if any); the catalog in `knobdeck-registry` lists it (see `.github/workflows/release.yml`). A **new** plugin also needs `catalog/plugins/<dir>.toml` in `knobdeck-registry` (tags, sort, featured as in `index.json`); without it the release exists but Get Plugins never offers it.
 
 - A plugin that runs on both OSes keeps one action set; OS differences live behind one `cfg` seam
   per concern (e.g. `win-tools`-style `win.rs` / `mac.rs` behind `mod os`).
