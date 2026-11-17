@@ -1,0 +1,11 @@
+[package]
+name = "web-requests"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true, features = ["secrets", "placeholders"] }
+ureq.workspace = true
+serde_json.workspace = true
+base64.workspace = true

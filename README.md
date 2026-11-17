@@ -41,6 +41,9 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [game-launcher](./game-launcher) | Launch installed Steam games (every OS) and Epic Games Store games (Windows, macOS) from a key or wheel; launcher pages | Windows, macOS, Linux |
 | [ytmusic](./ytmusic) | YouTube Music Desktop App (YTMDesktop 2.x) Companion Server: playback, likes, volume, repeat, queue, playlists | Windows, macOS, Linux |
 | [slides](./slides) | Slide shows: PowerPoint (COM on Windows, AppleScript on macOS), Keynote (macOS), LibreOffice Impress (Impress Remote protocol, every OS) | Windows, macOS, Linux |
+| [coding-agents](./coding-agents) | Claude Code and Codex session status (working, needs approval, your turn) through their hooks / `notify`; approve or deny Claude Code permission requests from a key | Windows, macOS, Linux |
+| [ai-actions](./ai-actions) | Fix, rewrite, translate, summarize or explain the selected text with the user's own model (Anthropic, OpenAI-compatible, Ollama); the answer replaces the text, goes on the clipboard or in a notification | Windows, macOS, Linux |
+| [web-requests](./web-requests) | HTTP requests and webhooks with placeholders, a live JSON value on a key, an on/off toggle; tokens in the credential store | Windows, macOS, Linux |
 
 The `vscode`, `intellij` and `browser-plugin` plugins talk to companions that run *inside* VS Code,
 JetBrains IDEs and browsers (an editor extension, an IDE plugin and a browser extension, not

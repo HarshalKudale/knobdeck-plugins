@@ -1,5 +1,15 @@
 {
   "plugins": {
+    "ai-actions": {
+      "version": "1.0.0",
+      "name": "AI Actions",
+      "summary": "Fix, rewrite, translate or explain selected text with your own AI model.",
+      "tags": [
+        "AI",
+        "Productivity"
+      ],
+      "sort": 37
+    },
     "ai-stats": {
       "version": "2.0.0",
       "name": "AI Stats",
@@ -30,6 +40,16 @@
       ],
       "sort": 86
     },
+    "coding-agents": {
+      "version": "1.0.0",
+      "name": "Coding Agents",
+      "summary": "Claude Code and Codex session status; approve or deny requests from a key.",
+      "tags": [
+        "Developer tools",
+        "AI"
+      ],
+      "sort": 31
+    },
     "discord": {
       "version": "1.3.0",
       "name": "Discord",
@@ -50,6 +70,16 @@
         "Streaming"
       ],
       "sort": 25
+    },
+    "files": {
+      "version": "1.1.0",
+      "name": "Files",
+      "summary": "Convert and resize images, merge PDFs, zip, rename and copy paths for the files you've selected.",
+      "tags": [
+        "Files",
+        "Productivity"
+      ],
+      "sort": 36
     },
     "game-launcher": {
       "version": "1.0.0",
@@ -207,6 +237,16 @@
       ],
       "sort": 85
     },
+    "web-requests": {
+      "version": "1.0.0",
+      "name": "Web Requests",
+      "summary": "Call webhooks and web APIs, show a JSON value on a key.",
+      "tags": [
+        "Automation",
+        "Developer tools"
+      ],
+      "sort": 45
+    },
     "win-tools": {
       "version": "1.8.2",
       "name": "Windows Tools",
@@ -247,16 +287,6 @@
         "Meetings"
       ],
       "sort": 60
-    },
-    "files": {
-      "version": "1.1.0",
-      "name": "Files",
-      "summary": "Convert and resize images, merge PDFs, zip, rename and copy paths for the files you've selected.",
-      "tags": [
-        "Files",
-        "Productivity"
-      ],
-      "sort": 36
     }
   }
 }

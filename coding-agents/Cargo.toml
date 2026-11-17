@@ -1,0 +1,12 @@
+[package]
+name = "coding-agents"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+serde_json.workspace = true
+# Codex's config.toml, edited without losing the user's formatting and comments.
+toml_edit = "0.22"
