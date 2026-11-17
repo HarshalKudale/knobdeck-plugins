@@ -1,12 +1,11 @@
 // Publishes one GitHub Release per plugin built in this run, tagged <dir>-v<version>
 // (e.g. obs-v1.3.0), holding that plugin's per-OS bundles and readmes plus <dir>.json (its
 // index.json display text and version). The catalog in knobdeck-registry reads these releases.
-// A tag that already exists is left alone: a released version is never rebuilt in place (a manual
-// rebuild of every plugin only refreshes the snapshot release).
+// A tag that already exists is left alone: a released version is never rebuilt in place.
 // Release notes are the top section of <dir>/CHANGELOG.md when there is one.
-// Plugin releases are never marked "Latest": the date-tagged snapshot release still is.
+// Plugin releases are never marked "Latest": the catalog's index is the only "latest".
 // Writes out/released.json: [{ id, version }] for the dispatch to the catalog.
-//   node scripts/release-plugins.mjs <commit sha>     (run before registry.mjs, which consumes out/part-*.json)
+//   node scripts/release-plugins.mjs <commit sha>
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
