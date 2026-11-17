@@ -12,6 +12,10 @@ Window management and system tools for KnobDeck on **macOS** — the macOS count
 - **Spaces and system:** previous/next Space, Mission Control, App Exposé, Show Desktop,
   Screenshot, Emoji & Symbols, Hide Others, Force Quit App (a wheel of running apps), Lock Screen,
   Sleep Display, and Finder / System Settings / Activity Monitor.
+- **Display Brightness:** a slider and a Set Display Brightness key, per display (or all of
+  them): the built-in display (and Apple displays) like the brightness keys, external monitors
+  over DDC/CI on Macs with Apple silicon (not through DisplayLink adapters, and not over HDMI on
+  some Macs and docks).
 - **System Stats:** live CPU, GPU or memory use on the tile; pressing it opens Activity Monitor.
 - **Audio:** Mute Microphone toggle and Microphone Level slider (for microphones that have those
   controls), and wheels to switch the output or input device.
