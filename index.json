@@ -1,7 +1,6 @@
 {
   "plugins": {
     "ai-actions": {
-      "version": "1.0.0",
       "name": "AI Actions",
       "summary": "Fix, rewrite, translate or explain selected text with your own AI model.",
       "tags": [
@@ -11,7 +10,6 @@
       "sort": 37
     },
     "ai-stats": {
-      "version": "2.0.0",
       "name": "AI Stats",
       "summary": "Claude and Codex plan limits and 30-day token usage.",
       "tags": [
@@ -21,7 +19,6 @@
       "sort": 90
     },
     "browser-plugin": {
-      "version": "1.4.0",
       "name": "Browser Controls",
       "summary": "Tabs, zoom, bookmarks and history for your browser.",
       "tags": [
@@ -31,7 +28,6 @@
       "sort": 50
     },
     "clocks": {
-      "version": "1.1.0",
       "name": "Clocks",
       "summary": "Clock for any time zone, world clock, countdown timer, stopwatch.",
       "tags": [
@@ -41,7 +37,6 @@
       "sort": 86
     },
     "coding-agents": {
-      "version": "1.0.0",
       "name": "Coding Agents",
       "summary": "Claude Code and Codex session status; approve or deny requests from a key.",
       "tags": [
@@ -51,7 +46,6 @@
       "sort": 31
     },
     "discord": {
-      "version": "1.3.0",
       "name": "Discord",
       "summary": "Mute, deafen, push-to-talk, channels and soundboard.",
       "tags": [
@@ -62,7 +56,6 @@
       "sort": 10
     },
     "elgato-lights": {
-      "version": "1.1.1",
       "name": "Elgato Lights",
       "summary": "Key Light, Ring Light and Light Strip: power, brightness, temperature, color.",
       "tags": [
@@ -72,7 +65,6 @@
       "sort": 25
     },
     "files": {
-      "version": "1.1.0",
       "name": "Files",
       "summary": "Convert and resize images, merge PDFs, zip, rename and copy paths for the files you've selected.",
       "tags": [
@@ -82,7 +74,6 @@
       "sort": 36
     },
     "game-launcher": {
-      "version": "1.0.0",
       "name": "Game Launcher",
       "summary": "Launch installed Steam and Epic games from a key or wheel.",
       "tags": [
@@ -92,7 +83,6 @@
       "sort": 35
     },
     "home-assistant": {
-      "version": "1.1.0",
       "name": "Home Assistant",
       "summary": "Toggle entities, run scenes, show sensors and set levels.",
       "tags": [
@@ -102,7 +92,6 @@
       "sort": 27
     },
     "hue": {
-      "version": "1.1.0",
       "name": "Philips Hue",
       "summary": "Hue lights, rooms and scenes: power, brightness, color.",
       "tags": [
@@ -112,7 +101,6 @@
       "sort": 28
     },
     "intellij": {
-      "version": "1.2.0",
       "name": "IntelliJ IDEA",
       "summary": "JetBrains IDE actions on a key.",
       "tags": [
@@ -122,7 +110,6 @@
       "sort": 70
     },
     "linux-tools": {
-      "version": "1.4.2",
       "name": "Linux Tools",
       "summary": "Windows, workspaces, per-app volume, audio devices on GNOME and KDE.",
       "tags": [
@@ -133,7 +120,6 @@
       "sort": 42
     },
     "mac-tools": {
-      "version": "1.6.1",
       "name": "macOS Tools",
       "summary": "Window management, Spaces, audio devices, mic, app menu commands.",
       "tags": [
@@ -144,7 +130,6 @@
       "sort": 41
     },
     "obs": {
-      "version": "1.3.0",
       "name": "OBS Studio",
       "summary": "Scenes, sources, recording and streaming.",
       "tags": [
@@ -155,7 +140,6 @@
       "sort": 20
     },
     "slides": {
-      "version": "1.0.1",
       "name": "Slides",
       "summary": "Present with PowerPoint, Keynote or LibreOffice Impress.",
       "tags": [
@@ -165,7 +149,6 @@
       "sort": 65
     },
     "spotify": {
-      "version": "1.2.1",
       "name": "Spotify",
       "summary": "Play, pause, skip and now playing for the Spotify desktop app.",
       "tags": [
@@ -176,7 +159,6 @@
       "sort": 15
     },
     "streamlabs": {
-      "version": "1.1.0",
       "name": "Streamlabs Desktop",
       "summary": "Go live, record, replay buffer, scenes, sources and audio.",
       "tags": [
@@ -186,7 +168,6 @@
       "sort": 22
     },
     "twitch": {
-      "version": "1.2.0",
       "name": "Twitch",
       "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers.",
       "tags": [
@@ -197,7 +178,6 @@
       "sort": 21
     },
     "vlc": {
-      "version": "1.2.0",
       "name": "VLC",
       "summary": "Playback controls for VLC media player.",
       "tags": [
@@ -207,7 +187,6 @@
       "sort": 80
     },
     "voicemod": {
-      "version": "1.1.0",
       "name": "Voicemod",
       "summary": "Voices, voice changer, hear myself, mic mute and soundboard.",
       "tags": [
@@ -217,7 +196,6 @@
       "sort": 26
     },
     "vscode": {
-      "version": "1.3.0",
       "name": "Visual Studio Code",
       "summary": "Editor commands through the KnobDeck VS Code extension.",
       "tags": [
@@ -228,7 +206,6 @@
       "sort": 30
     },
     "weather": {
-      "version": "1.1.0",
       "name": "Weather",
       "summary": "Current weather, 7-day and hourly forecast, air quality. No account.",
       "tags": [
@@ -238,7 +215,6 @@
       "sort": 85
     },
     "web-requests": {
-      "version": "1.0.0",
       "name": "Web Requests",
       "summary": "Call webhooks and web APIs, show a JSON value on a key.",
       "tags": [
@@ -248,7 +224,6 @@
       "sort": 45
     },
     "win-tools": {
-      "version": "1.8.2",
       "name": "Windows Tools",
       "summary": "Window management, audio devices, per-app volume, mic, system actions.",
       "tags": [
@@ -259,7 +234,6 @@
       "sort": 40
     },
     "youtube": {
-      "version": "1.2.0",
       "name": "YouTube",
       "summary": "Live viewers and the Studio live dashboard (read-only).",
       "tags": [
@@ -269,7 +243,6 @@
       "sort": 23
     },
     "ytmusic": {
-      "version": "1.1.0",
       "name": "YouTube Music Desktop",
       "summary": "Playback, likes, volume, queue and playlists in YTMDesktop.",
       "tags": [
@@ -279,7 +252,6 @@
       "sort": 16
     },
     "zoom": {
-      "version": "1.0.1",
       "name": "Zoom",
       "summary": "Meeting controls for Zoom calls.",
       "tags": [

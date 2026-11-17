@@ -1,4 +1,4 @@
-// Shared by plan.mjs and registry.mjs.
+// Shared by plan.mjs, registry.mjs and release-plugins.mjs.
 import { readFileSync } from "node:fs";
 
 /** Plugin folders that ship on each OS. */
@@ -14,8 +14,26 @@ export const OS_PLUGINS = {
   linux: ["ai-actions", "ai-stats", "browser-plugin", "clocks", "coding-agents", "discord", "elgato-lights", "files", "game-launcher", "home-assistant", "hue", "intellij", "linux-tools", "obs", "slides", "spotify", "twitch", "vlc", "vscode", "weather", "web-requests", "youtube", "ytmusic"],
 };
 
-/** index.json: { plugins: { "<dir>": { version, name, summary, tags, featured, sort } } } */
-export const readIndex = () => JSON.parse(readFileSync("index.json", "utf8")).plugins;
+/** A plugin's version: its Cargo.toml is the only place it is written (the binary reports it). */
+export const cargoVersion = (dir) => {
+  const v = readFileSync(`${dir}/Cargo.toml`, "utf8").match(/^version\s*=\s*"([^"]+)"/m)?.[1];
+  if (!v) throw new Error(`${dir}/Cargo.toml has no version`);
+  return v;
+};
+
+/**
+ * index.json holds display text only: { plugins: { "<dir>": { name, summary, tags, featured, sort } } }.
+ * Returned with each plugin's `version` read from its Cargo.toml. A `version` left in index.json is
+ * an error, so the two can't drift apart again.
+ */
+export const readIndex = () => {
+  const plugins = JSON.parse(readFileSync("index.json", "utf8")).plugins;
+  for (const [dir, p] of Object.entries(plugins)) {
+    if ("version" in p) throw new Error(`index.json: ${dir} has a version; it lives in ${dir}/Cargo.toml only`);
+    p.version = cargoVersion(dir);
+  }
+  return plugins;
+};
 
 /** The registry entry of `dir` on `os` in a registry.json plugin list (the id is the dir, or dir-os for cross-platform plugins). */
 export const findEntry = (entries, dir, os) => entries.find((e) => e.id === dir || e.id === `${dir}-${os}`);

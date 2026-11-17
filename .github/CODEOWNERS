@@ -1,0 +1,32 @@
+# Each plugin folder has an owner; a plugin moved to its own maintainer gets their handle here.
+* @HarshalKudale
+
+/ai-actions/ @HarshalKudale
+/ai-stats/ @HarshalKudale
+/browser-plugin/ @HarshalKudale
+/clocks/ @HarshalKudale
+/coding-agents/ @HarshalKudale
+/discord/ @HarshalKudale
+/elgato-lights/ @HarshalKudale
+/files/ @HarshalKudale
+/game-launcher/ @HarshalKudale
+/home-assistant/ @HarshalKudale
+/hue/ @HarshalKudale
+/intellij/ @HarshalKudale
+/linux-desktop/ @HarshalKudale
+/linux-tools/ @HarshalKudale
+/mac-tools/ @HarshalKudale
+/obs/ @HarshalKudale
+/slides/ @HarshalKudale
+/spotify/ @HarshalKudale
+/streamlabs/ @HarshalKudale
+/twitch/ @HarshalKudale
+/vlc/ @HarshalKudale
+/voicemod/ @HarshalKudale
+/vscode/ @HarshalKudale
+/weather/ @HarshalKudale
+/web-requests/ @HarshalKudale
+/win-tools/ @HarshalKudale
+/youtube/ @HarshalKudale
+/ytmusic/ @HarshalKudale
+/zoom/ @HarshalKudale
