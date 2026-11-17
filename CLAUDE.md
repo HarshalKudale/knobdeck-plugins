@@ -45,6 +45,9 @@ error and says "(Plasma)" in its label.
 Exceptions, deliberately kept:
 - Text Snippet, whose job *is* entering text (macOS/Windows type it with Unicode key events; Linux
   pastes it with Ctrl+V because Wayland offers no other way).
+- AI Actions' "in place of the selected text", which likewise enters text: Windows and Linux paste
+  the answer (clipboard + Ctrl+V: long answers arrive at once, line breaks don't press Enter in
+  chat apps), macOS types it like Text Snippet (line breaks as ⇧Return).
 - macOS previous/next Space: macOS has no API, so the user's own configured symbolic hotkey is read
   from `com.apple.symbolichotkeys` and posted; WindowServer handles it before any app sees it.
 
@@ -67,6 +70,9 @@ Current decisions (keep this list up to date):
 | files | the selection from `knobdeck_sdk::os::files` (Explorer Shell COM, Finder Apple Events, Dolphin's AT-SPI tree); images, PDFs and zips in Rust (`image`, `lopdf`, `zip`; HEIC through macOS `sips`); clipboard through Win32 / NSPasteboard / Klipper / the GNOME extension. No terminal or "open with" launching (which apps exist differs per machine) | none |
 | game-launcher | the launchers' own files (Steam `libraryfolders.vdf` / `appmanifest_*.acf`, Epic manifests) and URL schemes (`steam://rungameid/…`, `com.epicgames.launcher://apps/…`) | none |
 | slides | Windows PowerPoint COM (`SlideShowWindows(1).View`), macOS PowerPoint and Keynote AppleScript, LibreOffice Impress Remote protocol (TCP 1599) | none; Keynote has no blank-screen command, so Black/White Screen report that instead of sending B/W |
+| coding-agents | Claude Code hooks and Codex `notify` (setup adds them to the agents' own configs); the hook is this plugin's binary in hook mode, writing small files in the data folder; Codex activity from its session logs | none. No focusing a session's terminal and no starting sessions (KnobDeck doesn't focus other apps; terminals differ per machine) |
+| ai-actions | the user's model over its HTTP API (Anthropic Messages, Chat Completions, Ollama); the selection from `knobdeck_sdk::os` | Entering the answer in place of the selection, like Text Snippet (its job is entering text): Windows and Linux paste it (clipboard + Ctrl+V), macOS types it as Unicode key events |
+| web-requests | HTTP(S) to the user's own URLs | none |
 
 ## Rule 2: every OS stays working
 
