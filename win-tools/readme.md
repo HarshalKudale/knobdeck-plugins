@@ -18,6 +18,9 @@ use [Mac Tools](../mac-tools).
 - Text Snippet: types saved text into the focused window.
 - Wi-Fi / Bluetooth on-off, power plan keys and a power plan wheel, and a Ping key that shows
   the latency to a host, refreshed every 5 seconds.
+- Display Brightness slider and Set Display Brightness key, per monitor (or all of them): the
+  laptop screen through Windows' own brightness control, external monitors over DDC/CI (turn
+  DDC/CI on in the monitor's menu if it's off).
 - System Stats button: shows live CPU, GPU or memory use on the tile and opens Task Manager when pressed.
 - Position and monitor moves now apply real window bounds, and moved windows are
   raised on the target monitor without taking focus away from the current app.

@@ -23,6 +23,8 @@ fn main() {
 mod audio;
 #[cfg(target_os = "macos")]
 mod automation;
+#[cfg(target_os = "macos")]
+mod brightness;
 // Pure text helpers of the automation actions; compiled everywhere so their tests run on CI hosts.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 mod script_text;
@@ -53,7 +55,7 @@ mod app {
     use crate::ax::{self, Elem, Rect};
     use crate::screens::{self, Display};
     use crate::system::{self, Dock, Hotkey};
-    use crate::{audio, automation, clipboard, icon, menus, stats, windows};
+    use crate::{audio, automation, brightness, clipboard, icon, menus, stats, windows};
     use knobdeck_sdk::input::{self, InputExt};
     use knobdeck_sdk::{json, Action, Ctx, Error, Plugin, Result, Value, Visual};
     use std::collections::HashMap;
@@ -64,6 +66,30 @@ mod app {
         let t = text.trim();
         let end = t.char_indices().take_while(|&(i, c)| c.is_ascii_digit() || (i == 0 && (c == '-' || c == '+'))).last().map(|(i, c)| i + c.len_utf8())?;
         t[..end].parse().ok()
+    }
+
+    const BRIGHTNESS_ALL: &str = "__all__";
+
+    fn brightness_display_input() -> Value {
+        input::query_select("display", "Display", "brightness-displays", &[]).with("default", BRIGHTNESS_ALL)
+    }
+
+    /// The displays a brightness action changes: one, or every one with a brightness control.
+    fn brightness_targets(inputs: &Value) -> Result<Vec<String>> {
+        let pick = inputs["display"].as_str().unwrap_or(BRIGHTNESS_ALL);
+        if !pick.is_empty() && pick != BRIGHTNESS_ALL {
+            return Ok(vec![pick.to_string()]);
+        }
+        let all: Vec<String> = brightness::monitors()?.into_iter().map(|m| m.id).collect();
+        if all.is_empty() {
+            return Err(Error::msg("No display with a brightness control found"));
+        }
+        Ok(all)
+    }
+
+    /// Brightness of the first targeted display (what a slider for "All displays" shows).
+    fn brightness_first(inputs: &Value) -> Result<f64> {
+        brightness::get(&brightness_targets(inputs)?[0])
     }
 
     fn input_int(inputs: &Value, key: &str) -> Option<i64> {
@@ -736,6 +762,49 @@ mod app {
             )
             .action(device_wheel("output-device-wheel", "Output Device", "speaker", false))
             .action(device_wheel("input-device-wheel", "Input Device", "mic", true));
+
+        // ── Display brightness (per monitor) ──
+        p = p
+            .query("brightness-displays", |q| {
+                let list = brightness::monitors().or_else(|e| q.fail(e.message().to_string()))?;
+                let mut opts = vec![json!({"value": BRIGHTNESS_ALL, "label": "All displays"})];
+                opts.extend(list.into_iter().map(|m| json!({"value": m.id, "label": if m.internal { format!("{} (built-in)", m.name) } else { m.name }})));
+                Ok(Value::Array(opts))
+            })
+            .action(
+                Action::slider("brightness", "Display Brightness", 0.0, 100.0)
+                    .icon("sun")
+                    .unit("%")
+                    .inputs(vec![brightness_display_input(), input::text("step", "Step (%)").placeholder("5").default_value("5")])
+                    .live(std::time::Duration::from_secs(5), |ic| Ok(Visual::new().state(brightness_first(&ic.inputs)?.round())))
+                    .on_adjust(|ctx| {
+                        let target = match ctx.value {
+                            Some(v) => v,
+                            None => brightness_first(&ctx.inputs)? + ctx.input_f64("step").filter(|s| *s > 0.0).unwrap_or(5.0) * ctx.delta.unwrap_or(0.0),
+                        }
+                        .round()
+                        .clamp(0.0, 100.0);
+                        for id in brightness_targets(&ctx.inputs)? {
+                            brightness::set(&id, target)?;
+                        }
+                        ctx.fan_out_by(&["display"], target);
+                        Ok(())
+                    }),
+            )
+            .action(
+                Action::button("set-brightness", "Set Display Brightness")
+                    .icon("sun")
+                    .inputs(vec![brightness_display_input(), input::text("value", "Brightness (%)").placeholder("50").default_value("50")])
+                    .on_press(|ctx| {
+                        let Some(v) = ctx.input_f64("value").filter(|v| (0.0..=100.0).contains(v)) else {
+                            return ctx.fail("Brightness must be 0–100");
+                        };
+                        for id in brightness_targets(&ctx.inputs)? {
+                            brightness::set(&id, v.round())?;
+                        }
+                        Ok(())
+                    }),
+            );
 
         // ── Clipboard History ──
         p.action(off(

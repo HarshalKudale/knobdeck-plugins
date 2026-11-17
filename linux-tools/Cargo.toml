@@ -1,6 +1,6 @@
 [package]
 name = "linux-tools"
-version = "1.4.2"
+version = "1.5.0"
 edition = "2021"
 publish = false
 
@@ -12,3 +12,5 @@ serde_json.workspace = true
 [target.'cfg(target_os = "linux")'.dependencies]
 linux-desktop = { path = "../linux-desktop" }
 zbus.workspace = true
+# ioctl(I2C_SLAVE) for DDC/CI monitor brightness outside KDE.
+libc = "0.2"

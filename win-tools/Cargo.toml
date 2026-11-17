@@ -1,6 +1,6 @@
 [package]
 name = "win-tools"
-version = "1.8.2"
+version = "1.9.0"
 edition = "2021"
 publish = false
 
@@ -11,6 +11,8 @@ knobdeck-sdk = { workspace = true, features = ["os-window", "os-apps", "placehol
 base64.workspace = true
 windows = { version = "0.58", features = [
   "Devices_Radios",
+  "Win32_Devices_Display",
+  "Win32_System_Wmi",
   "Foundation",
   "Win32_Devices_FunctionDiscovery",
   "Win32_NetworkManagement_IpHelper",

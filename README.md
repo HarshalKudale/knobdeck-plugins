@@ -44,6 +44,11 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [coding-agents](./coding-agents) | Claude Code and Codex session status (working, needs approval, your turn) through their hooks / `notify`; approve or deny Claude Code permission requests from a key | Windows, macOS, Linux |
 | [ai-actions](./ai-actions) | Fix, rewrite, translate, summarize or explain the selected text with the user's own model (Anthropic, OpenAI-compatible, Ollama); the answer replaces the text, goes on the clipboard or in a notification | Windows, macOS, Linux |
 | [web-requests](./web-requests) | HTTP requests and webhooks with placeholders, a live JSON value on a key, an on/off toggle; tokens in the credential store | Windows, macOS, Linux |
+| [now-playing](./now-playing) | Any media player's title, artist and cover, play/pause, next, previous, position: Windows SMTC, Linux MPRIS, macOS Music and Spotify (AppleScript) | Windows, macOS, Linux |
+| [docker](./docker) | Docker Engine API on the local socket / named pipe (Docker Desktop, Engine, rootless, Colima, OrbStack, Podman): containers and Compose projects | Windows, macOS, Linux |
+| [speedtest](./speedtest) | Download / upload / latency against Cloudflare's speed test servers; live latency to any host | Windows, macOS, Linux |
+| [nanoleaf](./nanoleaf) | Nanoleaf OpenAPI: power, brightness, color temperature, color, effects (mDNS discovery, power-button pairing) | Windows, macOS, Linux |
+| [govee](./govee) | Govee LAN API (UDP), or Govee's cloud API with the user's key for other models and scenes | Windows, macOS, Linux |
 
 The `vscode`, `intellij` and `browser-plugin` plugins talk to companions that run *inside* VS Code,
 JetBrains IDEs and browsers (an editor extension, an IDE plugin and a browser extension, not

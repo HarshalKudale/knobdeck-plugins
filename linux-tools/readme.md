@@ -18,6 +18,8 @@ Ubuntu and Arch based distributions.
 - **Workspaces and desktop:** previous / next / new / close desktop, Overview, Present Windows,
   Applications, Search (KRunner / GNOME search), Screenshot, Files, System Settings, System
   Monitor, Lock Screen, and on Plasma Show Desktop, Emoji Picker and Turn Off Display.
+- **Display Brightness:** a slider and a Set Display Brightness key, per display (or all of
+  them), for laptop screens and external monitors (DDC/CI).
 - **System Stats:** live CPU, GPU or memory use on the tile; pressing it opens the system monitor.
 - **Wi-Fi / Bluetooth** on/off, **Power Profile** (Power Saver / Balanced / Performance) and
   **Ping**.
@@ -37,6 +39,11 @@ request; terminals paste with Ctrl+Shift+V, so pasting there won't work).
   installs a small **KnobDeck GNOME Shell extension** (`knobdeck@knobdeck.harshalkudale.com`)
   into `~/.local/share/gnome-shell/extensions` and enables it. GNOME loads new extensions at
   login: **log out and back in once** after installing the plugin.
+- **Brightness:** on Plasma through PowerDevil's own brightness service (laptop screens and
+  DDC/CI monitors, with Plasma's OSD). On GNOME the laptop screen through logind, and external
+  monitors over DDC/CI on `/dev/i2c-*`, which needs the `i2c-dev` module and access to the bus:
+  `sudo modprobe i2c-dev` (and `i2c-dev` in `/etc/modules-load.d/`), then
+  `sudo usermod -aG i2c $USER` (or ddcutil's udev rule) and log in again.
 - **Both:** lock through logind, Wi-Fi through NetworkManager, Bluetooth through BlueZ, power
   profiles through power-profiles-daemon, audio through `pactl` (PipeWire or PulseAudio).
 
