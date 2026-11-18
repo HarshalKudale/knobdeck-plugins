@@ -18,6 +18,15 @@
       ],
       "sort": 90
     },
+    "apple-music": {
+      "name": "Apple Music",
+      "summary": "Music app playback, shuffle, repeat, favorites, volume dial, playlists and what is playing.",
+      "tags": [
+        "Music",
+        "Media"
+      ],
+      "sort": 94
+    },
     "browser-plugin": {
       "name": "Browser Controls",
       "summary": "Tabs, zoom, bookmarks and history for your browser.",
@@ -155,6 +164,15 @@
         "Smart home"
       ],
       "sort": 29
+    },
+    "neovim": {
+      "name": "Neovim",
+      "summary": "Run Ex commands and Lua, save all, switch buffers on a dial, toggle options, see the mode and file.",
+      "tags": [
+        "Developer tools",
+        "Editor"
+      ],
+      "sort": 95
     },
     "now-playing": {
       "name": "Now Playing",
