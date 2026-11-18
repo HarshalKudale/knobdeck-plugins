@@ -50,8 +50,12 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [nanoleaf](./nanoleaf) | Nanoleaf OpenAPI: power, brightness, color temperature, color, effects (mDNS discovery, power-button pairing) | Windows, macOS, Linux |
 | [github](./github) | GitHub REST and GraphQL APIs (device sign-in or a personal access token): notifications, review requests, your open PRs, workflow status, re-run failed jobs, run workflow, repo counters | Windows, macOS, Linux |
 | [govee](./govee) | Govee LAN API (UDP), or Govee's cloud API with the user's key for other models and scenes | Windows, macOS, Linux |
+| [wled](./wled) | WLED JSON API: power, brightness, presets, effects (picker, dial, wheel) with speed and intensity, palettes, color, segment selection (mDNS discovery) | Windows, macOS, Linux |
+| [lifx](./lifx) | LIFX LAN protocol (UDP 56700): power, brightness, white temperature, hue, saturation, color (broadcast discovery, no account) | Windows, macOS, Linux |
 | [voicemeeter](./voicemeeter) | Voicemeeter Remote API (`VoicemeeterRemote64.dll`): strip / bus mute and gain, A1–A5 / B1–B3 routing, Macro Buttons, load configuration; Standard, Banana, Potato | Windows |
 | [streamerbot](./streamerbot) | Streamer.bot WebSocket server: run actions (with arguments) and code triggers, an action-group wheel, global variables on a key | Windows |
+| [apple-music](./apple-music) | Music app (AppleScript): play/pause, next, previous, shuffle, repeat, favorite, volume dial, playlists, now playing with artwork | macOS |
+| [neovim](./neovim) | Neovim over its msgpack-RPC server socket / pipe: Ex commands, Lua, save all, buffer dial, option toggles, mode and file | Windows, macOS, Linux |
 
 The `vscode`, `intellij` and `browser-plugin` plugins talk to companions that run *inside* VS Code,
 JetBrains IDEs and browsers (an editor extension, an IDE plugin and a browser extension, not
