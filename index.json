@@ -18,6 +18,15 @@
       ],
       "sort": 90
     },
+    "apple-music": {
+      "name": "Apple Music",
+      "summary": "Music app playback, shuffle, repeat, favorites, volume dial, playlists and what is playing.",
+      "tags": [
+        "Music",
+        "Media"
+      ],
+      "sort": 94
+    },
     "blender": {
       "name": "Blender",
       "summary": "Playback, frames, workspaces, shading, render, brush and transform dials through the KnobDeck add-on.",
@@ -100,6 +109,16 @@
       ],
       "sort": 35
     },
+    "github": {
+      "name": "GitHub",
+      "summary": "Notifications, review requests, your PRs, workflow runs and repo counters.",
+      "tags": [
+        "Developer",
+        "Productivity"
+      ],
+      "featured": false,
+      "sort": 93
+    },
     "govee": {
       "name": "Govee",
       "summary": "Govee lights: power, brightness, color, color temperature, scenes. LAN or API key.",
@@ -108,6 +127,15 @@
         "Smart home"
       ],
       "sort": 29
+    },
+    "hardware-monitor": {
+      "name": "Hardware Monitor",
+      "summary": "CPU and GPU temperatures, fans, power, GPU load and VRAM on a key or a gauge.",
+      "tags": [
+        "System",
+        "Monitoring"
+      ],
+      "sort": 91
     },
     "home-assistant": {
       "name": "Home Assistant",
@@ -135,6 +163,15 @@
         "IDE"
       ],
       "sort": 70
+    },
+    "lifx": {
+      "name": "LIFX",
+      "summary": "LIFX lights on your network: power, brightness, white temperature, hue, saturation, color. No account.",
+      "tags": [
+        "Lighting",
+        "Smart home"
+      ],
+      "sort": 97
     },
     "linux-tools": {
       "name": "Linux Tools",
@@ -165,6 +202,15 @@
       ],
       "sort": 29
     },
+    "neovim": {
+      "name": "Neovim",
+      "summary": "Run Ex commands and Lua, save all, switch buffers on a dial, toggle options, see the mode and file.",
+      "tags": [
+        "Developer tools",
+        "Editor"
+      ],
+      "sort": 95
+    },
     "now-playing": {
       "name": "Now Playing",
       "summary": "What any player is playing, with its cover: play/pause, next, previous, position.",
@@ -192,6 +238,15 @@
         "Presentations"
       ],
       "sort": 65
+    },
+    "soundboard": {
+      "name": "Soundboard",
+      "summary": "Play sound files from a key to any output, or to a virtual mic and your headphones at once.",
+      "tags": [
+        "Audio",
+        "Streaming"
+      ],
+      "sort": 92
     },
     "speedtest": {
       "name": "Speed Test",
@@ -304,6 +359,15 @@
       ],
       "featured": true,
       "sort": 40
+    },
+    "wled": {
+      "name": "WLED",
+      "summary": "WLED LED strips: power, brightness, presets, effects with speed and intensity, palettes, color, segments.",
+      "tags": [
+        "Lighting",
+        "Smart home"
+      ],
+      "sort": 96
     },
     "youtube": {
       "name": "YouTube",

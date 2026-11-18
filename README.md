@@ -48,9 +48,16 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [docker](./docker) | Docker Engine API on the local socket / named pipe (Docker Desktop, Engine, rootless, Colima, OrbStack, Podman): containers and Compose projects | Windows, macOS, Linux |
 | [speedtest](./speedtest) | Download / upload / latency against Cloudflare's speed test servers; live latency to any host | Windows, macOS, Linux |
 | [nanoleaf](./nanoleaf) | Nanoleaf OpenAPI: power, brightness, color temperature, color, effects (mDNS discovery, power-button pairing) | Windows, macOS, Linux |
+| [github](./github) | GitHub REST and GraphQL APIs (device sign-in or a personal access token): notifications, review requests, your open PRs, workflow status, re-run failed jobs, run workflow, repo counters | Windows, macOS, Linux |
 | [govee](./govee) | Govee LAN API (UDP), or Govee's cloud API with the user's key for other models and scenes | Windows, macOS, Linux |
+| [wled](./wled) | WLED JSON API: power, brightness, presets, effects (picker, dial, wheel) with speed and intensity, palettes, color, segment selection (mDNS discovery) | Windows, macOS, Linux |
+| [lifx](./lifx) | LIFX LAN protocol (UDP 56700): power, brightness, white temperature, hue, saturation, color (broadcast discovery, no account) | Windows, macOS, Linux |
 | [voicemeeter](./voicemeeter) | Voicemeeter Remote API (`VoicemeeterRemote64.dll`): strip / bus mute and gain, A1–A5 / B1–B3 routing, Macro Buttons, load configuration; Standard, Banana, Potato | Windows |
+| [hardware-monitor](./hardware-monitor) | CPU / GPU temperatures, fans, power, GPU load and VRAM: Linux hwmon + amdgpu, LibreHardwareMonitor's WMI on Windows, Apple silicon HID sensors and the SMC on macOS, NVIDIA through NVML | Windows, macOS, Linux |
 | [streamerbot](./streamerbot) | Streamer.bot WebSocket server: run actions (with arguments) and code triggers, an action-group wheel, global variables on a key | Windows |
+| [apple-music](./apple-music) | Music app (AppleScript): play/pause, next, previous, shuffle, repeat, favorite, volume dial, playlists, now playing with artwork | macOS |
+| [neovim](./neovim) | Neovim over its msgpack-RPC server socket / pipe: Ex commands, Lua, save all, buffer dial, option toggles, mode and file | Windows, macOS, Linux |
+| [soundboard](./soundboard) | Play mp3 / wav / ogg / flac files from a key to any output, or two at once (a virtual cable into your mic plus your headphones); master volume dial; Soundpad on Windows | Windows, macOS, Linux |
 | [blender](./blender) | Blender through the KnobDeck add-on (companion hub, `bpy`): play / pause, frame dial, jumps, workspaces, shading, overlays, X-ray, render, save, undo, mode, brush size / strength and object transform dials, live mode / object key | Windows, macOS, Linux |
 
 The `vscode`, `intellij`, `browser-plugin` and `blender` plugins talk to companions that run
