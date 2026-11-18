@@ -50,6 +50,7 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [nanoleaf](./nanoleaf) | Nanoleaf OpenAPI: power, brightness, color temperature, color, effects (mDNS discovery, power-button pairing) | Windows, macOS, Linux |
 | [govee](./govee) | Govee LAN API (UDP), or Govee's cloud API with the user's key for other models and scenes | Windows, macOS, Linux |
 | [voicemeeter](./voicemeeter) | Voicemeeter Remote API (`VoicemeeterRemote64.dll`): strip / bus mute and gain, A1–A5 / B1–B3 routing, Macro Buttons, load configuration; Standard, Banana, Potato | Windows |
+| [hardware-monitor](./hardware-monitor) | CPU / GPU temperatures, fans, power, GPU load and VRAM: Linux hwmon + amdgpu, LibreHardwareMonitor's WMI on Windows, Apple silicon HID sensors and the SMC on macOS, NVIDIA through NVML | Windows, macOS, Linux |
 | [streamerbot](./streamerbot) | Streamer.bot WebSocket server: run actions (with arguments) and code triggers, an action-group wheel, global variables on a key | Windows |
 
 The `vscode`, `intellij` and `browser-plugin` plugins talk to companions that run *inside* VS Code,

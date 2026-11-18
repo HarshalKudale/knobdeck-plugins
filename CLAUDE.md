@@ -79,6 +79,7 @@ Current decisions (keep this list up to date):
 | nanoleaf, govee | the devices' own local APIs (Nanoleaf OpenAPI; Govee LAN UDP API), Govee's cloud API with the user's key | none |
 | voicemeeter | Voicemeeter's Remote API (`VoicemeeterRemote64.dll`, loaded at run time from the install folder in its uninstall registry entry) | none |
 | streamerbot | Streamer.bot's WebSocket server (`GetActions`, `DoAction`, `ExecuteCodeTrigger`, `GetGlobal`; SHA-256 challenge auth) | none. No setting globals: the server has no request for it (an action can) |
+| hardware-monitor | read-only sensors: Linux hwmon sysfs, amdgpu device files, RAPL; Windows LibreHardwareMonitor / OpenHardwareMonitor WMI (the user runs it; Windows has no sensor API for apps), `MSAcpi_ThermalZoneTemperature`; macOS `IOHIDEventSystemClient` (private, `dlsym`) and the AppleSMC user client (IOKit); NVIDIA NVML (`nvml.dll` / `libnvidia-ml.so.1`, loaded at run time) | none |
 
 ## Rule 2: every OS stays working
 
