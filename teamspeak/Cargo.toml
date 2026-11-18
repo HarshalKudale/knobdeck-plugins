@@ -1,0 +1,10 @@
+[package]
+name = "teamspeak"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true, features = ["secrets"] }
+serde_json.workspace = true
+tungstenite.workspace = true

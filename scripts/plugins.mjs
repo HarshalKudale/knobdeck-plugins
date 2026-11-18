@@ -6,12 +6,12 @@ import { readFileSync } from "node:fs";
 // - zoom: Zoom has no documented local API for its desktop client; the plugin's localhost:19421
 //   endpoints were never a published interface.
 export const OS_PLUGINS = {
-  windows: ["ai-actions", "ai-stats", "browser-plugin", "clocks", "coding-agents", "discord", "docker", "elgato-lights", "files", "game-launcher", "govee", "home-assistant", "hue", "intellij", "nanoleaf", "now-playing", "obs", "slides", "speedtest", "spotify", "streamerbot", "streamlabs", "twitch", "vlc", "voicemeeter", "voicemod", "vscode", "weather", "web-requests", "win-tools", "youtube", "ytmusic"],
-  macos: ["ai-actions", "ai-stats", "browser-plugin", "clocks", "coding-agents", "discord", "docker", "elgato-lights", "files", "game-launcher", "govee", "home-assistant", "hue", "intellij", "mac-tools", "nanoleaf", "now-playing", "obs", "slides", "speedtest", "spotify", "streamlabs", "twitch", "vlc", "voicemod", "vscode", "weather", "web-requests", "youtube", "ytmusic"],
-  // Only apps with an official Linux build (Streamlabs Desktop, Voicemod, Voicemeeter and Streamer.bot have none).
+  windows: ["ai-actions", "ai-stats", "browser-plugin", "clocks", "coding-agents", "discord", "docker", "elgato-lights", "files", "game-launcher", "govee", "home-assistant", "hue", "intellij", "nanoleaf", "now-playing", "obs", "slides", "speedtest", "spotify", "streamerbot", "streamlabs", "teamspeak", "twitch", "vlc", "voicemeeter", "voicemod", "vscode", "vtube-studio", "weather", "web-requests", "win-tools", "youtube", "ytmusic"],
+  macos: ["ai-actions", "ai-stats", "browser-plugin", "clocks", "coding-agents", "discord", "docker", "elgato-lights", "files", "game-launcher", "govee", "home-assistant", "hue", "intellij", "mac-tools", "nanoleaf", "now-playing", "obs", "slides", "speedtest", "spotify", "streamlabs", "teamspeak", "twitch", "vlc", "voicemod", "vscode", "vtube-studio", "weather", "web-requests", "youtube", "ytmusic"],
+  // Only apps with an official Linux build (Streamlabs Desktop, Voicemod, Voicemeeter, Streamer.bot and VTube Studio have none).
   // Debian/Ubuntu and Arch; GNOME and KDE. Files works only in Dolphin (experimental; GNOME Files
   // doesn't share its selection).
-  linux: ["ai-actions", "ai-stats", "browser-plugin", "clocks", "coding-agents", "discord", "docker", "elgato-lights", "files", "game-launcher", "govee", "home-assistant", "hue", "intellij", "linux-tools", "nanoleaf", "now-playing", "obs", "slides", "speedtest", "spotify", "twitch", "vlc", "vscode", "weather", "web-requests", "youtube", "ytmusic"],
+  linux: ["ai-actions", "ai-stats", "browser-plugin", "clocks", "coding-agents", "discord", "docker", "elgato-lights", "files", "game-launcher", "govee", "home-assistant", "hue", "intellij", "linux-tools", "nanoleaf", "now-playing", "obs", "slides", "speedtest", "spotify", "teamspeak", "twitch", "vlc", "vscode", "weather", "web-requests", "youtube", "ytmusic"],
 };
 
 /** A plugin's version: its Cargo.toml is the only place it is written (the binary reports it). */

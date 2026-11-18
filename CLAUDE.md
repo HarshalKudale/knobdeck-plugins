@@ -79,6 +79,8 @@ Current decisions (keep this list up to date):
 | nanoleaf, govee | the devices' own local APIs (Nanoleaf OpenAPI; Govee LAN UDP API), Govee's cloud API with the user's key | none |
 | voicemeeter | Voicemeeter's Remote API (`VoicemeeterRemote64.dll`, loaded at run time from the install folder in its uninstall registry entry) | none |
 | streamerbot | Streamer.bot's WebSocket server (`GetActions`, `DoAction`, `ExecuteCodeTrigger`, `GetGlobal`; SHA-256 challenge auth) | none. No setting globals: the server has no request for it (an action can) |
+| teamspeak | TeamSpeak 5/6 Remote Apps WebSocket (`auth` with the key TeamSpeak issues once the user allows KnobDeck; `buttonPress` for named buttons the user binds to TeamSpeak actions under Key Bindings, the only request the API has; state from its events) and TeamSpeak 3 ClientQuery (`clientupdate client_input_muted/output_muted/away/input_deactivated`) | none. TeamSpeak 5/6 can't be muted directly: the user binds each KnobDeck button once in TeamSpeak (a TeamSpeak-side binding, not a keystroke) |
+| vtube-studio | VTube Studio's public WebSocket API (`HotkeyTriggerRequest`, `ModelLoadRequest`, `ExpressionActivationRequest`, `MoveModelRequest`, `InjectParameterDataRequest`; token from its Allow popup) | none. Hotkeys are triggered through the API by id, never as key presses |
 
 ## Rule 2: every OS stays working
 
@@ -94,7 +96,7 @@ Current decisions (keep this list up to date):
 - **An app's plugin ships for Linux only when the app itself has an official Linux build** (from
   its vendor, or a distro package of that build), not a third-party client or workaround. Then
   check that the interface the plugin uses exists on Linux too. Not shipped: Streamlabs Desktop,
-  Voicemod, Voicemeeter and Streamer.bot (no Linux build). Zoom isn't shipped anywhere (no documented local API for the
+  Voicemod, Voicemeeter, Streamer.bot and VTube Studio (no Linux build). Zoom isn't shipped anywhere (no documented local API for the
   desktop client). Files ships for Linux as experimental: only Dolphin shares its selection
   (through AT-SPI); GNOME Files doesn't.
 - To ship a plugin, bump `version` in its `Cargo.toml` (the only place it is written; `index.json` holds display text only and CI fails if it has a `version`) and merge to master. CI builds only plugins that have no `<dir>-v<version>` release yet and publishes one release per plugin under that tag (notes: the top section of `<dir>/CHANGELOG.md`, if any); the catalog in `knobdeck-registry` lists it (see `.github/workflows/release.yml`). A **new** plugin also needs `catalog/plugins/<dir>.toml` in `knobdeck-registry` (tags, sort, featured as in `index.json`); without it the release exists but Get Plugins never offers it.

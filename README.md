@@ -51,6 +51,8 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [govee](./govee) | Govee LAN API (UDP), or Govee's cloud API with the user's key for other models and scenes | Windows, macOS, Linux |
 | [voicemeeter](./voicemeeter) | Voicemeeter Remote API (`VoicemeeterRemote64.dll`): strip / bus mute and gain, A1–A5 / B1–B3 routing, Macro Buttons, load configuration; Standard, Banana, Potato | Windows |
 | [streamerbot](./streamerbot) | Streamer.bot WebSocket server: run actions (with arguments) and code triggers, an action-group wheel, global variables on a key | Windows |
+| [teamspeak](./teamspeak) | TeamSpeak 5/6 Remote Apps WebSocket (buttons bound in TeamSpeak, state from its events) and TeamSpeak 3 ClientQuery: mic / speaker mute, away, push-to-talk, current channel, who's talking | Windows, macOS, Linux |
+| [vtube-studio](./vtube-studio) | VTube Studio public API: hotkeys, load model, toggle expressions, move / resize / rotate the model and drive a parameter on a dial, current model | Windows, macOS |
 
 The `vscode`, `intellij` and `browser-plugin` plugins talk to companions that run *inside* VS Code,
 JetBrains IDEs and browsers (an editor extension, an IDE plugin and a browser extension, not
