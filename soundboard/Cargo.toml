@@ -1,0 +1,25 @@
+[package]
+name = "soundboard"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk.workspace = true
+serde_json.workspace = true
+# Decoding and mixing only (symphonia: mp3, wav, ogg/vorbis, flac). Playback goes through cpal on
+# Windows and macOS and through PulseAudio / PipeWire's pulse server on Linux (below).
+rodio = { version = "0.23", default-features = false, features = ["mp3", "wav", "vorbis", "flac"] }
+
+# cpal: WASAPI on Windows, CoreAudio on macOS.
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+rodio = { version = "0.23", default-features = false, features = ["playback", "mp3", "wav", "vorbis", "flac"] }
+
+# Linux: the PulseAudio protocol in pure Rust (PipeWire's pipewire-pulse speaks it too), so the
+# build needs no ALSA headers and every sink (null sinks, virtual cables) is listed by name.
+[target.'cfg(target_os = "linux")'.dependencies]
+pulseaudio = "0.3"
+futures = { version = "0.3", default-features = false, features = ["executor", "std"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_Pipes"] }
