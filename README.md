@@ -51,6 +51,7 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [govee](./govee) | Govee LAN API (UDP), or Govee's cloud API with the user's key for other models and scenes | Windows, macOS, Linux |
 | [voicemeeter](./voicemeeter) | Voicemeeter Remote API (`VoicemeeterRemote64.dll`): strip / bus mute and gain, A1–A5 / B1–B3 routing, Macro Buttons, load configuration; Standard, Banana, Potato | Windows |
 | [streamerbot](./streamerbot) | Streamer.bot WebSocket server: run actions (with arguments) and code triggers, an action-group wheel, global variables on a key | Windows |
+| [soundboard](./soundboard) | Play mp3 / wav / ogg / flac files from a key to any output, or two at once (a virtual cable into your mic plus your headphones); master volume dial; Soundpad on Windows | Windows, macOS, Linux |
 
 The `vscode`, `intellij` and `browser-plugin` plugins talk to companions that run *inside* VS Code,
 JetBrains IDEs and browsers (an editor extension, an IDE plugin and a browser extension, not

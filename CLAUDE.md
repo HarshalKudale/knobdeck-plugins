@@ -79,6 +79,7 @@ Current decisions (keep this list up to date):
 | nanoleaf, govee | the devices' own local APIs (Nanoleaf OpenAPI; Govee LAN UDP API), Govee's cloud API with the user's key | none |
 | voicemeeter | Voicemeeter's Remote API (`VoicemeeterRemote64.dll`, loaded at run time from the install folder in its uninstall registry entry) | none |
 | streamerbot | Streamer.bot's WebSocket server (`GetActions`, `DoAction`, `ExecuteCodeTrigger`, `GetGlobal`; SHA-256 challenge auth) | none. No setting globals: the server has no request for it (an action can) |
+| soundboard | its own playback: WASAPI (Windows) and CoreAudio (macOS) through cpal, the PulseAudio protocol on Linux (pure Rust; PipeWire serves it); Soundpad through its documented remote control pipe `\\.\pipe\sp_remote_control` (Windows) | none |
 
 ## Rule 2: every OS stays working
 
