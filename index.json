@@ -230,6 +230,15 @@
       ],
       "sort": 65
     },
+    "soundboard": {
+      "name": "Soundboard",
+      "summary": "Play sound files from a key to any output, or to a virtual mic and your headphones at once.",
+      "tags": [
+        "Audio",
+        "Streaming"
+      ],
+      "sort": 92
+    },
     "speedtest": {
       "name": "Speed Test",
       "summary": "Internet speed test on a key, and live latency to any host.",

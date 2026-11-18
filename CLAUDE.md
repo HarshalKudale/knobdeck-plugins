@@ -83,6 +83,7 @@ Current decisions (keep this list up to date):
 | apple-music | Music.app's AppleScript dictionary through `osascript` (only Play / Pause and Play Playlist open Music) | none |
 | neovim | Neovim's msgpack-RPC API (`nvim_command`, `nvim_exec_lua`, `nvim_get_mode`) on its `--listen` socket / named pipe | none: no `nvim_input` / `nvim_feedkeys` |
 | hardware-monitor | read-only sensors: Linux hwmon sysfs, amdgpu device files, RAPL; Windows LibreHardwareMonitor / OpenHardwareMonitor WMI (the user runs it; Windows has no sensor API for apps), `MSAcpi_ThermalZoneTemperature`; macOS `IOHIDEventSystemClient` (private, `dlsym`) and the AppleSMC user client (IOKit); NVIDIA NVML (`nvml.dll` / `libnvidia-ml.so.1`, loaded at run time) | none |
+| soundboard | its own playback: WASAPI (Windows) and CoreAudio (macOS) through cpal, the PulseAudio protocol on Linux (pure Rust; PipeWire serves it); Soundpad through its documented remote control pipe `\\.\pipe\sp_remote_control` (Windows) | none |
 
 ## Rule 2: every OS stays working
 
