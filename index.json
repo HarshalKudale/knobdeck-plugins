@@ -100,6 +100,16 @@
       ],
       "sort": 35
     },
+    "github": {
+      "name": "GitHub",
+      "summary": "Notifications, review requests, your PRs, workflow runs and repo counters.",
+      "tags": [
+        "Developer",
+        "Productivity"
+      ],
+      "featured": false,
+      "sort": 93
+    },
     "govee": {
       "name": "Govee",
       "summary": "Govee lights: power, brightness, color, color temperature, scenes. LAN or API key.",

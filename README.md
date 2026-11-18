@@ -48,6 +48,7 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [docker](./docker) | Docker Engine API on the local socket / named pipe (Docker Desktop, Engine, rootless, Colima, OrbStack, Podman): containers and Compose projects | Windows, macOS, Linux |
 | [speedtest](./speedtest) | Download / upload / latency against Cloudflare's speed test servers; live latency to any host | Windows, macOS, Linux |
 | [nanoleaf](./nanoleaf) | Nanoleaf OpenAPI: power, brightness, color temperature, color, effects (mDNS discovery, power-button pairing) | Windows, macOS, Linux |
+| [github](./github) | GitHub REST and GraphQL APIs (device sign-in or a personal access token): notifications, review requests, your open PRs, workflow status, re-run failed jobs, run workflow, repo counters | Windows, macOS, Linux |
 | [govee](./govee) | Govee LAN API (UDP), or Govee's cloud API with the user's key for other models and scenes | Windows, macOS, Linux |
 | [wled](./wled) | WLED JSON API: power, brightness, presets, effects (picker, dial, wheel) with speed and intensity, palettes, color, segment selection (mDNS discovery) | Windows, macOS, Linux |
 | [lifx](./lifx) | LIFX LAN protocol (UDP 56700): power, brightness, white temperature, hue, saturation, color (broadcast discovery, no account) | Windows, macOS, Linux |
