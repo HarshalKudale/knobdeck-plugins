@@ -79,6 +79,8 @@ Current decisions (keep this list up to date):
 | nanoleaf, govee | the devices' own local APIs (Nanoleaf OpenAPI; Govee LAN UDP API), Govee's cloud API with the user's key | none |
 | voicemeeter | Voicemeeter's Remote API (`VoicemeeterRemote64.dll`, loaded at run time from the install folder in its uninstall registry entry) | none |
 | streamerbot | Streamer.bot's WebSocket server (`GetActions`, `DoAction`, `ExecuteCodeTrigger`, `GetGlobal`; SHA-256 challenge auth) | none. No setting globals: the server has no request for it (an action can) |
+| apple-music | Music.app's AppleScript dictionary through `osascript` (only Play / Pause and Play Playlist open Music) | none |
+| neovim | Neovim's msgpack-RPC API (`nvim_command`, `nvim_exec_lua`, `nvim_get_mode`) on its `--listen` socket / named pipe | none: no `nvim_input` / `nvim_feedkeys` |
 
 ## Rule 2: every OS stays working
 
