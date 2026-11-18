@@ -82,6 +82,7 @@ Current decisions (keep this list up to date):
 | streamerbot | Streamer.bot's WebSocket server (`GetActions`, `DoAction`, `ExecuteCodeTrigger`, `GetGlobal`; SHA-256 challenge auth) | none. No setting globals: the server has no request for it (an action can) |
 | apple-music | Music.app's AppleScript dictionary through `osascript` (only Play / Pause and Play Playlist open Music) | none |
 | neovim | Neovim's msgpack-RPC API (`nvim_command`, `nvim_exec_lua`, `nvim_get_mode`) on its `--listen` socket / named pipe | none: no `nvim_input` / `nvim_feedkeys` |
+| hardware-monitor | read-only sensors: Linux hwmon sysfs, amdgpu device files, RAPL; Windows LibreHardwareMonitor / OpenHardwareMonitor WMI (the user runs it; Windows has no sensor API for apps), `MSAcpi_ThermalZoneTemperature`; macOS `IOHIDEventSystemClient` (private, `dlsym`) and the AppleSMC user client (IOKit); NVIDIA NVML (`nvml.dll` / `libnvidia-ml.so.1`, loaded at run time) | none |
 
 ## Rule 2: every OS stays working
 

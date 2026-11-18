@@ -119,6 +119,15 @@
       ],
       "sort": 29
     },
+    "hardware-monitor": {
+      "name": "Hardware Monitor",
+      "summary": "CPU and GPU temperatures, fans, power, GPU load and VRAM on a key or a gauge.",
+      "tags": [
+        "System",
+        "Monitoring"
+      ],
+      "sort": 91
+    },
     "home-assistant": {
       "name": "Home Assistant",
       "summary": "Toggle entities, run scenes, show sensors and set levels.",

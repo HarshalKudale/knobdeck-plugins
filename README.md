@@ -53,6 +53,7 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [wled](./wled) | WLED JSON API: power, brightness, presets, effects (picker, dial, wheel) with speed and intensity, palettes, color, segment selection (mDNS discovery) | Windows, macOS, Linux |
 | [lifx](./lifx) | LIFX LAN protocol (UDP 56700): power, brightness, white temperature, hue, saturation, color (broadcast discovery, no account) | Windows, macOS, Linux |
 | [voicemeeter](./voicemeeter) | Voicemeeter Remote API (`VoicemeeterRemote64.dll`): strip / bus mute and gain, A1–A5 / B1–B3 routing, Macro Buttons, load configuration; Standard, Banana, Potato | Windows |
+| [hardware-monitor](./hardware-monitor) | CPU / GPU temperatures, fans, power, GPU load and VRAM: Linux hwmon + amdgpu, LibreHardwareMonitor's WMI on Windows, Apple silicon HID sensors and the SMC on macOS, NVIDIA through NVML | Windows, macOS, Linux |
 | [streamerbot](./streamerbot) | Streamer.bot WebSocket server: run actions (with arguments) and code triggers, an action-group wheel, global variables on a key | Windows |
 | [apple-music](./apple-music) | Music app (AppleScript): play/pause, next, previous, shuffle, repeat, favorite, volume dial, playlists, now playing with artwork | macOS |
 | [neovim](./neovim) | Neovim over its msgpack-RPC server socket / pipe: Ex commands, Lua, save all, buffer dial, option toggles, mode and file | Windows, macOS, Linux |
