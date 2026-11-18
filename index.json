@@ -285,6 +285,15 @@
       ],
       "sort": 22
     },
+    "teamspeak": {
+      "name": "TeamSpeak",
+      "summary": "Mute mic and speakers, away, push-to-talk, current channel and who's talking (TeamSpeak 5/6 and 3).",
+      "tags": [
+        "Communication",
+        "Gaming"
+      ],
+      "sort": 98
+    },
     "twitch": {
       "name": "Twitch",
       "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers.",
@@ -331,6 +340,15 @@
       ],
       "featured": true,
       "sort": 30
+    },
+    "vtube-studio": {
+      "name": "VTube Studio",
+      "summary": "Hotkeys, models and expressions on keys; move, resize or drive a parameter on a dial.",
+      "tags": [
+        "Streaming",
+        "VTubing"
+      ],
+      "sort": 99
     },
     "weather": {
       "name": "Weather",
