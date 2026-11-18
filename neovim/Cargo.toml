@@ -1,0 +1,10 @@
+[package]
+name = "neovim"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true, features = ["placeholders"] }
+# msgpack for Neovim's RPC.
+rmpv = "1"

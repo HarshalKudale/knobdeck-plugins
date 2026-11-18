@@ -59,7 +59,7 @@ Current decisions (keep this list up to date):
 |---|---|---|
 | discord, obs, vlc, vscode, intellij, streamlabs, voicemod, elgato-lights | the app's / device's own API / pipe / websocket / HTTP | none |
 | spotify | Windows SMTC, macOS AppleScript and Linux MPRIS for playback; Spotify Web API for the rest | none |
-| twitch, youtube, weather | web APIs (Helix, YouTube Data, Open-Meteo) | none |
+| twitch, youtube, weather, github | web APIs (Helix, YouTube Data, Open-Meteo, GitHub REST / GraphQL); keys open pages in the default browser | none |
 | clocks | none needed (time and timers only) | none |
 | mac-tools | Dock (`CoreDockSendNotification`), `SACLockScreenImmediate`, Text Input Sources, Accessibility (windows, hide, Edit ▸ Paste, Menu Command presses any menu item), CoreAudio (mic mute and level: the device's own controls only), `NSRunningApplication.forceTerminate` (Force Quit App), Screenshot app, the `shortcuts` CLI (Run Shortcut), `osascript` (Run AppleScript / JXA), Keyboard Maestro Engine's AppleScript `do script`, display brightness through DisplayServices (`DisplayServicesSetBrightness`, built-in and Apple displays) and DDC/CI over `IOAVServiceWriteI2C` (external monitors, Apple silicon) | Spaces ←/→ (no API; the user's configured system hotkey is posted); Text Snippet types its text. Disabled: Spotlight, Force Quit… (⌥⌘Esc), Clipboard History, Switch to Window, Focus App |
 | win-tools | Win32 (windows, audio sessions and endpoints, `LockWorkStation`; per-monitor DPI aware), undocumented `IPolicyConfig` for the default audio device (no public API; unchanged since Windows 7), `ShellExecuteW` for Task View / Show Desktop / Run (`shell:::{CLSID}`), `ms-screenclip:`, `ms-settings:`, Explorer, Task Manager, display brightness through WMI `WmiMonitorBrightnessMethods` (laptop panel) and DDC/CI through `dxva2` (external monitors) | Text Snippet types its text (no paste mode). Disabled: virtual desktops (no public API), Emoji Panel, Clipboard History, Borderless / Transparency / Set Opacity / Click-Through (restyle other apps' windows), Fullscreen (only resized the window), Switch to Window, Focus App and Move App Window's focus option (Windows only lets a background process take the foreground by a workaround) |
@@ -77,8 +77,12 @@ Current decisions (keep this list up to date):
 | docker | Docker Engine API over the local Unix socket / `docker_engine` named pipe / `DOCKER_HOST` (Podman serves the same API) | none |
 | speedtest | Cloudflare's speed test endpoints; latency is a TCP connect time | none |
 | nanoleaf, govee | the devices' own local APIs (Nanoleaf OpenAPI; Govee LAN UDP API), Govee's cloud API with the user's key | none |
+| wled, lifx | the devices' own local APIs (WLED JSON API over HTTP, found by mDNS `_wled._tcp`; LIFX LAN protocol over UDP 56700, found by broadcast `GetService`) | none |
 | voicemeeter | Voicemeeter's Remote API (`VoicemeeterRemote64.dll`, loaded at run time from the install folder in its uninstall registry entry) | none |
 | streamerbot | Streamer.bot's WebSocket server (`GetActions`, `DoAction`, `ExecuteCodeTrigger`, `GetGlobal`; SHA-256 challenge auth) | none. No setting globals: the server has no request for it (an action can) |
+| apple-music | Music.app's AppleScript dictionary through `osascript` (only Play / Pause and Play Playlist open Music) | none |
+| neovim | Neovim's msgpack-RPC API (`nvim_command`, `nvim_exec_lua`, `nvim_get_mode`) on its `--listen` socket / named pipe | none: no `nvim_input` / `nvim_feedkeys` |
+| hardware-monitor | read-only sensors: Linux hwmon sysfs, amdgpu device files, RAPL; Windows LibreHardwareMonitor / OpenHardwareMonitor WMI (the user runs it; Windows has no sensor API for apps), `MSAcpi_ThermalZoneTemperature`; macOS `IOHIDEventSystemClient` (private, `dlsym`) and the AppleSMC user client (IOKit); NVIDIA NVML (`nvml.dll` / `libnvidia-ml.so.1`, loaded at run time) | none |
 | soundboard | its own playback: WASAPI (Windows) and CoreAudio (macOS) through cpal, the PulseAudio protocol on Linux (pure Rust; PipeWire serves it); Soundpad through its documented remote control pipe `\\.\pipe\sp_remote_control` (Windows) | none |
 
 ## Rule 2: every OS stays working
