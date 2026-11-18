@@ -79,6 +79,7 @@ Current decisions (keep this list up to date):
 | nanoleaf, govee | the devices' own local APIs (Nanoleaf OpenAPI; Govee LAN UDP API), Govee's cloud API with the user's key | none |
 | voicemeeter | Voicemeeter's Remote API (`VoicemeeterRemote64.dll`, loaded at run time from the install folder in its uninstall registry entry) | none |
 | streamerbot | Streamer.bot's WebSocket server (`GetActions`, `DoAction`, `ExecuteCodeTrigger`, `GetGlobal`; SHA-256 challenge auth) | none. No setting globals: the server has no request for it (an action can) |
+| blender | the KnobDeck add-on for Blender (`Knobdeck/knobdeck-blender-companion`) over KnobDeck's companion hub; the add-on runs every action with Blender's Python API (`bpy`: `frame_set`, `screen.animation_play` / `keyframe_jump`, `window.workspace`, `SpaceView3D.shading` / `overlay`, `render.render`, `wm.save_mainfile`, `ed.undo` / `redo`, the brush's / unified paint settings, object location / rotation / scale) on Blender's main thread | none |
 
 ## Rule 2: every OS stays working
 

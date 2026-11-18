@@ -18,6 +18,15 @@
       ],
       "sort": 90
     },
+    "blender": {
+      "name": "Blender",
+      "summary": "Playback, frames, workspaces, shading, render, brush and transform dials through the KnobDeck add-on.",
+      "tags": [
+        "3D",
+        "Creative"
+      ],
+      "sort": 100
+    },
     "browser-plugin": {
       "name": "Browser Controls",
       "summary": "Tabs, zoom, bookmarks and history for your browser.",

@@ -51,14 +51,16 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [govee](./govee) | Govee LAN API (UDP), or Govee's cloud API with the user's key for other models and scenes | Windows, macOS, Linux |
 | [voicemeeter](./voicemeeter) | Voicemeeter Remote API (`VoicemeeterRemote64.dll`): strip / bus mute and gain, A1–A5 / B1–B3 routing, Macro Buttons, load configuration; Standard, Banana, Potato | Windows |
 | [streamerbot](./streamerbot) | Streamer.bot WebSocket server: run actions (with arguments) and code triggers, an action-group wheel, global variables on a key | Windows |
+| [blender](./blender) | Blender through the KnobDeck add-on (companion hub, `bpy`): play / pause, frame dial, jumps, workspaces, shading, overlays, X-ray, render, save, undo, mode, brush size / strength and object transform dials, live mode / object key | Windows, macOS, Linux |
 
-The `vscode`, `intellij` and `browser-plugin` plugins talk to companions that run *inside* VS Code,
-JetBrains IDEs and browsers (an editor extension, an IDE plugin and a browser extension, not
-KnobDeck SDK plugins). Each lives in its own repo, listed in
+The `vscode`, `intellij`, `browser-plugin` and `blender` plugins talk to companions that run
+*inside* VS Code, JetBrains IDEs, browsers and Blender (an editor extension, an IDE plugin, a
+browser extension and a Blender add-on, not KnobDeck SDK plugins). Each lives in its own repo, listed in
 [knobdeck-companion](https://github.com/Knobdeck/knobdeck-companion):
 [vscode](https://github.com/Knobdeck/knobdeck-vscode-companion),
 [intellij](https://github.com/Knobdeck/knobdeck-intellij-companion),
-[browser](https://github.com/Knobdeck/knobdeck-browser-companion). Each one's CI builds its plugin
+[browser](https://github.com/Knobdeck/knobdeck-browser-companion),
+[blender](https://github.com/Knobdeck/knobdeck-blender-companion). Each one's CI builds its plugin
 from this repo and drives it against the companion.
 
 Spotify, Twitch, Voicemod and YouTube take app credentials at build time from repository variables
