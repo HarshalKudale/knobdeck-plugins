@@ -127,6 +127,15 @@
       ],
       "sort": 70
     },
+    "lifx": {
+      "name": "LIFX",
+      "summary": "LIFX lights on your network: power, brightness, white temperature, hue, saturation, color. No account.",
+      "tags": [
+        "Lighting",
+        "Smart home"
+      ],
+      "sort": 97
+    },
     "linux-tools": {
       "name": "Linux Tools",
       "summary": "Windows, workspaces, per-app volume, audio devices on GNOME and KDE.",
@@ -295,6 +304,15 @@
       ],
       "featured": true,
       "sort": 40
+    },
+    "wled": {
+      "name": "WLED",
+      "summary": "WLED LED strips: power, brightness, presets, effects with speed and intensity, palettes, color, segments.",
+      "tags": [
+        "Lighting",
+        "Smart home"
+      ],
+      "sort": 96
     },
     "youtube": {
       "name": "YouTube",
