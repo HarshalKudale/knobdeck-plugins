@@ -60,14 +60,16 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [soundboard](./soundboard) | Play mp3 / wav / ogg / flac files from a key to any output, or two at once (a virtual cable into your mic plus your headphones); master volume dial; Soundpad on Windows | Windows, macOS, Linux |
 | [teamspeak](./teamspeak) | TeamSpeak 5/6 Remote Apps WebSocket (buttons bound in TeamSpeak, state from its events) and TeamSpeak 3 ClientQuery: mic / speaker mute, away, push-to-talk, current channel, who's talking | Windows, macOS, Linux |
 | [vtube-studio](./vtube-studio) | VTube Studio public API: hotkeys, load model, toggle expressions, move / resize / rotate the model and drive a parameter on a dial, current model | Windows, macOS |
+| [blender](./blender) | Blender through the KnobDeck add-on (companion hub, `bpy`): play / pause, frame dial, jumps, workspaces, shading, overlays, X-ray, render, save, undo, mode, brush size / strength and object transform dials, live mode / object key | Windows, macOS, Linux |
 
-The `vscode`, `intellij` and `browser-plugin` plugins talk to companions that run *inside* VS Code,
-JetBrains IDEs and browsers (an editor extension, an IDE plugin and a browser extension, not
-KnobDeck SDK plugins). Each lives in its own repo, listed in
+The `vscode`, `intellij`, `browser-plugin` and `blender` plugins talk to companions that run
+*inside* VS Code, JetBrains IDEs, browsers and Blender (an editor extension, an IDE plugin, a
+browser extension and a Blender add-on, not KnobDeck SDK plugins). Each lives in its own repo, listed in
 [knobdeck-companion](https://github.com/Knobdeck/knobdeck-companion):
 [vscode](https://github.com/Knobdeck/knobdeck-vscode-companion),
 [intellij](https://github.com/Knobdeck/knobdeck-intellij-companion),
-[browser](https://github.com/Knobdeck/knobdeck-browser-companion). Each one's CI builds its plugin
+[browser](https://github.com/Knobdeck/knobdeck-browser-companion),
+[blender](https://github.com/Knobdeck/knobdeck-blender-companion). Each one's CI builds its plugin
 from this repo and drives it against the companion.
 
 Spotify, Twitch, Voicemod and YouTube take app credentials at build time from repository variables
