@@ -63,6 +63,15 @@
       ],
       "sort": 31
     },
+    "daw-mackie": {
+      "name": "DAW Control (Mackie)",
+      "summary": "Control your DAW as a Mackie Control surface: transport, jog, faders, banks, mute / solo / arm, with its LEDs and track names.",
+      "tags": [
+        "Music",
+        "Audio"
+      ],
+      "sort": 106
+    },
     "discord": {
       "name": "Discord",
       "summary": "Mute, deafen, push-to-talk, channels and soundboard.",
@@ -99,6 +108,15 @@
         "Productivity"
       ],
       "sort": 36
+    },
+    "finance": {
+      "name": "Finance",
+      "summary": "Crypto, stock, ETF, index and forex prices with change and sparkline: ticker keys, a watchlist wheel and dial. No account.",
+      "tags": [
+        "Finance",
+        "Information"
+      ],
+      "sort": 103
     },
     "game-launcher": {
       "name": "Game Launcher",
@@ -193,6 +211,15 @@
       "featured": true,
       "sort": 41
     },
+    "midi": {
+      "name": "MIDI",
+      "summary": "Send notes, CCs and program changes to any MIDI port, turn a CC on a dial, and see incoming values on a key.",
+      "tags": [
+        "Music",
+        "Audio"
+      ],
+      "sort": 105
+    },
     "mqtt": {
       "name": "MQTT",
       "summary": "Publish to your MQTT broker, toggle and dim devices, show a topic's value. Zigbee2MQTT, Tasmota, Shelly.",
@@ -219,6 +246,15 @@
         "Editor"
       ],
       "sort": 95
+    },
+    "network": {
+      "name": "Network",
+      "summary": "Public IP, Wake-on-LAN, Tailscale on/off and exit node, Wi-Fi networks and VPNs, Pi-hole and Uptime Kuma status.",
+      "tags": [
+        "Network",
+        "Monitoring"
+      ],
+      "sort": 104
     },
     "now-playing": {
       "name": "Now Playing",
@@ -247,6 +283,17 @@
         "RGB"
       ],
       "sort": 109
+    },
+    "reaper": {
+      "name": "REAPER",
+      "summary": "Transport with live state, markers, any action by command id, track volume / pan dials, mute, solo, arm.",
+      "tags": [
+        "Audio",
+        "Music",
+        "Creative"
+      ],
+      "featured": false,
+      "sort": 107
     },
     "slides": {
       "name": "Slides",
@@ -311,6 +358,33 @@
         "Gaming"
       ],
       "sort": 98
+    },
+    "text-to-speech": {
+      "name": "Text to Speech",
+      "summary": "Read the selection, the clipboard or your own text aloud; voice, rate and volume dials.",
+      "tags": [
+        "Accessibility",
+        "Productivity"
+      ],
+      "sort": 102
+    },
+    "text-tools": {
+      "name": "Text Tools",
+      "summary": "Change case, slugify, encode / decode, format JSON, count words, text slots.",
+      "tags": [
+        "Productivity",
+        "Text"
+      ],
+      "sort": 101
+    },
+    "toolbox": {
+      "name": "Toolbox",
+      "summary": "Counters on a key or dial, dice, coin flip, random pick and a tally file.",
+      "tags": [
+        "Productivity",
+        "Utilities"
+      ],
+      "sort": 100
     },
     "twitch": {
       "name": "Twitch",
