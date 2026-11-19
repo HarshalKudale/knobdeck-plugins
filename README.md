@@ -62,6 +62,8 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [vtube-studio](./vtube-studio) | VTube Studio public API: hotkeys, load model, toggle expressions, move / resize / rotate the model and drive a parameter on a dial, current model | Windows, macOS |
 | [text-to-speech](./text-to-speech) | Read the selected text, the clipboard or any text (placeholders) aloud with the OS's voices: Windows WinRT SpeechSynthesizer, macOS `say`, Linux Speech Dispatcher (SSIP); stop, voice picker, rate and volume dials | Windows, macOS, Linux |
 | [blender](./blender) | Blender through the KnobDeck add-on (companion hub, `bpy`): play / pause, frame dial, jumps, workspaces, shading, overlays, X-ray, render, save, undo, mode, brush size / strength and object transform dials, live mode / object key | Windows, macOS, Linux |
+| [toolbox](./toolbox) | Counter on a key or a dial (kept across restarts), dice, coin flip, random pick from your own list, tally rows to a CSV file; all local | Windows, macOS, Linux |
+| [text-tools](./text-tools) | Transforms on the selected text (case, trim, slugify, URL / Base64 encode and decode, JSON format / minify) onto the clipboard or in place of the selection; word count; nine saved text slots | Windows, macOS, Linux |
 
 The `vscode`, `intellij`, `browser-plugin` and `blender` plugins talk to companions that run
 *inside* VS Code, JetBrains IDEs, browsers and Blender (an editor extension, an IDE plugin, a
