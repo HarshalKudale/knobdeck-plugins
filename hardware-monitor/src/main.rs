@@ -155,7 +155,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Live CPU and GPU temperatures, fan speeds, power, GPU load and VRAM from your computer's sensors, on a key or a gauge.")
-        .icon("thermometer")
+        .icon("app-icon.svg")
         .query("sensors", |_q| {
             let scan = sensors::scan();
             let mut list: Vec<Value> = sensors::AUTO

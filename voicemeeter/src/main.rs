@@ -150,7 +150,7 @@ mod app {
             .platforms(&["windows"])
             .author("KnobDeck")
             .description("Voicemeeter, Banana and Potato: strip and bus mute and gain on a dial, A1–A5 / B1–B3 routing, Macro Buttons and configurations.")
-            .icon("audio-lines")
+            .icon("app-icon.svg")
             .query("strips", |q| options("strip").or_else(|e| q.fail(e.message().to_string())))
             .query("buses", |q| options("bus").or_else(|e| q.fail(e.message().to_string())))
             .query("outputs", |q| {

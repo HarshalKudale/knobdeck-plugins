@@ -140,7 +140,7 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .author("KnobDeck")
         .description("Plan limits (5-hour, weekly) and 30-day token usage for Claude Code and Codex, from the logins and transcripts already on this computer.")
-        .icon("gauge")
+        .icon("app-icon.svg")
         .platforms(&[std::env::consts::OS])
         .action(limits_action("claude-limits", "Claude Limits", &CLAUDE))
         .action(limits_action("codex-limits", "Codex Limits", &CODEX))

@@ -1,3 +1,7 @@
+## 1.0.1
+
+- A proper app icon in the Plugins store and sidebar (`icons/app-icon.svg`).
+
 ## 1.0.0
 
 - Play Sound and Hold to Play: mp3, wav, ogg and flac files, per-sound volume, restart / stop /

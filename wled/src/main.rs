@@ -161,7 +161,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("LED strips and matrices running WLED: power, brightness, presets, effects with speed and intensity, palettes, color and segments.")
-        .icon("rainbow")
+        .icon("app-icon.svg")
         .setup("wled-setup", None)
         .setup_inputs(vec![input::text("addresses", "Device addresses (optional)").placeholder("192.168.1.50, wled-desk.local").with("help", "WLED devices on this network are found automatically. Add addresses only for devices that are not found.")])
         .query("devices", |_| {

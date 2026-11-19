@@ -81,7 +81,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Go live, record, replay buffer, scenes, sources and audio in Streamlabs Desktop.")
-        .icon("radio-tower")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000)
         .setup("streamlabs-setup", None)
         .setup_inputs(vec![

@@ -252,7 +252,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Call any web address from a key: webhooks (IFTTT, n8n, Zapier, Make), REST APIs, local servers. Show a value from a JSON reply on a key, and switch things on and off.")
-        .icon("globe")
+        .icon("app-icon.svg")
         .setup("web-requests-setup", None)
         .setup_inputs(
             (1..=http::TOKEN_SLOTS)

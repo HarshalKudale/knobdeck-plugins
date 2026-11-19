@@ -227,7 +227,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control Blender through the KnobDeck add-on: playback and frames, workspaces, viewport shading, overlays and X-ray, render, save, undo, brush size and strength, and the selected objects' transform on a dial.")
-        .icon("box")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000)
         // Timeline
         .action(

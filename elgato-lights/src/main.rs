@@ -90,7 +90,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Key Light, Ring Light and Light Strip: power, brightness, temperature and color.")
-        .icon("lamp")
+        .icon("app-icon.svg")
         .setup("elgato-lights-setup", None)
         .setup_inputs(vec![input::text("addresses", "Light addresses (optional)").placeholder("192.168.1.20, 192.168.1.21").with("help", "Lights on this network are found automatically. Add addresses only for lights that are not found.")])
         .query("get-lights", |_| {

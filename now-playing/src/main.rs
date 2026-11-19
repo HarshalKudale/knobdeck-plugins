@@ -135,7 +135,7 @@ fn main() {
         } else {
             "What any media player is playing, with its cover, and play/pause, next, previous and seeking: browsers, Spotify, VLC and every app with media controls."
         })
-        .icon("disc-3")
+        .icon("app-icon.svg")
         .query("players", |q| {
             let list = media::sessions().or_else(|e| q.fail(e.message().to_string()))?;
             let mut opts = vec![json!({"value": AUTO, "label": "Whatever is playing"})];

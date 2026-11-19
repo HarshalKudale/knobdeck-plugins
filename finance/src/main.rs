@@ -211,7 +211,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Crypto, stock, ETF, index and forex prices with change and sparkline: ticker keys, a watchlist wheel and a watchlist dial. No account needed.")
-        .icon("chart-candlestick")
+        .icon("app-icon.svg")
         .setup("finance-setup", None)
         .setup_inputs(vec![
             input::text("coingecko_key", "CoinGecko Demo API key (optional)").with("type", "password").with("help", "Not needed: prices work without a key. A free Demo key (coingecko.com ▸ Developer Dashboard) raises the rate limit for long watchlists. Kept in this computer's credential store."),

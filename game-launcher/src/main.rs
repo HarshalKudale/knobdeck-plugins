@@ -132,7 +132,7 @@ fn main() {
         } else {
             "Launch your installed Steam, Epic Games Store and Heroic games from a key or a wheel, and close a running game."
         })
-        .icon("gamepad-2")
+        .icon("app-icon.svg")
         .query("games", |_| {
             let mut v = games();
             v.sort_by_key(|g| g.name.to_lowercase());

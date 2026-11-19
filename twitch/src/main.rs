@@ -136,7 +136,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Chat, chat modes, ads, stream info, markers, clips, viewers, alerts and live channels on Twitch.")
-        .icon("twitch")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000)
         .setup("twitch-setup", None)
         .setup_inputs(vec![input::text("client_id", "Twitch app client ID (optional)").placeholder("leave empty to use KnobDeck's").with("help", "Only needed if you registered your own app at dev.twitch.tv (Public client type).")])

@@ -77,7 +77,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Play, pause, skip and now playing for the Spotify desktop app; likes, shuffle, repeat, volume, devices, playlists and the queue with your own Spotify app.")
-        .icon("music")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000)
         .setup("spotify-setup", None)
         .setup_inputs(vec![input::text("client_id", "Your Spotify app's client ID").placeholder("e.g. 0123456789abcdef0123456789abcdef").with(

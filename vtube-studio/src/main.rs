@@ -134,7 +134,7 @@ fn main() {
         .platforms(&[os]) // one package per OS
         .author("KnobDeck")
         .description("VTube Studio hotkeys, models and expressions on keys; move, resize and rotate the model or drive a tracking parameter on a dial; the current model on a key.")
-        .icon("sparkles")
+        .icon("app-icon.svg")
         .setup("vtube-studio-setup", None)
         .setup_inputs(vec![
             input::text("host", "Host").placeholder("127.0.0.1").default_value("127.0.0.1"),

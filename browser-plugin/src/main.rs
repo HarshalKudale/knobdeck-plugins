@@ -202,7 +202,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Shared Chrome, Edge, Brave, Firefox and Zen controls, wheels, and zoom actions on Windows, macOS and Linux, through the KnobDeck browser extension.")
-        .icon("globe")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000);
 
     // Every action runs in the extension. The address bar, find and save have no extension API in

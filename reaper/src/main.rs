@@ -135,7 +135,7 @@ fn main() {
         .platforms(&[os]) // one package per OS
         .author("KnobDeck")
         .description("REAPER transport with live state, markers, any action by command id, and track volume, pan, mute, solo and record arm on keys and dials, over REAPER's web browser interface.")
-        .icon("audio-waveform")
+        .icon("app-icon.svg")
         .setup("reaper-setup", None)
         .setup_inputs(vec![
             input::text("host", "Host").placeholder("127.0.0.1").default_value("127.0.0.1"),

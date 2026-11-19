@@ -178,7 +178,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Run Ex commands and Lua in Neovim, save all, switch buffers on a dial, toggle options and see the mode and file, over Neovim's own RPC API.")
-        .icon(ICON)
+        .icon("app-icon.svg")
         .query("servers", |_| {
             let mut opts = vec![json!({"value": AUTO, "label": "Newest Neovim"})];
             opts.extend(servers().into_iter().filter_map(|a| describe(&a).map(|label| json!({"value": a.to_string(), "label": label}))));

@@ -326,7 +326,7 @@ mod app {
             .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
             .description("Advanced window management: snap, resize, always-on-top, per-app volume, audio devices, and more.")
-            .icon("app-window")
+            .icon("app-icon.svg")
             .platforms(&["windows"])
             // ── Queries ──
             .query("get-monitors", |ctx| {

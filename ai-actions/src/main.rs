@@ -157,7 +157,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Fix, rewrite, translate, summarize or explain the selected text with your own AI model (Anthropic, OpenAI-compatible or local Ollama), and put the answer back in place.")
-        .icon("sparkles")
+        .icon("app-icon.svg")
         .setup("ai-actions-setup", None)
         .setup_inputs(vec![
             input::select("provider", "Model provider", &[("anthropic", "Anthropic (Claude)"), ("openai", "OpenAI or an OpenAI-compatible server"), ("ollama", "Ollama (on this computer)")]).default_value("anthropic"),

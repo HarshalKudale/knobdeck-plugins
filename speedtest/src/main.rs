@@ -58,7 +58,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Test your internet speed from a key (Cloudflare's speed test servers) and watch the latency to any host.")
-        .icon("gauge")
+        .icon("app-icon.svg")
         .on_ready(|rt| {
             let _ = RT.set(rt.clone());
             Ok(())

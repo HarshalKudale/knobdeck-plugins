@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- A proper app icon in the Plugins store and sidebar (`icons/app-icon.svg`).
+
 ## 1.0.0
 
 - Sensor, Sensor Gauge and Two Sensors: CPU and GPU temperatures, CPU package power, GPU load,

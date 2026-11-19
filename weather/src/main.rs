@@ -145,7 +145,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Current weather, forecast and air quality for any place (Open-Meteo, no account).")
-        .icon("cloud-sun")
+        .icon("app-icon.svg")
         .action(
             Action::button("weather", "Weather")
                 .icon("cloud-sun")

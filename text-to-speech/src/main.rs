@@ -134,7 +134,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Read the selected text, the clipboard or your own text aloud with your computer's voices. Stop it, pick the voice, and set rate and volume on dials.")
-        .icon("speech")
+        .icon("app-icon.svg")
         .query("voices", |q| voice_options(false).or_else(|e| q.fail(e.message().to_string())))
         .query("voices-or-default", |q| voice_options(true).or_else(|e| q.fail(e.message().to_string())))
         .action(

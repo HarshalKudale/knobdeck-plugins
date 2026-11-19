@@ -78,7 +78,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Play sound files from a key to any output device, or two at once (your headphones and a virtual cable into your mic). Master volume dial; Soundpad on Windows.")
-        .icon("audio-lines")
+        .icon("app-icon.svg")
         .query("outputs", |q| options(false).or_else(|e| q.fail(e.message().to_string())))
         .query("outputs-or-none", |q| options(true).or_else(|e| q.fail(e.message().to_string())))
         .query("soundpad-sounds", |q| {

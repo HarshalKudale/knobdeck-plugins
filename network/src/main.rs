@@ -205,7 +205,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Public IP, Wake-on-LAN, Tailscale (on/off, exit node), saved Wi-Fi networks and VPNs, and Pi-hole / Uptime Kuma status.")
-        .icon("network")
+        .icon("app-icon.svg")
         // Joining a network or dialling a VPN can take a while.
         .ack_timeout_ms(45_000)
         .setup("network-setup", None)

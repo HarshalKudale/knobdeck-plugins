@@ -604,7 +604,7 @@ mod app {
             .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
             .description("Window management, workspaces, per-app volume, audio devices and system actions for GNOME and KDE Plasma.")
-            .icon("app-window")
+            .icon("app-icon.svg")
             .platforms(&["linux"])
             .on_ready(|_| {
                 log(format!("desktop: {:?}", linux_desktop::desktop()));

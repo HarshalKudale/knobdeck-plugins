@@ -534,7 +534,7 @@ mod app {
             .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
             .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system actions, live stats, audio devices, mic mute and level, app menu commands, and Shortcuts, AppleScript and Keyboard Maestro actions.")
-            .icon("app-window")
+            .icon("app-icon.svg")
             .platforms(&["macos"])
             // ── Queries ──
             .query("get-monitors", |ctx| {

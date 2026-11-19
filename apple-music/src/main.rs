@@ -132,7 +132,7 @@ mod app {
             .platforms(&["macos"])
             .author("KnobDeck")
             .description("Music app playback, shuffle, repeat, favorites, volume and playlists, with what is playing and its artwork.")
-            .icon(ICON)
+            .icon("app-icon.svg")
             .query("playlists", |q| {
                 let out = tell(script::PLAYLISTS).or_else(|e| q.fail(format!("{} (open Music to list playlists)", e.message())))?;
                 Ok(Value::Array(script::parse_playlists(&out).into_iter().map(|p| json!({"value": p, "label": p})).collect()))

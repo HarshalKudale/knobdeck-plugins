@@ -222,7 +222,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Toggle lights and switches, run scenes and scripts, show sensors and set levels in Home Assistant.")
-        .icon("house")
+        .icon("app-icon.svg")
         .setup("home-assistant-setup", None)
         .setup_inputs(vec![
             input::text("url", "Home Assistant URL").placeholder("http://homeassistant.local:8123").default_value("http://homeassistant.local:8123"),

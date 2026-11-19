@@ -187,7 +187,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("RGB lighting through OpenRGB: load profiles, set a colour on every device or one, and a brightness dial.")
-        .icon("palette")
+        .icon("app-icon.svg")
         .setup("openrgb-setup", None)
         .setup_inputs(vec![
             input::text("host", "Host").placeholder("127.0.0.1").default_value("127.0.0.1").with("help", "Where OpenRGB runs. Turn on its SDK server: SDK Server tab ▸ Start Server (OpenRGB's settings can start it whenever OpenRGB starts, or run OpenRGB with --server)."),

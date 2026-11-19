@@ -1,3 +1,7 @@
+## 1.8.1
+
+- A proper app icon in the Plugins store and sidebar (`icons/app-icon.svg`).
+
 ## 1.8.0
 
 - New audio actions, matching Win Tools and Linux Tools (same ids and settings): Device Volume
