@@ -48,6 +48,8 @@ Exceptions, deliberately kept:
 - AI Actions' "in place of the selected text", which likewise enters text: Windows and Linux paste
   the answer (clipboard + Ctrl+V: long answers arrive at once, line breaks don't press Enter in
   chat apps), macOS types it like Text Snippet (line breaks as ⇧Return).
+- Text Tools' "in place of the selected text" (a transform's result, Paste Slot), entered the same
+  way as AI Actions does it: Windows and Linux paste it (clipboard + Ctrl+V), macOS types it.
 - macOS previous/next Space: macOS has no API, so the user's own configured symbolic hotkey is read
   from `com.apple.symbolichotkeys` and posted; WindowServer handles it before any app sees it.
 
@@ -86,8 +88,11 @@ Current decisions (keep this list up to date):
 | soundboard | its own playback: WASAPI (Windows) and CoreAudio (macOS) through cpal, the PulseAudio protocol on Linux (pure Rust; PipeWire serves it); Soundpad through its documented remote control pipe `\\.\pipe\sp_remote_control` (Windows) | none |
 | teamspeak | TeamSpeak 5/6 Remote Apps WebSocket (`auth` with the key TeamSpeak issues once the user allows KnobDeck; `buttonPress` for named buttons the user binds to TeamSpeak actions under Key Bindings, the only request the API has; state from its events) and TeamSpeak 3 ClientQuery (`clientupdate client_input_muted/output_muted/away/input_deactivated`) | none. TeamSpeak 5/6 can't be muted directly: the user binds each KnobDeck button once in TeamSpeak (a TeamSpeak-side binding, not a keystroke) |
 | vtube-studio | VTube Studio's public WebSocket API (`HotkeyTriggerRequest`, `ModelLoadRequest`, `ExpressionActivationRequest`, `MoveModelRequest`, `InjectParameterDataRequest`; token from its Allow popup) | none. Hotkeys are triggered through the API by id, never as key presses |
+| text-to-speech | the OS's speech synthesizer: Windows WinRT `SpeechSynthesizer` played through a `MediaPlayer`, macOS `/usr/bin/say` (the system synthesizer's own front end; text on stdin, volume as its `[[volm]]` command), Linux Speech Dispatcher over SSIP on its Unix socket (pure Rust, `--spawn` when it isn't running) | none |
 | blender | the KnobDeck add-on for Blender (`Knobdeck/knobdeck-blender-companion`) over KnobDeck's companion hub; the add-on runs every action with Blender's Python API (`bpy`: `frame_set`, `screen.animation_play` / `keyframe_jump`, `window.workspace`, `SpaceView3D.shading` / `overlay`, `render.render`, `wm.save_mainfile`, `ed.undo` / `redo`, the brush's / unified paint settings, object location / rotation / scale) on Blender's main thread | none |
 | reaper | REAPER's built-in web browser interface over HTTP (`/_/` command strings: `TRANSPORT`, `TRACK`, `MARKER`, `GET/REPEAT`, `SET/TRACK/n/VOL` / `PAN` / `MUTE` / `SOLO` / `RECARM` / `SEL`, `SET/POS_STR/m<id>`, `GET/<id>` for toggle state, numeric and named action ids such as `_SWS_…`) | none. Transport and marker keys run REAPER's own actions by command id, never as key presses |
+| toolbox | none needed (counters, dice, coin, random pick, a CSV tally file; all local) | none |
+| text-tools | the selection from `knobdeck_sdk::os` (UI Automation, Accessibility, AT-SPI); transforms in Rust; clipboard through Win32 / NSPasteboard / Klipper / the GNOME extension; slots in the data folder | Entering the result in place of the selection (Transform's "in place" output, Paste Slot), like AI Actions: Windows and Linux paste it (clipboard + Ctrl+V), macOS types it as Unicode key events |
 
 ## Rule 2: every OS stays working
 
