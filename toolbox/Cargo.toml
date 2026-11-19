@@ -1,0 +1,10 @@
+[package]
+name = "toolbox"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk.workspace = true
+serde_json.workspace = true
+jiff = { version = "0.2.39", features = ["tzdb-bundle-platform"] }

@@ -109,6 +109,15 @@
       ],
       "sort": 36
     },
+    "finance": {
+      "name": "Finance",
+      "summary": "Crypto, stock, ETF, index and forex prices with change and sparkline: ticker keys, a watchlist wheel and dial. No account.",
+      "tags": [
+        "Finance",
+        "Information"
+      ],
+      "sort": 103
+    },
     "game-launcher": {
       "name": "Game Launcher",
       "summary": "Launch installed Steam and Epic games from a key or wheel.",
@@ -229,6 +238,15 @@
       ],
       "sort": 95
     },
+    "network": {
+      "name": "Network",
+      "summary": "Public IP, Wake-on-LAN, Tailscale on/off and exit node, Wi-Fi networks and VPNs, Pi-hole and Uptime Kuma status.",
+      "tags": [
+        "Network",
+        "Monitoring"
+      ],
+      "sort": 104
+    },
     "now-playing": {
       "name": "Now Playing",
       "summary": "What any player is playing, with its cover: play/pause, next, previous, position.",
@@ -247,6 +265,17 @@
       ],
       "featured": true,
       "sort": 20
+    },
+    "reaper": {
+      "name": "REAPER",
+      "summary": "Transport with live state, markers, any action by command id, track volume / pan dials, mute, solo, arm.",
+      "tags": [
+        "Audio",
+        "Music",
+        "Creative"
+      ],
+      "featured": false,
+      "sort": 107
     },
     "slides": {
       "name": "Slides",
@@ -311,6 +340,33 @@
         "Gaming"
       ],
       "sort": 98
+    },
+    "text-to-speech": {
+      "name": "Text to Speech",
+      "summary": "Read the selection, the clipboard or your own text aloud; voice, rate and volume dials.",
+      "tags": [
+        "Accessibility",
+        "Productivity"
+      ],
+      "sort": 102
+    },
+    "text-tools": {
+      "name": "Text Tools",
+      "summary": "Change case, slugify, encode / decode, format JSON, count words, text slots.",
+      "tags": [
+        "Productivity",
+        "Text"
+      ],
+      "sort": 101
+    },
+    "toolbox": {
+      "name": "Toolbox",
+      "summary": "Counters on a key or dial, dice, coin flip, random pick and a tally file.",
+      "tags": [
+        "Productivity",
+        "Utilities"
+      ],
+      "sort": 100
     },
     "twitch": {
       "name": "Twitch",
