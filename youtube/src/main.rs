@@ -4,8 +4,10 @@
 mod yt;
 
 use knobdeck_sdk::input::{self, InputExt};
-use knobdeck_sdk::{load_env, open_url, Action, Plugin, Result, Visual};
-use std::time::Duration;
+use knobdeck_sdk::{load_env, open_url, Action, Plugin, Result, Value, Visual};
+use std::collections::HashMap;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 /// Each API read costs quota; a minute keeps a day of viewer polling far inside the free quota.
 const VIEWERS_POLL: Duration = Duration::from_secs(60);
@@ -21,6 +23,79 @@ fn viewers_label() -> Result<String> {
     })
 }
 
+/// Channel statistics move slowly (YouTube rounds subscriber counts to three digits): one read
+/// per channel every 10 minutes is ~144 quota units a day, shared by every key on that channel.
+const STATS_POLL: Duration = Duration::from_secs(600);
+static STATS: Mutex<Option<HashMap<String, (Instant, Value)>>> = Mutex::new(None);
+
+/// The `channels` query for what the user typed: a handle (`@name`, with or without the @), a
+/// channel id (`UC…`), a channel URL, or nothing for their own channel.
+fn channel_query(input: &str) -> String {
+    let t = input.trim().trim_end_matches('/');
+    let t = t.split(['?', '#']).next().unwrap_or(t);
+    let t = t.rsplit_once("youtube.com/").map_or(t, |(_, rest)| rest);
+    if t.is_empty() {
+        return "mine=true".into();
+    }
+    if let Some(id) = t.strip_prefix("channel/") {
+        return format!("id={}", knobdeck_sdk::oauth::encode(id.split('/').next().unwrap_or(id)));
+    }
+    if let Some(name) = t.strip_prefix("user/") {
+        return format!("forUsername={}", knobdeck_sdk::oauth::encode(name.split('/').next().unwrap_or(name)));
+    }
+    if t.len() == 24 && t.starts_with("UC") && !t.contains(['@', '/']) {
+        return format!("id={t}");
+    }
+    let handle = t.split('/').next().unwrap_or(t).trim_start_matches('@');
+    format!("forHandle={}", knobdeck_sdk::oauth::encode(&format!("@{handle}")))
+}
+
+/// The channel's `items[0]` with `snippet` and `statistics`, cached for `STATS_POLL`.
+fn channel(input: &str) -> Result<Value> {
+    let q = channel_query(input);
+    if let Some((at, v)) = STATS.lock().unwrap().get_or_insert_with(HashMap::new).get(&q) {
+        if at.elapsed() < STATS_POLL - Duration::from_secs(5) {
+            return Ok(v.clone());
+        }
+    }
+    let item = yt::get(&format!("/channels?part=snippet,statistics&{q}"))?["items"][0].clone();
+    if item.is_null() {
+        return Err(knobdeck_sdk::Error::msg(format!("No YouTube channel {}", if input.trim().is_empty() { "on this account" } else { input.trim() })));
+    }
+    STATS.lock().unwrap().get_or_insert_with(HashMap::new).insert(q, (Instant::now(), item.clone()));
+    Ok(item)
+}
+
+/// 1234 → "1,234"; 12345 → "12.3K"; 4560000 → "4.56M".
+fn compact(n: u64) -> String {
+    let short = |v: f64, unit: &str| {
+        let s = if v < 10.0 { format!("{v:.2}") } else if v < 100.0 { format!("{v:.1}") } else { format!("{v:.0}") };
+        let s = if s.contains('.') { s.trim_end_matches('0').trim_end_matches('.').to_string() } else { s };
+        format!("{s}{unit}")
+    };
+    match n {
+        0..=9_999 => {
+            let d = n.to_string();
+            if d.len() > 3 { format!("{},{}", &d[..d.len() - 3], &d[d.len() - 3..]) } else { d }
+        }
+        10_000..=999_999 => short(n as f64 / 1e3, "K"),
+        1_000_000..=999_999_999 => short(n as f64 / 1e6, "M"),
+        _ => short(n as f64 / 1e9, "B"),
+    }
+}
+
+fn stat_label(item: &Value, stat: &str) -> String {
+    let s = &item["statistics"];
+    // Counts are decimal strings.
+    let n = |k: &str| s[k].as_str().and_then(|v| v.parse().ok()).unwrap_or(0u64);
+    match stat {
+        "views" => format!("{} views", compact(n("viewCount"))),
+        "videos" => format!("{} videos", compact(n("videoCount"))),
+        _ if s["hiddenSubscriberCount"] == true => "Subscribers hidden".into(),
+        _ => format!("{} subscribers", compact(n("subscriberCount"))),
+    }
+}
+
 fn main() {
     load_env();
     knobdeck_sdk::secrets::migrate_env(&["GOOGLE_CLIENT_SECRET"]);
@@ -28,7 +103,7 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
-        .description("YouTube live viewers and the Studio live dashboard (read-only sign-in).")
+        .description("YouTube live viewers, channel stats and the Studio live dashboard (read-only sign-in).")
         .icon("youtube")
         .ack_timeout_ms(5000)
         .setup("youtube-setup", None)
@@ -66,6 +141,23 @@ fn main() {
         //            Ok(())
         //        }),
         //)
+        .action(
+            Action::button("channel-stats", "Channel Stats")
+                .icon("users")
+                .inputs(vec![
+                    input::text("channel", "Channel").placeholder("@handle or channel ID; empty for yours"),
+                    input::select("stat", "Show", &[("subscribers", "Subscribers"), ("views", "Total views"), ("videos", "Videos")]).with("default", "subscribers"),
+                ])
+                .live(Duration::from_secs(60), |ic| Ok(Visual::new().label(match channel(&ic.input_str("channel")) {
+                    Ok(item) => stat_label(&item, &ic.input_str("stat")),
+                    Err(e) => e.message().to_string(),
+                })))
+                // Press opens the channel.
+                .on_press(|ctx| {
+                    let item = channel(&ctx.input_str("channel"))?;
+                    open_url(&format!("https://www.youtube.com/channel/{}", item["id"].as_str().unwrap_or("")))
+                }),
+        )
         .action(Action::button("dashboard", "Live Dashboard").icon("layout-dashboard").on_press(|_| {
             let ch = yt::get("/channels?part=id&mine=true")?;
             let id = ch["items"][0]["id"].as_str().unwrap_or("");
@@ -90,4 +182,38 @@ fn main() {
         //        }),
         //)
         .run()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use knobdeck_sdk::json;
+
+    #[test]
+    fn channel_input_forms() {
+        assert_eq!(channel_query(""), "mine=true");
+        assert_eq!(channel_query("@MrBeast"), "forHandle=%40MrBeast");
+        assert_eq!(channel_query("mrbeast"), "forHandle=%40mrbeast");
+        assert_eq!(channel_query("UCX6OQ3DkcsbYNE6H8uQQuVA"), "id=UCX6OQ3DkcsbYNE6H8uQQuVA");
+        assert_eq!(channel_query("https://www.youtube.com/@MrBeast/videos"), "forHandle=%40MrBeast");
+        assert_eq!(channel_query("https://www.youtube.com/channel/UCX6OQ3DkcsbYNE6H8uQQuVA/"), "id=UCX6OQ3DkcsbYNE6H8uQQuVA");
+        assert_eq!(channel_query("youtube.com/@name?si=x"), "forHandle=%40name");
+        assert_eq!(channel_query("https://youtube.com/user/oldname"), "forUsername=oldname");
+    }
+
+    #[test]
+    fn counts_read_well() {
+        assert_eq!(compact(0), "0");
+        assert_eq!(compact(1234), "1,234");
+        assert_eq!(compact(12_345), "12.3K");
+        assert_eq!(compact(100_000), "100K");
+        assert_eq!(compact(4_560_000), "4.56M");
+        assert_eq!(compact(1_000_000), "1M");
+        assert_eq!(compact(2_300_000_000), "2.3B");
+        let item = json!({"statistics": {"subscriberCount": "4560000", "viewCount": "1234", "videoCount": "87", "hiddenSubscriberCount": false}});
+        assert_eq!(stat_label(&item, "subscribers"), "4.56M subscribers");
+        assert_eq!(stat_label(&item, "views"), "1,234 views");
+        assert_eq!(stat_label(&item, "videos"), "87 videos");
+        assert_eq!(stat_label(&json!({"statistics": {"hiddenSubscriberCount": true}}), "subscribers"), "Subscribers hidden");
+    }
 }

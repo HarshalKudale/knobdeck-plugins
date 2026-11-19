@@ -1,9 +1,11 @@
 [package]
 name = "twitch"
-version = "1.2.0"
+version = "1.3.0"
 edition = "2021"
 publish = false
 
 [dependencies]
 knobdeck-sdk = { workspace = true, features = ["oauth"] }
 ureq.workspace = true
+# TLS for EventSub (wss): rustls with the ring provider ureq already brings.
+tungstenite = { workspace = true, features = ["rustls-tls-webpki-roots"] }
