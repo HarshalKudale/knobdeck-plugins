@@ -100,6 +100,15 @@
       ],
       "sort": 36
     },
+    "finance": {
+      "name": "Finance",
+      "summary": "Crypto, stock, ETF, index and forex prices with change and sparkline: ticker keys, a watchlist wheel and dial. No account.",
+      "tags": [
+        "Finance",
+        "Information"
+      ],
+      "sort": 103
+    },
     "game-launcher": {
       "name": "Game Launcher",
       "summary": "Launch installed Steam and Epic games from a key or wheel.",
@@ -210,6 +219,15 @@
         "Editor"
       ],
       "sort": 95
+    },
+    "network": {
+      "name": "Network",
+      "summary": "Public IP, Wake-on-LAN, Tailscale on/off and exit node, Wi-Fi networks and VPNs, Pi-hole and Uptime Kuma status.",
+      "tags": [
+        "Network",
+        "Monitoring"
+      ],
+      "sort": 104
     },
     "now-playing": {
       "name": "Now Playing",
