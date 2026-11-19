@@ -220,6 +220,15 @@
       ],
       "sort": 105
     },
+    "mqtt": {
+      "name": "MQTT",
+      "summary": "Publish to your MQTT broker, toggle and dim devices, show a topic's value. Zigbee2MQTT, Tasmota, Shelly.",
+      "tags": [
+        "Smart home",
+        "Automation"
+      ],
+      "sort": 108
+    },
     "nanoleaf": {
       "name": "Nanoleaf",
       "summary": "Nanoleaf panels and lightstrips: power, brightness, color temperature, color, effects.",
@@ -265,6 +274,15 @@
       ],
       "featured": true,
       "sort": 20
+    },
+    "openrgb": {
+      "name": "OpenRGB",
+      "summary": "RGB lighting through OpenRGB: load profiles, set a colour on all devices or one, brightness dial.",
+      "tags": [
+        "Lighting",
+        "RGB"
+      ],
+      "sort": 109
     },
     "reaper": {
       "name": "REAPER",
