@@ -135,9 +135,9 @@ mod imp {
     }
 
     fn now_playing_of(name: &str) -> Result<NowPlaying> {
-        let (conn, name) = (bus::session()?, name);
-        let meta: HashMap<String, OwnedValue> = bus::get(&conn, &name, PATH, PLAYER, "Metadata")?;
-        let status: String = bus::get(&conn, &name, PATH, PLAYER, "PlaybackStatus")?;
+        let conn = bus::session()?;
+        let meta: HashMap<String, OwnedValue> = bus::get(&conn, name, PATH, PLAYER, "Metadata")?;
+        let status: String = bus::get(&conn, name, PATH, PLAYER, "PlaybackStatus")?;
         let text = |k: &str| meta.get(k).and_then(|v| v.try_clone().ok()).and_then(|v| String::try_from(v).ok()).unwrap_or_default();
         let artist = meta.get("xesam:artist").and_then(|v| v.try_clone().ok()).and_then(|v| Vec::<String>::try_from(v).ok()).map(|a| a.join(", ")).unwrap_or_default();
         Ok(NowPlaying { title: text("xesam:title"), artist, playing: status == "Playing" })

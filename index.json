@@ -324,7 +324,7 @@
     },
     "spotify": {
       "name": "Spotify",
-      "summary": "Play, pause, skip and now playing for the Spotify desktop app.",
+      "summary": "Play, pause, skip and now playing; likes, shuffle, volume, devices, playlists and the queue with your own Spotify app.",
       "tags": [
         "Music",
         "Media"
