@@ -1,0 +1,10 @@
+[package]
+name = "reaper"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true, features = ["secrets"] }
+ureq.workspace = true
+base64.workspace = true

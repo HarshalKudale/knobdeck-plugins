@@ -230,6 +230,17 @@
       "featured": true,
       "sort": 20
     },
+    "reaper": {
+      "name": "REAPER",
+      "summary": "Transport with live state, markers, any action by command id, track volume / pan dials, mute, solo, arm.",
+      "tags": [
+        "Audio",
+        "Music",
+        "Creative"
+      ],
+      "featured": false,
+      "sort": 107
+    },
     "slides": {
       "name": "Slides",
       "summary": "Present with PowerPoint, Keynote or LibreOffice Impress.",
