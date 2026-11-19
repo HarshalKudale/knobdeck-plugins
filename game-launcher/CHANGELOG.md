@@ -1,3 +1,7 @@
+## 1.1.1
+
+- A proper app icon in the Plugins store and sidebar (`icons/app-icon.svg`).
+
 ## 1.1.0
 
 - More launchers: GOG Galaxy and Ubisoft Connect (Windows), Heroic (Epic, GOG, Amazon and

@@ -115,7 +115,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("LIFX bulbs, strips and panels on your network: power, brightness, white temperature, hue, saturation and color. No account needed.")
-        .icon("lamp-floor")
+        .icon("app-icon.svg")
         .setup("lifx-setup", None)
         .setup_inputs(vec![input::text("addresses", "Light addresses (optional)").placeholder("192.168.1.60").with("help", "Lights on this network are found automatically. Add addresses only for lights that are not found (for example on another subnet).")])
         .query("lights", |_| {

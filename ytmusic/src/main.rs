@@ -127,7 +127,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control the YouTube Music Desktop App: playback, likes, volume, queue and playlists.")
-        .icon("music")
+        .icon("app-icon.svg")
         .setup("ytmusic-setup", None)
         .setup_inputs(vec![
             input::text("host", "Address (optional)").placeholder("127.0.0.1").with("help", "Leave empty when YouTube Music Desktop runs on this computer."),

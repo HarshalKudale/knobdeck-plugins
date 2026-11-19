@@ -279,7 +279,7 @@ fn main() {
         } else {
             "Act on the files selected in Dolphin: convert and resize images, merge PDFs, zip, rename, copy paths."
         })
-        .icon("files")
+        .icon("app-icon.svg")
         .action(files_action("convert-image", "Convert Images", "image").inputs(vec![input::select("format", "To", &[("png", "PNG"), ("jpeg", "JPEG"), ("webp", "WebP (lossless)")]).default_value("png")]))
         .action(files_action("resize-image", "Resize Images", "scaling").inputs(vec![
             input::select("mode", "By", &[("edge", "Longest edge (px)"), ("percent", "Percent")]).default_value("edge"),

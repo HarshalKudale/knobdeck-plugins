@@ -174,7 +174,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Publish messages, toggle and dim devices, and show a topic's value on a key through your MQTT broker. Works with Zigbee2MQTT, Tasmota and Shelly.")
-        .icon("radio-tower")
+        .icon("app-icon.svg")
         .setup("mqtt-setup", None)
         .setup_inputs(vec![
             input::text("host", "Broker address").placeholder("192.168.1.10 or mqtt.local"),

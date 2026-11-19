@@ -104,7 +104,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("YouTube live viewers, channel stats and the Studio live dashboard (read-only sign-in).")
-        .icon("youtube")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000)
         .setup("youtube-setup", None)
         .setup_inputs(vec![

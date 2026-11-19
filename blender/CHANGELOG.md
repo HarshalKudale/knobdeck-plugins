@@ -1,3 +1,7 @@
+## 1.0.1
+
+- A proper app icon in the Plugins store and sidebar (`icons/app-icon.svg`).
+
 ## 1.0.0
 
 - First release, for Windows, macOS and Linux. Needs KnobDeck with the companion hub and the

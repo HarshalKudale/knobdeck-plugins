@@ -238,7 +238,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Counters on a key or a dial (kept across restarts), dice, a coin flip, a random pick from your own list and a tally that writes each press to a file.")
-        .icon("wrench")
+        .icon("app-icon.svg")
         .action(
             Action::button("counter", "Counter")
                 .icon("hash")

@@ -154,7 +154,7 @@ fn main() {
         .platforms(&[os]) // one package per OS
         .author("KnobDeck")
         .description("TeamSpeak microphone and speaker mute, away, push-to-talk, and the current channel and who is talking. TeamSpeak 5/6 (Remote Apps) and TeamSpeak 3 (ClientQuery).")
-        .icon("headset")
+        .icon("app-icon.svg")
         .setup("teamspeak-setup", None)
         .setup_inputs(vec![
             input::select("client", "TeamSpeak version", &[("remote-apps", "TeamSpeak 5 or 6 (Remote Apps)"), ("clientquery", "TeamSpeak 3 (ClientQuery)")]).default_value("remote-apps"),

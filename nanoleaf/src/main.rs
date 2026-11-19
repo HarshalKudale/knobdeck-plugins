@@ -81,7 +81,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Nanoleaf Shapes, Elements, Canvas, Lines and lightstrips: power, brightness, color temperature, color and effects.")
-        .icon("hexagon")
+        .icon("app-icon.svg")
         .setup("nanoleaf-setup", None)
         .setup_inputs(vec![input::text("addresses", "Device addresses (optional)").placeholder("192.168.1.30").with(
             "help",

@@ -233,7 +233,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Govee lights and light strips: power, brightness, color, color temperature and scenes. Local LAN control, or your Govee API key for other models.")
-        .icon("lamp-ceiling")
+        .icon("app-icon.svg")
         .setup("govee-setup", None)
         .setup_inputs(vec![
             input::text("api_key", "Govee API key (optional)").with("help", "Only for models without LAN Control, and for scenes. Get one in the Govee Home app ▸ Profile ▸ Settings ▸ Apply for API Key. Kept in this computer's credential store."),

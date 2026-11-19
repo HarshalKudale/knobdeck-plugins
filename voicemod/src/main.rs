@@ -71,7 +71,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Voicemod voices, voice changer, hear myself, background effects, mic mute and soundboard.")
-        .icon("audio-waveform")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000)
         .setup("voicemod-setup", None)
         .setup_inputs(vec![input::text("key", "Client key (optional)").placeholder("leave empty to use KnobDeck's").with("help", "Only needed if Voicemod gave you your own Control API key.")])

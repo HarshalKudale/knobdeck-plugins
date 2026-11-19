@@ -151,6 +151,10 @@ Current decisions (keep this list up to date):
 - CI builds only plugins whose `Cargo.toml` version has no `<dir>-v<version>` release yet, so without the bump your change is not published. A released version is never rebuilt: its `<dir>-v<version>` release stays as it is.
 - Optionally add a `## <version>` section at the top of `<dir>/CHANGELOG.md`; it becomes the release notes.
 - Icons are not release assets: the registry links `<dir>/icons/<icon>` by raw GitHub URL, so changing an icon file needs no version bump.
+- A plugin's own icon (the one `Plugin::new(..).icon(..)` names) is `icons/app-icon.svg`, a finished
+  squircle tile the app shows edge to edge: the brand's mark on its colour (Simple Icons) or a Lucide
+  glyph on its category colour, made by `scripts/plugin-icons.mjs` (add the plugin to its tables and
+  re-run). Discord, IntelliJ, OBS, VS Code and Zoom keep their own logo files. Actions keep Lucide names.
 
 ## Rule 5: secrets live in the OS credential store
 

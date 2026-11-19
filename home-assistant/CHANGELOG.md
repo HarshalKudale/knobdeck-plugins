@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- A proper app icon in the Plugins store and sidebar (`icons/app-icon.svg`).
+
 ## 1.2.0
 
 - Keys follow entities live over Home Assistant's WebSocket API (`/api/websocket`, the same

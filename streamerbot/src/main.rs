@@ -66,7 +66,7 @@ fn main() {
         .platforms(&["windows"])
         .author("KnobDeck")
         .description("Run Streamer.bot actions and code triggers, a wheel of an action group, and show global variables. Streamer.bot reaches Twitch, YouTube, Kick, OBS and more.")
-        .icon("bot")
+        .icon("app-icon.svg")
         .setup("streamerbot-setup", None)
         .setup_inputs(vec![
             input::text("host", "Host").placeholder("127.0.0.1").default_value("127.0.0.1"),

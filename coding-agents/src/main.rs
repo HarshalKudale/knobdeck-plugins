@@ -228,7 +228,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("See what your Claude Code and Codex sessions are doing (working, waiting for approval, your turn) and approve or deny Claude Code's requests from a key.")
-        .icon("bot")
+        .icon("app-icon.svg")
         .setup("coding-agents-setup", None)
         .setup_inputs(vec![
             input::checkbox("claude", "Connect Claude Code (adds KnobDeck's hooks to ~/.claude/settings.json)").default_value(true),

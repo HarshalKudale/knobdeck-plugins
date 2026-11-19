@@ -199,7 +199,7 @@ fn main() {
         } else {
             "Present from KnobDeck: next and previous slide, start, end, go to slide, black screen and a slide counter in LibreOffice Impress."
         })
-        .icon("presentation")
+        .icon("app-icon.svg")
         .ack_timeout_ms(6000)
         .action(step_button("next", "Next Slide", "chevron-right", Op::Next))
         .action(step_button("previous", "Previous Slide", "chevron-left", Op::Previous))

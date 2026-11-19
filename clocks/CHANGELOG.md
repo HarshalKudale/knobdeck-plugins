@@ -1,3 +1,7 @@
+## 1.2.1
+
+- A proper app icon in the Plugins store and sidebar (`icons/app-icon.svg`).
+
 ## 1.2.0
 
 - New Pomodoro action: work / short break / long break every N sessions, configurable lengths,

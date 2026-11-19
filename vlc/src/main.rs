@@ -124,6 +124,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control VLC over its built-in HTTP interface.")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000)
         .setup("vlc-setup", Some("setup.html"))
         .on_ready(|rt| {

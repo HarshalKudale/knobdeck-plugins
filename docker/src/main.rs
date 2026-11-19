@@ -98,7 +98,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Start, stop and restart containers and Compose projects, and see what is running. Works with Docker Desktop, Docker Engine, Colima, OrbStack and Podman.")
-        .icon("container")
+        .icon("app-icon.svg")
         .query("containers", |q| {
             let list = containers().or_else(|e| q.fail(e.message().to_string()))?;
             Ok(Value::Array(list.into_iter().map(|c| json!({"value": c.name, "label": format!("{} ({})", c.name, c.image)})).collect()))

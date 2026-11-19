@@ -123,7 +123,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Change case, trim, slugify, URL / Base64 encode and decode, or format JSON in the selected text; count words; keep text in numbered slots. Results go on the clipboard or in place of the selection.")
-        .icon("type")
+        .icon("app-icon.svg")
         .action(
             Action::button("transform", "Transform Text")
                 .icon("type")

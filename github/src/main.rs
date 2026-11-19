@@ -214,7 +214,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Notifications, review requests, your pull requests, workflow runs and repository counters on GitHub.")
-        .icon("github")
+        .icon("app-icon.svg")
         .ack_timeout_ms(5000)
         .setup("github-setup", None)
         .setup_inputs(vec![input::text("token", "Personal access token (optional)")

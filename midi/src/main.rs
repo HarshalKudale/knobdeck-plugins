@@ -327,7 +327,7 @@ fn main() {
         .platforms(&[os]) // one package per OS
         .author("KnobDeck")
         .description("Send MIDI notes, control changes, program changes and raw messages to any MIDI port, turn a CC on a dial, and show incoming CCs and notes on a key.")
-        .icon("piano")
+        .icon("app-icon.svg")
         .query("outputs", |q| port_options(q, midi_io::outputs(), "KnobDeck (virtual port)"))
         .query("inputs", |q| port_options(q, midi_io::inputs(), "KnobDeck (virtual port)"))
         .query("feedback", |q| {

@@ -85,7 +85,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Hue lights, rooms and zones: power, brightness, color temperature, color and scenes.")
-        .icon("lamp-ceiling")
+        .icon("app-icon.svg")
         .setup("hue-setup", None)
         .setup_inputs(vec![input::text("bridge", "Bridge address (optional)")
             .placeholder("192.168.1.30")

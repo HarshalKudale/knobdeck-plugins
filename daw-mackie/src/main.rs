@@ -249,7 +249,7 @@ fn main() {
         .platforms(&[os]) // one package per OS
         .author("KnobDeck")
         .description("Control your DAW as a Mackie Control surface: transport, jog wheel, faders, V-Pots, banks, mute / solo / record arm / select, with the DAW's LEDs, fader positions, track names and time display.")
-        .icon("sliders-vertical")
+        .icon("app-icon.svg")
         .setup("daw-mackie-setup", None)
         .setup_inputs(vec![
             input::text("output", "Port to the DAW (optional on macOS / Linux)").placeholder("KnobDeck to DAW").with("help", windows_help),

@@ -407,7 +407,7 @@ fn main() {
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Clocks for any time zone, a world clock wheel, a countdown timer, a Pomodoro timer and a stopwatch.")
-        .icon("clock")
+        .icon("app-icon.svg")
         .query("get-zones", |_| {
             let mut zones: Vec<String> = jiff::tz::db().available().map(|n| n.to_string()).filter(|n| n.contains('/') && !n.starts_with("Etc/")).collect();
             zones.sort();
