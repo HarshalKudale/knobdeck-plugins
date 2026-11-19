@@ -30,6 +30,9 @@ If the token is revoked, the plugin asks you to run setup again.
 
 ## How it works
 
-The plugin uses Home Assistant's REST API (`/api/states`, `/api/services/<domain>/<service>`) with
-the token as a bearer token. Keys refresh every 2 seconds (sensor keys every 5) from one shared
-`/api/states` reply. The token is stored only in this computer's credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service).
+The plugin keeps one connection to Home Assistant's WebSocket API (`/api/websocket`): it signs in
+with the token, subscribes to `state_changed` and reads every state once, so keys change the moment
+an entity does. Actions call services over the REST API (`/api/services/<domain>/<service>`) with
+the token as a bearer token. If the WebSocket connection fails (a proxy that blocks WebSockets,
+Home Assistant restarting), keys refresh every 2 seconds (sensor keys every 5) from one shared
+`/api/states` reply until it reconnects; it retries after 1, 2, 4… up to 60 seconds. The token is stored only in this computer's credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service).

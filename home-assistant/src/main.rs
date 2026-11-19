@@ -1,11 +1,13 @@
 //! Home Assistant plugin for KnobDeck — toggle and watch entities, run scenes and scripts, set
 //! levels on a dial and call any service, over Home Assistant's REST API with a long-lived token.
+//! Keys follow entity states live over the WebSocket API, and poll over REST while it is down.
 
 mod ha;
+mod ws;
 
 use ha::Conn;
 use knobdeck_sdk::input::{self, InputExt};
-use knobdeck_sdk::{json, load_env, Action, Ctx, Error, Plugin, Result, Value, Visual};
+use knobdeck_sdk::{json, load_env, Action, Ctx, Error, Plugin, Result, Runtime, Value, Visual};
 use std::time::Duration;
 
 const POLL: Duration = Duration::from_secs(2);
@@ -53,6 +55,108 @@ fn toggle_visual(s: &Value, show_name: bool) -> Visual {
         v.label(ha::friendly_name(s))
     } else {
         v
+    }
+}
+
+/// A checkbox input, read as `Ctx::input_bool` reads it.
+fn flag(inputs: &Value, key: &str) -> bool {
+    match &inputs[key] {
+        Value::Bool(b) => *b,
+        Value::String(s) => matches!(s.as_str(), "true" | "1" | "on"),
+        Value::Number(n) => n.as_f64().is_some_and(|f| f != 0.0),
+        _ => false,
+    }
+}
+
+/// What a Toggle Entity key shows.
+fn toggle_live(inputs: &Value) -> Result<Visual> {
+    let c = guard(conn())?;
+    Ok(toggle_visual(&guard(ha::state(&c, &entity_of(inputs)?))?, flag(inputs, "show_name")))
+}
+
+/// What a Show State key shows.
+fn state_live(inputs: &Value) -> Result<Visual> {
+    let c = guard(conn())?;
+    let s = guard(ha::state(&c, &entity_of(inputs)?))?;
+    let text = ha::display(&s, inputs["attribute"].as_str().unwrap_or(""));
+    let label = if flag(inputs, "show_name") { format!("{}\n{text}", ha::friendly_name(&s)) } else { text };
+    let id = s["entity_id"].as_str().unwrap_or("");
+    Ok(Visual::new().label(label).icon(ha::icon_for(id, ha::is_on(&s))))
+}
+
+/// What a Level dial shows.
+fn level_live(inputs: &Value) -> Result<Visual> {
+    let c = guard(conn())?;
+    let s = guard(ha::state(&c, &entity_of(inputs)?))?;
+    Ok(match ha::level_of(&s) {
+        Some(v) => Visual::new().state(v),
+        None => Visual::new().label("No level"),
+    })
+}
+
+/// Keys that follow an entity, and how each draws it.
+type Draw = fn(&Value) -> Result<Visual>;
+const FOLLOWERS: &[(&str, Draw)] = &[("toggle", toggle_live), ("state", state_live), ("level", level_live)];
+
+/// Redraw the keys showing `entity` (every key when `None`) at once, instead of at their next poll.
+fn redraw(rt: &Runtime, entity: Option<&str>) {
+    for (action, draw) in FOLLOWERS {
+        for iid in rt.instances_of(action) {
+            let inputs = rt.inputs_of(&iid);
+            if entity.is_none_or(|e| inputs["entity"].as_str().map(str::trim) == Some(e)) {
+                if let Ok(v) = draw(&inputs) {
+                    rt.set_visual(&iid, v);
+                }
+            }
+        }
+    }
+}
+
+/// Keep the WebSocket feed up: reconnect with back-off, and poll over REST while it is down.
+fn run_feed(rt: Runtime) {
+    let mut attempt = 0;
+    loop {
+        let Ok(c) = conn() else {
+            // Not set up yet.
+            std::thread::sleep(std::time::Duration::from_secs(10));
+            continue;
+        };
+        let was_up = std::sync::atomic::AtomicBool::new(false);
+        let stop = ws::run(
+            &c,
+            &|u| match u {
+                ws::Update::All(list) => {
+                    ha::live_all(list);
+                    redraw(&rt, None);
+                }
+                ws::Update::Changed(id, s) => {
+                    ha::live_change(&id, s);
+                    redraw(&rt, Some(&id));
+                }
+            },
+            &|| {
+                knobdeck_sdk::log("live states: connected to the WebSocket API");
+                was_up.store(true, std::sync::atomic::Ordering::Relaxed);
+            },
+        );
+        ha::live_down();
+        if was_up.into_inner() {
+            attempt = 0;
+        }
+        let wait = match stop {
+            // REST polling reports the refused token on the keys; retry rarely.
+            ws::Stop::Refused(m) => {
+                knobdeck_sdk::log(format!("live states: token refused ({m}); polling"));
+                std::time::Duration::from_secs(300)
+            }
+            ws::Stop::Lost(m) => {
+                let w = ws::backoff(attempt);
+                knobdeck_sdk::log(format!("live states: {m}; polling, reconnecting in {}s", w.as_secs()));
+                w
+            }
+        };
+        attempt += 1;
+        std::thread::sleep(wait);
     }
 }
 
@@ -124,6 +228,11 @@ fn main() {
             input::text("url", "Home Assistant URL").placeholder("http://homeassistant.local:8123").default_value("http://homeassistant.local:8123"),
             input::text("token", "Long-lived access token").with("help", "In Home Assistant, open your profile ▸ Security ▸ Long-lived access tokens ▸ Create token, and paste it here."),
         ])
+        .on_ready(|rt| {
+            let rt = rt.clone();
+            std::thread::spawn(move || run_feed(rt));
+            Ok(())
+        })
         .query("toggle-entities", |_| entity_options(Some(ha::TOGGLE)))
         .query("activate-entities", |_| entity_options(Some(ha::ACTIVATE)))
         .query("level-entities", |_| entity_options(Some(ha::LEVEL)))
@@ -148,10 +257,7 @@ fn main() {
                 .inputs(vec![input::query_select("entity", "Entity", "toggle-entities", &[]), input::checkbox("show_name", "Show the entity's name").default_value(true)])
                 .state("off", "Off", "toggle-left")
                 .state("on", "On", "toggle-right")
-                .live(POLL, |ic| {
-                    let c = guard(conn())?;
-                    Ok(toggle_visual(&guard(ha::state(&c, &entity_of(&ic.inputs)?))?, ic.input_bool("show_name")))
-                })
+                .live(POLL, |ic| toggle_live(&ic.inputs))
                 .on_press(|ctx| {
                     let c = guard(conn())?;
                     let entity = entity_of(&ctx.inputs)?;
@@ -173,14 +279,7 @@ fn main() {
                     input::text("attribute", "Attribute (optional)").placeholder("temperature").with("help", "Show this attribute instead of the state."),
                     input::checkbox("show_name", "Show the entity's name").default_value(false),
                 ])
-                .live(Duration::from_secs(5), |ic| {
-                    let c = guard(conn())?;
-                    let s = guard(ha::state(&c, &entity_of(&ic.inputs)?))?;
-                    let text = ha::display(&s, &ic.input_str("attribute"));
-                    let label = if ic.input_bool("show_name") { format!("{}\n{text}", ha::friendly_name(&s)) } else { text };
-                    let id = s["entity_id"].as_str().unwrap_or("");
-                    Ok(Visual::new().label(label).icon(ha::icon_for(id, ha::is_on(&s))))
-                })
+                .live(Duration::from_secs(5), |ic| state_live(&ic.inputs))
                 .on_press(|_| {
                     ha::invalidate();
                     Ok(())
@@ -194,14 +293,7 @@ fn main() {
                     input::query_select("entity", "Light, cover, fan, media player or number", "level-entities", &[]),
                     input::text("step", "Step (%)").placeholder("5").default_value("5"),
                 ])
-                .live(POLL, |ic| {
-                    let c = guard(conn())?;
-                    let s = guard(ha::state(&c, &entity_of(&ic.inputs)?))?;
-                    Ok(match ha::level_of(&s) {
-                        Some(v) => Visual::new().state(v),
-                        None => Visual::new().label("No level"),
-                    })
-                })
+                .live(POLL, |ic| level_live(&ic.inputs))
                 .on_adjust(|ctx| {
                     let c = guard(conn())?;
                     let s = guard(ha::state(&c, &entity_of(&ctx.inputs)?))?;
