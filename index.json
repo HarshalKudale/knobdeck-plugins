@@ -248,6 +248,17 @@
       "featured": true,
       "sort": 20
     },
+    "reaper": {
+      "name": "REAPER",
+      "summary": "Transport with live state, markers, any action by command id, track volume / pan dials, mute, solo, arm.",
+      "tags": [
+        "Audio",
+        "Music",
+        "Creative"
+      ],
+      "featured": false,
+      "sort": 107
+    },
     "slides": {
       "name": "Slides",
       "summary": "Present with PowerPoint, Keynote or LibreOffice Impress.",
@@ -311,6 +322,33 @@
         "Gaming"
       ],
       "sort": 98
+    },
+    "text-to-speech": {
+      "name": "Text to Speech",
+      "summary": "Read the selection, the clipboard or your own text aloud; voice, rate and volume dials.",
+      "tags": [
+        "Accessibility",
+        "Productivity"
+      ],
+      "sort": 102
+    },
+    "text-tools": {
+      "name": "Text Tools",
+      "summary": "Change case, slugify, encode / decode, format JSON, count words, text slots.",
+      "tags": [
+        "Productivity",
+        "Text"
+      ],
+      "sort": 101
+    },
+    "toolbox": {
+      "name": "Toolbox",
+      "summary": "Counters on a key or dial, dice, coin flip, random pick and a tally file.",
+      "tags": [
+        "Productivity",
+        "Utilities"
+      ],
+      "sort": 100
     },
     "twitch": {
       "name": "Twitch",
