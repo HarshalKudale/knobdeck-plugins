@@ -294,6 +294,15 @@
       ],
       "sort": 98
     },
+    "text-to-speech": {
+      "name": "Text to Speech",
+      "summary": "Read the selection, the clipboard or your own text aloud; voice, rate and volume dials.",
+      "tags": [
+        "Accessibility",
+        "Productivity"
+      ],
+      "sort": 102
+    },
     "text-tools": {
       "name": "Text Tools",
       "summary": "Change case, slugify, encode / decode, format JSON, count words, text slots.",
