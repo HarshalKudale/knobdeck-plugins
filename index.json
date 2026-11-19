@@ -294,6 +294,24 @@
       ],
       "sort": 98
     },
+    "text-tools": {
+      "name": "Text Tools",
+      "summary": "Change case, slugify, encode / decode, format JSON, count words, text slots.",
+      "tags": [
+        "Productivity",
+        "Text"
+      ],
+      "sort": 101
+    },
+    "toolbox": {
+      "name": "Toolbox",
+      "summary": "Counters on a key or dial, dice, coin flip, random pick and a tally file.",
+      "tags": [
+        "Productivity",
+        "Utilities"
+      ],
+      "sort": 100
+    },
     "twitch": {
       "name": "Twitch",
       "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers.",
