@@ -1,7 +1,10 @@
-//! Game Launcher plugin for KnobDeck — launch installed Steam and Epic Games Store games from a
-//! key or a wheel, and open the launchers' pages.
+//! Game Launcher plugin for KnobDeck — launch installed games (Steam, Epic, GOG Galaxy, Ubisoft
+//! Connect, Heroic, Lutris) from a key or a wheel, open the launchers' pages, and close a running
+//! game.
 
+mod launchers;
 mod library;
+mod procs;
 
 use knobdeck_sdk::input::{self, InputExt};
 use knobdeck_sdk::{json, open_url, Action, Error, Plugin, Result, Value, Visual};
@@ -24,6 +27,9 @@ fn games() -> Vec<Game> {
 }
 
 fn launch(key: &str) -> Result<()> {
+    if let Some(id) = key.strip_prefix("gog:") {
+        return launchers::launch_gog(id);
+    }
     let url = library::launch_url(key).ok_or_else(|| Error::msg("Choose a game"))?;
     open_url(&url).map_err(|e| Error::msg(format!("Could not start the launcher: {}", e.message())))
 }
@@ -31,6 +37,10 @@ fn launch(key: &str) -> Result<()> {
 fn store_label(store: &str) -> &'static str {
     match store {
         "epic" => "Epic",
+        "gog" => "GOG",
+        "ubisoft" => "Ubisoft",
+        "heroic" => "Heroic",
+        "lutris" => "Lutris",
         _ => "Steam",
     }
 }
@@ -40,7 +50,7 @@ fn listed(store: &str, sort: &str) -> Vec<Game> {
     let mut v: Vec<Game> = games().into_iter().filter(|g| store.is_empty() || store == "all" || g.store == store).collect();
     v.sort_by_key(|g| g.name.to_lowercase());
     if sort != "name" {
-        v.sort_by(|a, b| b.last_played.cmp(&a.last_played));
+        v.sort_by_key(|g| std::cmp::Reverse(g.last_played));
     }
     v
 }
@@ -62,10 +72,50 @@ fn pages() -> Vec<(&'static str, &'static str)> {
 
 fn stores() -> Vec<(&'static str, &'static str)> {
     if cfg!(target_os = "linux") {
-        vec![("all", "All"), ("steam", "Steam")]
+        vec![("all", "All"), ("steam", "Steam"), ("heroic", "Heroic"), ("lutris", "Lutris")]
+    } else if cfg!(windows) {
+        vec![("all", "All"), ("steam", "Steam"), ("epic", "Epic Games"), ("gog", "GOG Galaxy"), ("ubisoft", "Ubisoft Connect"), ("heroic", "Heroic")]
     } else {
-        vec![("all", "All"), ("steam", "Steam"), ("epic", "Epic Games")]
+        vec![("all", "All"), ("steam", "Steam"), ("epic", "Epic Games"), ("heroic", "Heroic")]
     }
+}
+
+const RUNNING: &str = "__running__";
+
+/// Close Game: ask the game's processes (or every known game's) to close, and terminate the
+/// ones still running after `grace` (none: only ask).
+fn close_game(key: &str, grace: Option<Duration>) -> Result<String> {
+    let all = games();
+    let picked: Vec<&Game> = if key == RUNNING || key.is_empty() { all.iter().collect() } else { all.iter().filter(|g| g.key == key).collect() };
+    if picked.is_empty() {
+        return Err(Error::msg("This game isn't installed any more"));
+    }
+    let owners: Vec<procs::Owner> = picked.iter().filter_map(|g| procs::Owner::of(g)).collect();
+    if owners.is_empty() {
+        return Err(Error::msg("The launcher doesn't say where this game is installed"));
+    }
+    let found = procs::find(&owners);
+    if found.is_empty() {
+        return Err(Error::msg(if key == RUNNING || key.is_empty() { "No game is running" } else { "The game isn't running" }));
+    }
+    let name = picked.iter().find(|g| procs::Owner::of(g).is_some_and(|o| found.iter().any(|(_, e)| o.owns(e)))).map(|g| g.name.clone()).unwrap_or_default();
+    let pids: Vec<u32> = found.iter().map(|p| p.0).collect();
+    procs::close(&pids);
+    if let Some(grace) = grace {
+        std::thread::spawn(move || {
+            let until = Instant::now() + grace;
+            while Instant::now() < until {
+                std::thread::sleep(Duration::from_millis(250));
+                // Still running, and still the same program (a pid can be reused).
+                if !procs::find(&owners).iter().any(|(p, _)| pids.contains(p)) {
+                    return;
+                }
+            }
+            let left: Vec<u32> = procs::find(&owners).into_iter().map(|p| p.0).filter(|p| pids.contains(p)).collect();
+            procs::kill(&left);
+        });
+    }
+    Ok(name)
 }
 
 fn main() {
@@ -75,7 +125,13 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
-        .description(if cfg!(target_os = "linux") { "Launch your installed Steam games from a key or a wheel." } else { "Launch your installed Steam and Epic Games Store games from a key or a wheel." })
+        .description(if cfg!(target_os = "linux") {
+            "Launch your installed Steam, Heroic and Lutris games from a key or a wheel, and close a running game."
+        } else if cfg!(windows) {
+            "Launch your installed Steam, Epic, GOG Galaxy, Ubisoft Connect and Heroic games from a key or a wheel, and close a running game."
+        } else {
+            "Launch your installed Steam, Epic Games Store and Heroic games from a key or a wheel, and close a running game."
+        })
         .icon("gamepad-2")
         .query("games", |_| {
             let mut v = games();
@@ -84,6 +140,13 @@ fn main() {
                 return Err(Error::msg("No installed games found"));
             }
             Ok(Value::Array(v.into_iter().map(|g| json!({"value": g.key, "label": format!("{} · {}", g.name, store_label(g.store))})).collect()))
+        })
+        .query("running-games", |_| {
+            let mut v = games();
+            v.sort_by_key(|g| g.name.to_lowercase());
+            let mut opts = vec![json!({"value": RUNNING, "label": "Any running game"})];
+            opts.extend(v.into_iter().filter(|g| procs::Owner::of(g).is_some()).map(|g| json!({"value": g.key, "label": format!("{} · {}", g.name, store_label(g.store))})));
+            Ok(Value::Array(opts))
         })
         .action(
             Action::button("launch", "Launch Game")
@@ -135,6 +198,25 @@ fn main() {
             let page = PAGES.iter().find(|p| p.0 == if want.is_empty() { "steam-library" } else { want.as_str() }).ok_or_else(|| Error::msg("Choose a page"))?;
             open_url(page.2).map_err(|e| Error::msg(format!("Could not open the launcher: {}", e.message())))
         }))
+        .action(
+            Action::button("close", "Close Game")
+                .icon("circle-x")
+                .inputs(vec![
+                    input::query_select("game", "Game", "running-games", &[]).with("default", RUNNING),
+                    input::select("force", "If it doesn't close", &[("5", "End it after 5 s"), ("15", "End it after 15 s"), ("30", "End it after 30 s"), ("never", "Leave it running")]).with("default", "5"),
+                ])
+                .on_press(|ctx| {
+                    let force = ctx.input_str("force");
+                    let grace = match force.as_str() {
+                        "never" => None,
+                        s => Some(Duration::from_secs(s.parse().unwrap_or(5))),
+                    };
+                    match close_game(&ctx.input_str("game"), grace) {
+                        Ok(_) => Ok(()),
+                        Err(e) => ctx.fail(e.message().to_string()),
+                    }
+                }),
+        )
         .run()
 }
 
@@ -146,5 +228,8 @@ mod tests {
     fn page_urls() {
         assert!(pages().iter().any(|p| p.0 == "steam-library"));
         assert_eq!(pages().iter().any(|p| p.0 == "epic-store"), !cfg!(target_os = "linux"));
+        for (store, _) in stores().into_iter().skip(1) {
+            assert_eq!(store_label(store) == "Steam", store == "steam", "{store}");
+        }
     }
 }

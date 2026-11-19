@@ -14,6 +14,7 @@ use [Mac Tools](../mac-tools).
 - Includes dynamic wheels for choosing target windows live.
 - Move App Window: snap, center, maximize, minimize or place a chosen app's window
   (for example Discord to the right half of monitor 2) whether or not it has focus.
+- Sleep Display: turns the monitors off (any mouse or key input wakes them).
 - Task View, Show Desktop, Lock PC, Screen Snip, File Explorer, Settings, Run and Task Manager.
 - Text Snippet: types saved text into the focused window.
 - Wi-Fi / Bluetooth on-off, power plan keys and a power plan wheel, and a Ping key that shows

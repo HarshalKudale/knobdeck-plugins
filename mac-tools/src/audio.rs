@@ -1,5 +1,6 @@
 //! CoreAudio: list / switch the default output and input device, mute the
-//! microphone and set its input level. (Per-app volume, which Win Tools offers, needs an audio driver
+//! microphone and set its input level, and a device's volume and mute (an output's volume through
+//! AudioToolbox's virtual main volume, the one the menu bar's volume slider sets). (Per-app volume, which Win Tools offers, needs an audio driver
 //! on macOS, so it is not part of Mac Tools.)
 
 use knobdeck_sdk::{Error, Result};
@@ -17,6 +18,9 @@ const DEFAULT_OUTPUT: u32 = fourcc(b"dOut");
 const DEFAULT_INPUT: u32 = fourcc(b"dIn ");
 const DEFAULT_SYSTEM_OUTPUT: u32 = fourcc(b"sOut");
 const NAME: u32 = fourcc(b"lnam");
+const UID: u32 = fourcc(b"uid ");
+/// `kAudioHardwareServiceDeviceProperty_VirtualMainVolume` (AudioToolbox).
+const VIRTUAL_MAIN_VOLUME: u32 = fourcc(b"vmvc");
 const STREAMS: u32 = fourcc(b"stm#");
 const MUTE: u32 = fourcc(b"mute");
 const VOLUME: u32 = fourcc(b"volm");
@@ -39,6 +43,14 @@ extern "C" {
     fn AudioObjectGetPropertyDataSize(obj: u32, addr: *const Address, qsize: u32, qdata: *const c_void, size: *mut u32) -> i32;
     fn AudioObjectGetPropertyData(obj: u32, addr: *const Address, qsize: u32, qdata: *const c_void, size: *mut u32, data: *mut c_void) -> i32;
     fn AudioObjectSetPropertyData(obj: u32, addr: *const Address, qsize: u32, qdata: *const c_void, size: u32, data: *const c_void) -> i32;
+}
+
+#[link(name = "AudioToolbox", kind = "framework")]
+extern "C" {
+    fn AudioHardwareServiceHasProperty(obj: u32, addr: *const Address) -> u8;
+    fn AudioHardwareServiceIsPropertySettable(obj: u32, addr: *const Address, settable: *mut u8) -> i32;
+    fn AudioHardwareServiceGetPropertyData(obj: u32, addr: *const Address, qsize: u32, qdata: *const c_void, size: *mut u32, data: *mut c_void) -> i32;
+    fn AudioHardwareServiceSetPropertyData(obj: u32, addr: *const Address, qsize: u32, qdata: *const c_void, size: u32, data: *const c_void) -> i32;
 }
 
 fn addr(selector: u32, scope: u32, element: u32) -> Address {
@@ -134,12 +146,17 @@ pub fn set_default(input: bool, id: u32) -> Result {
 // Only the device's own controls are used: a mic without a mute control (many USB mics) can't be
 // muted here, rather than being faked by setting its level to 0.
 
-/// Elements that carry the control: the main element, else channels 1 and 2.
+/// Input elements that carry the control: the main element, else channels 1 and 2.
 fn control_elements(id: u32, selector: u32) -> Vec<u32> {
-    if settable(id, &addr(selector, SCOPE_INPUT, ELEMENT_MAIN)) {
+    elements(id, selector, SCOPE_INPUT)
+}
+
+/// Elements of `scope` that carry the control: the main element, else channels 1 and 2.
+fn elements(id: u32, selector: u32, sc: u32) -> Vec<u32> {
+    if settable(id, &addr(selector, sc, ELEMENT_MAIN)) {
         return vec![ELEMENT_MAIN];
     }
-    (1..=2).filter(|&ch| settable(id, &addr(selector, SCOPE_INPUT, ch))).collect()
+    (1..=2).filter(|&ch| settable(id, &addr(selector, sc, ch))).collect()
 }
 
 fn mic() -> Result<u32> {
@@ -188,6 +205,113 @@ pub fn set_mic_level(percent: f64) -> Result<i64> {
     Ok(p as i64)
 }
 
+// ── Any device's volume and mute (Device Volume, Mute Device, Push to Talk) ──
+// Devices are picked by their UID, which stays the same across restarts and reconnects (the
+// numeric AudioObjectID doesn't).
+
+/// The device setting's value for "whatever the default device is".
+pub const DEFAULT_DEVICE: &str = "__default__";
+
+/// A device's persistent UID (`kAudioDevicePropertyDeviceUID`).
+pub fn uid(id: u32) -> Option<String> {
+    let a = addr(UID, SCOPE_GLOBAL, ELEMENT_MAIN);
+    let mut s: CFStringRef = std::ptr::null();
+    let mut size = std::mem::size_of::<CFStringRef>() as u32;
+    let st = unsafe { AudioObjectGetPropertyData(id, &a, 0, std::ptr::null(), &mut size, &mut s as *mut _ as *mut c_void) };
+    (st == 0 && !s.is_null()).then(|| unsafe { CFString::wrap_under_create_rule(s) }.to_string())
+}
+
+/// The device a setting names: its UID, or the default device.
+fn resolve(input: bool, key: &str) -> Result<u32> {
+    if key.is_empty() || key == DEFAULT_DEVICE {
+        return default_device(input).ok_or_else(|| Error::msg(if input { "No microphone is selected" } else { "No output device is selected" }));
+    }
+    devices(input).into_iter().find(|d| uid(d.id).as_deref() == Some(key)).map(|d| d.id).ok_or_else(|| Error::msg("That device isn't connected"))
+}
+
+/// Whether the device named by `key` is the default one.
+pub fn is_default(input: bool, key: &str) -> bool {
+    !key.is_empty() && default_device(input).and_then(uid).as_deref() == Some(key)
+}
+
+/// Make the device named by `key` (a UID) the default.
+pub fn set_default_uid(input: bool, key: &str) -> Result {
+    set_default(input, resolve(input, key)?)
+}
+
+pub fn device_muted(input: bool, key: &str) -> Result<bool> {
+    let id = resolve(input, key)?;
+    let el = *elements(id, MUTE, scope(input)).first().ok_or_else(|| Error::msg("This device has no mute control macOS can switch"))?;
+    Ok(get::<u32>(id, &addr(MUTE, scope(input), el)).is_some_and(|m| m != 0))
+}
+
+pub fn set_device_mute(input: bool, key: &str, muted: bool) -> Result {
+    let id = resolve(input, key)?;
+    let els = elements(id, MUTE, scope(input));
+    if els.is_empty() {
+        return Err(Error::msg("This device has no mute control macOS can switch"));
+    }
+    for el in els {
+        set(id, &addr(MUTE, scope(input), el), muted as u32)?;
+    }
+    Ok(())
+}
+
+/// Flip the device's mute; returns the new muted state.
+pub fn toggle_device_mute(input: bool, key: &str) -> Result<bool> {
+    let target = !device_muted(input, key)?;
+    set_device_mute(input, key, target)?;
+    Ok(target)
+}
+
+/// An output's virtual main volume (all channels at once, keeping their balance), if it has one.
+fn virtual_main(id: u32) -> Option<Address> {
+    let a = addr(VIRTUAL_MAIN_VOLUME, SCOPE_OUTPUT, ELEMENT_MAIN);
+    let mut s = 0u8;
+    (unsafe { AudioHardwareServiceHasProperty(id, &a) } != 0 && unsafe { AudioHardwareServiceIsPropertySettable(id, &a, &mut s) } == 0 && s != 0).then_some(a)
+}
+
+/// The device's volume in percent.
+pub fn device_volume(input: bool, key: &str) -> Result<i64> {
+    let id = resolve(input, key)?;
+    let v = if let Some(a) = (!input).then(|| virtual_main(id)).flatten() {
+        let (mut v, mut size) = (0f32, 4u32);
+        let st = unsafe { AudioHardwareServiceGetPropertyData(id, &a, 0, std::ptr::null(), &mut size, &mut v as *mut f32 as *mut c_void) };
+        (st == 0).then_some(v)
+    } else {
+        elements(id, VOLUME, scope(input)).first().and_then(|&el| get::<f32>(id, &addr(VOLUME, scope(input), el)))
+    };
+    v.map(|v| (v as f64 * 100.0).round() as i64).ok_or_else(|| Error::msg("This device's volume can't be changed from macOS"))
+}
+
+/// Set the device's volume (0–100); returns the volume set.
+pub fn set_device_volume(input: bool, key: &str, percent: f64) -> Result<i64> {
+    let id = resolve(input, key)?;
+    let p = percent.round().clamp(0.0, 100.0);
+    let v = (p / 100.0) as f32;
+    if let Some(a) = (!input).then(|| virtual_main(id)).flatten() {
+        let st = unsafe { AudioHardwareServiceSetPropertyData(id, &a, 0, std::ptr::null(), 4, &v as *const f32 as *const c_void) };
+        if st != 0 {
+            return Err(Error::msg(format!("CoreAudio refused the change (OSStatus {st})")));
+        }
+        return Ok(p as i64);
+    }
+    let els = elements(id, VOLUME, scope(input));
+    if els.is_empty() {
+        return Err(Error::msg("This device's volume can't be changed from macOS"));
+    }
+    for el in els {
+        set(id, &addr(VOLUME, scope(input), el), v)?;
+    }
+    Ok(p as i64)
+}
+
+/// Nudge the device's volume by `delta` percent; returns the volume set.
+pub fn adjust_device_volume(input: bool, key: &str, delta: f64) -> Result<i64> {
+    let now = device_volume(input, key)? as f64;
+    set_device_volume(input, key, now + delta)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -196,8 +320,11 @@ mod tests {
     fn lists_outputs_with_names() {
         let outs = devices(false);
         eprintln!("outputs: {:?}\ninputs: {:?}\nmic muted: {:?}", outs, devices(true), mic_muted());
+        eprintln!("default output volume: {:?}, muted: {:?}", device_volume(false, DEFAULT_DEVICE), device_muted(false, DEFAULT_DEVICE));
         if let Some(def) = default_device(false) {
             assert!(outs.iter().any(|d| d.id == def), "default output is listed");
+            let u = uid(def).expect("every device has a UID");
+            assert!(is_default(false, &u) && resolve(false, &u).ok() == Some(def));
         }
     }
 }

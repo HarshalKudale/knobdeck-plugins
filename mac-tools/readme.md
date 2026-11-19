@@ -17,8 +17,11 @@ Window management and system tools for KnobDeck on **macOS** — the macOS count
   over DDC/CI on Macs with Apple silicon (not through DisplayLink adapters, and not over HDMI on
   some Macs and docks).
 - **System Stats:** live CPU, GPU or memory use on the tile; pressing it opens Activity Monitor.
-- **Audio:** Mute Microphone toggle and Microphone Level slider (for microphones that have those
-  controls), and wheels to switch the output or input device.
+- **Audio:** Mute Microphone toggle, Push to Talk (hold to unmute the microphone) and Microphone
+  Level slider (for microphones that have those controls), wheels to switch the output or input
+  device, and the same device actions as Win Tools and Linux Tools: Device Volume (a slider or
+  dial; for outputs the system volume the menu bar's slider sets), Mute Device, Set Audio Device
+  and Toggle Audio Device (switch between two), for the default device or a chosen one.
 - **Text Snippet:** types saved text into whatever has focus, or with Paste mode on, copies it to
   the clipboard and presses the app's Edit ▸ Paste.
 - **Menu Command:** presses any item of an app's menu bar — pick the app and the command

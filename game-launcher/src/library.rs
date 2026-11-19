@@ -1,6 +1,7 @@
 //! Installed games: Steam (every OS) and the Epic Games Launcher (Windows and macOS), read from
-//! the launchers' own files. Games are launched through the launchers' URL schemes, so Steam or
-//! Epic starts the game the same way their library's Play button does.
+//! the launchers' own files, plus the launchers in `launchers.rs` (GOG Galaxy, Ubisoft Connect,
+//! Heroic, Lutris). Games are launched through the launchers' URL schemes, so the launcher starts
+//! the game the same way its library's Play button does.
 
 use base64::Engine;
 use knobdeck_sdk::Value;
@@ -9,13 +10,19 @@ use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Game {
-    /// `steam:<appid>` or `epic:<namespace>:<item id>:<app name>`.
+    /// `steam:<appid>`, `epic:<namespace>:<item id>:<app name>`, `gog:<id>`, `ubisoft:<id>`,
+    /// `heroic:<runner>:<app name>` or `lutris:<id>`.
     pub key: String,
     pub name: String,
     pub store: &'static str,
     /// Unix seconds (Steam only; 0 when never played or unknown).
     pub last_played: u64,
     pub icon: Option<PathBuf>,
+    /// The game's install folder (Close Game closes only processes started from it).
+    pub dir: Option<PathBuf>,
+    /// For a game whose folder is shared with other programs (Heroic's sideloaded apps): only
+    /// this exe counts as the game.
+    pub exe: Option<PathBuf>,
 }
 
 pub fn launch_url(key: &str) -> Option<String> {
@@ -25,11 +32,17 @@ pub fn launch_url(key: &str) -> Option<String> {
             let parts: Vec<&str> = rest.splitn(3, ':').collect();
             (parts.len() == 3 && parts.iter().all(|p| !p.is_empty())).then(|| format!("com.epicgames.launcher://apps/{}%3A{}%3A{}?action=launch&silent=true", enc(parts[0]), enc(parts[1]), enc(parts[2])))
         }
+        ("ubisoft", id) if !id.is_empty() && id.bytes().all(|b| b.is_ascii_digit()) => Some(format!("uplay://launch/{id}/0")),
+        ("lutris", id) if !id.is_empty() && id.bytes().all(|b| b.is_ascii_digit()) => Some(format!("lutris:rungameid/{id}")),
+        ("heroic", rest) => {
+            let (runner, app) = rest.split_once(':')?;
+            (["legendary", "gog", "nile", "sideload"].contains(&runner) && !app.is_empty()).then(|| format!("heroic://launch?appName={}&runner={runner}", enc(app)))
+        }
         _ => None,
     }
 }
 
-fn enc(s: &str) -> String {
+pub fn enc(s: &str) -> String {
     s.bytes().map(|b| if b.is_ascii_alphanumeric() || b"-_.~".contains(&b) { (b as char).to_string() } else { format!("%{b:02X}") }).collect()
 }
 
@@ -144,7 +157,7 @@ fn block(it: &mut std::iter::Peekable<std::vec::IntoIter<Option<String>>>) -> BT
 // ---------- Steam ----------
 
 #[cfg(not(windows))]
-fn home() -> PathBuf {
+pub fn home() -> PathBuf {
     PathBuf::from(std::env::var_os("HOME").unwrap_or_default())
 }
 
@@ -220,7 +233,7 @@ pub fn steam_games() -> Vec<Game> {
                     continue;
                 }
                 let Ok(t) = std::fs::read_to_string(e.path()) else { continue };
-                if let Some(g) = steam_game(&parse_vdf(&t), &root) {
+                if let Some(g) = steam_game(&parse_vdf(&t), &root, &lib) {
                     if !games.iter().any(|x| x.key == g.key) {
                         games.push(g);
                     }
@@ -231,14 +244,15 @@ pub fn steam_games() -> Vec<Game> {
     games
 }
 
-fn steam_game(acf: &Kv, root: &Path) -> Option<Game> {
+fn steam_game(acf: &Kv, root: &Path, lib: &Path) -> Option<Game> {
     let app = acf.get("AppState")?;
     let id = app.str("appid")?.to_string();
     let name = app.str("name").unwrap_or(&id).to_string();
     if is_tool(&id, &name) {
         return None;
     }
-    Some(Game { key: format!("steam:{id}"), name, store: "steam", last_played: app.str("LastPlayed").and_then(|v| v.parse().ok()).unwrap_or(0), icon: steam_icon(root, &id) })
+    let dir = app.str("installdir").filter(|d| !d.is_empty()).map(|d| lib.join("steamapps/common").join(d));
+    Some(Game { key: format!("steam:{id}"), name, store: "steam", last_played: app.str("LastPlayed").and_then(|v| v.parse().ok()).unwrap_or(0), icon: steam_icon(root, &id), dir, exe: None })
 }
 
 /// The game's small icon from Steam's library cache: `librarycache/<appid>/<sha1>.jpg` (current
@@ -283,7 +297,8 @@ pub fn epic_game(m: &Value) -> Option<Game> {
     if m["bIsIncompleteInstall"] == true {
         return None;
     }
-    Some(Game { key: format!("epic:{ns}:{item}:{app}"), name: m["DisplayName"].as_str().unwrap_or(app).to_string(), store: "epic", last_played: 0, icon: None })
+    let dir = m["InstallLocation"].as_str().filter(|d| !d.is_empty()).map(PathBuf::from);
+    Some(Game { key: format!("epic:{ns}:{item}:{app}"), name: m["DisplayName"].as_str().unwrap_or(app).to_string(), store: "epic", last_played: 0, icon: None, dir, exe: None })
 }
 
 pub fn epic_games() -> Vec<Game> {
@@ -300,6 +315,10 @@ pub fn epic_games() -> Vec<Game> {
 pub fn all_games() -> Vec<Game> {
     let mut v = steam_games();
     v.extend(epic_games());
+    v.extend(crate::launchers::gog_games());
+    v.extend(crate::launchers::ubisoft_games());
+    v.extend(crate::launchers::heroic_games());
+    v.extend(crate::launchers::lutris_games());
     v
 }
 
@@ -360,9 +379,12 @@ mod tests {
         let lib = parse_vdf("\"libraryfolders\" { \"0\" { \"path\" \"C:\\\\Program Files (x86)\\\\Steam\" // c\n } \"1\" { \"path\" \"D:\\\\Games\" } }");
         let paths: Vec<_> = lib.get("libraryfolders").unwrap().entries().iter().filter_map(|(_, f)| f.str("path")).map(String::from).collect();
         assert_eq!(paths, ["C:\\Program Files (x86)\\Steam", "D:\\Games"]);
-        let g = steam_game(&kv, Path::new("/nonexistent")).unwrap();
+        let g = steam_game(&kv, Path::new("/nonexistent"), Path::new("/lib")).unwrap();
         assert_eq!((g.key.as_str(), g.name.as_str(), g.last_played), ("steam:730", "Counter-Strike 2", 1793986248));
-        assert!(steam_game(&parse_vdf("\"AppState\" { \"appid\" \"1628350\" \"name\" \"Steam Linux Runtime 3.0 (sniper)\" }"), Path::new("/")).is_none());
+        assert_eq!(g.dir, None, "no installdir in this manifest");
+        let g = steam_game(&parse_vdf("\"AppState\" { \"appid\" \"570\" \"name\" \"Dota 2\" \"installdir\" \"dota 2 beta\" }"), Path::new("/x"), Path::new("/lib")).unwrap();
+        assert_eq!(g.dir.as_deref(), Some(Path::new("/lib/steamapps/common/dota 2 beta")));
+        assert!(steam_game(&parse_vdf("\"AppState\" { \"appid\" \"1628350\" \"name\" \"Steam Linux Runtime 3.0 (sniper)\" }"), Path::new("/"), Path::new("/")).is_none());
     }
 
     #[test]
@@ -379,5 +401,12 @@ mod tests {
         assert_eq!(launch_url("steam:57a"), None);
         assert_eq!(launch_url("epic:a:b"), None);
         assert_eq!(launch_url("other:1"), None);
+        assert_eq!(launch_url("ubisoft:635").as_deref(), Some("uplay://launch/635/0"));
+        assert_eq!(launch_url("lutris:12").as_deref(), Some("lutris:rungameid/12"));
+        assert_eq!(launch_url("lutris:x"), None);
+        assert_eq!(launch_url("heroic:legendary:Fortnite").as_deref(), Some("heroic://launch?appName=Fortnite&runner=legendary"));
+        assert_eq!(launch_url("heroic:sideload:a b&c").as_deref(), Some("heroic://launch?appName=a%20b%26c&runner=sideload"));
+        assert_eq!(launch_url("heroic:other:x"), None);
+        assert_eq!(launch_url("gog:1207658924"), None, "GOG starts through Galaxy's command line or the game's exe");
     }
 }
