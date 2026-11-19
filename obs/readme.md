@@ -12,6 +12,12 @@ Control OBS Studio from KnobDeck through obs-websocket v5.
 - Source Volume on a dial or slider, kept in sync with OBS's mixer.
 - OBS Stats on a key: CPU, FPS, dropped or skipped frames.
 - Refresh a browser source, or point it at a new URL.
+- Split Recording: start a new recording file without stopping (OBS 30.2 or newer, with
+  Settings ▸ Output ▸ Advanced ▸ Recording ▸ Automatic File Splitting turned on; "Only split
+  manually" is enough).
+- Set Text: write a text source's text (GDI+ on Windows, FreeType 2 on macOS and Linux), with
+  placeholders such as `{clipboard}` or `{date}`.
+- Stream / Record Time on a key: "LIVE 12:34", "REC 01:02:03", "Paused …", lit while the output runs.
 
 ## Setup
 

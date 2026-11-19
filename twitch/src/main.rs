@@ -1,11 +1,16 @@
 //! Twitch plugin for KnobDeck — chat, chat modes, ads, stream info, markers, clips, viewers and
-//! a channel monitor through the Helix API with the user's sign-in.
+//! a channel monitor through the Helix API with the user's sign-in; an alert pager through
+//! EventSub over WebSocket.
 
+mod eventsub;
 mod helix;
 
+use eventsub::Kind;
 use knobdeck_sdk::input::{self, InputExt};
-use knobdeck_sdk::{json, load_env, open_url, Action, Plugin, Result, Value, Visual};
-use std::time::Duration;
+use knobdeck_sdk::{json, load_env, open_url, Action, Plugin, Result, Runtime, Value, Visual};
+use std::collections::{HashMap, VecDeque};
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 const MODES_POLL: Duration = Duration::from_secs(10);
 
@@ -46,17 +51,100 @@ fn viewers_label() -> Result<String> {
     })
 }
 
+struct Alert {
+    seq: u64,
+    kind: Kind,
+    text: String,
+    at: Instant,
+}
+
+/// Newest first; the pager pages back through these.
+static ALERTS: Mutex<VecDeque<Alert>> = Mutex::new(VecDeque::new());
+const MAX_ALERTS: usize = 20;
+/// How long a new alert flashes before it stays lit until pressed.
+const FLASH: Duration = Duration::from_secs(10);
+/// Pager instance → (newest alert seq it has acknowledged, alerts paged back).
+static VIEW: Mutex<Option<HashMap<String, (u64, usize)>>> = Mutex::new(None);
+static RT: OnceLock<Runtime> = OnceLock::new();
+
+fn push_alert(kind: Kind, text: String) {
+    let mut a = ALERTS.lock().unwrap();
+    let seq = a.front().map_or(1, |x| x.seq + 1);
+    a.push_front(Alert { seq, kind, text, at: Instant::now() });
+    a.truncate(MAX_ALERTS);
+}
+
+/// The kinds a pager shows: its checkboxes, on unless unticked.
+fn shows(inputs: &Value, kind: Kind) -> bool {
+    !matches!(&inputs[kind.input()], Value::Bool(false)) && inputs[kind.input()] != "false"
+}
+
+/// The pager's tile: the newest alert flashes, then stays lit until pressed; pressing again
+/// pages back through older ones.
+fn pager_visual(iid: &str, inputs: &Value) -> Visual {
+    let alerts = ALERTS.lock().unwrap();
+    let list: Vec<&Alert> = alerts.iter().filter(|a| shows(inputs, a.kind)).collect();
+    let (acked, back) = VIEW.lock().unwrap().get_or_insert_with(HashMap::new).get(iid).copied().unwrap_or((0, 0));
+    let Some(newest) = list.first() else {
+        let status = eventsub::STATUS.lock().unwrap().clone();
+        return Visual::new().state("idle").label(if status.is_empty() { "No alerts yet".into() } else { status });
+    };
+    if newest.seq > acked {
+        let blink = newest.at.elapsed() < FLASH && newest.at.elapsed().as_secs() % 2 == 1;
+        return Visual::new().state(if blink { "idle" } else { "new" }).label(&newest.text);
+    }
+    let i = back.min(list.len() - 1);
+    Visual::new().state("idle").label(if i == 0 { list[0].text.clone() } else { format!("{}/{} {}", i + 1, list.len(), list[i].text) })
+}
+
+fn pager_press(iid: &str, inputs: &Value) {
+    let newest = ALERTS.lock().unwrap().iter().filter(|a| shows(inputs, a.kind)).map(|a| a.seq).collect::<Vec<_>>();
+    let mut view = VIEW.lock().unwrap();
+    let v = view.get_or_insert_with(HashMap::new).entry(iid.to_string()).or_insert((0, 0));
+    match newest.first() {
+        None => {}
+        Some(&seq) if seq > v.0 => *v = (seq, 0),
+        Some(_) => v.1 = (v.1 + 1) % newest.len(),
+    }
+}
+
+/// The EventSub connection, kept while a pager is placed and the user is signed in.
+fn start_eventsub() {
+    std::thread::spawn(|| {
+        let wanted = || RT.get().is_some_and(|rt| !rt.instances_of("alerts").is_empty());
+        let can_start = || {
+            let ok = helix::auth().signed_in();
+            if !ok {
+                eventsub::status("Not signed in — run setup");
+            }
+            ok
+        };
+        let subscribe = |session: &str| match helix::me() {
+            Ok(me) => {
+                eventsub::subscribe_all(&me, session, &|body| helix::call("POST", "/eventsub/subscriptions", Some(body)));
+            }
+            Err(e) => eventsub::status(e.message()),
+        };
+        eventsub::run(&wanted, &can_start, &subscribe, &push_alert);
+    });
+}
+
 fn main() {
     load_env();
     Plugin::new(&format!("twitch-{}", std::env::consts::OS), "Twitch")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
-        .description("Chat, chat modes, ads, stream info, markers, clips, viewers and live channels on Twitch.")
+        .description("Chat, chat modes, ads, stream info, markers, clips, viewers, alerts and live channels on Twitch.")
         .icon("twitch")
         .ack_timeout_ms(5000)
         .setup("twitch-setup", None)
         .setup_inputs(vec![input::text("client_id", "Twitch app client ID (optional)").placeholder("leave empty to use KnobDeck's").with("help", "Only needed if you registered your own app at dev.twitch.tv (Public client type).")])
+        .on_ready(|rt| {
+            let _ = RT.set(rt.clone());
+            start_eventsub();
+            Ok(())
+        })
         .action(Action::button("chat-message", "Chat Message").icon("message-square").inputs(vec![input::textarea("message", "Message").placeholder("Follow me on …")]).on_press(|ctx| {
             let message = ctx.input_str("message");
             if message.trim().is_empty() {
@@ -167,5 +255,49 @@ fn main() {
                     open_url(&format!("https://www.twitch.tv/{channel}"))
                 }),
         )
+        .action(
+            Action::toggle("alerts", "Alert Pager")
+                .icon("bell")
+                .inputs(vec![
+                    input::checkbox("follows", "Follows").default_value(true),
+                    input::checkbox("subs", "Subs and gifts").default_value(true),
+                    input::checkbox("raids", "Raids").default_value(true),
+                    input::checkbox("cheers", "Cheers").default_value(true),
+                ])
+                .state("idle", "Alerts", "bell")
+                .state("new", "New Alert", "bell-ring")
+                .live(Duration::from_secs(1), |ic| Ok(pager_visual(&ic.instance_id, &ic.inputs)))
+                // Press: acknowledge the new alert; again: page back through older ones.
+                .on_press(|ctx| {
+                    pager_press(&ctx.instance_id, &ctx.inputs);
+                    ctx.set_visual(pager_visual(&ctx.instance_id, &ctx.inputs));
+                    Ok(())
+                }),
+        )
         .run()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pager_flashes_then_pages_back() {
+        let inputs = json!({"cheers": false});
+        assert_eq!(pager_visual("p", &inputs).label.as_deref(), Some("No alerts yet"));
+        push_alert(Kind::Follow, "Ana followed".into());
+        push_alert(Kind::Cheer, "Eve cheered 100 bits".into());
+        push_alert(Kind::Raid, "Dee raided with 3".into());
+        let v = pager_visual("p", &inputs);
+        assert_eq!((v.state.as_deref(), v.label.as_deref()), (Some("new"), Some("Dee raided with 3")));
+        pager_press("p", &inputs); // acknowledge
+        let v = pager_visual("p", &inputs);
+        assert_eq!((v.state.as_deref(), v.label.as_deref()), (Some("idle"), Some("Dee raided with 3")));
+        pager_press("p", &inputs); // back one, skipping the cheer this pager hides
+        assert_eq!(pager_visual("p", &inputs).label.as_deref(), Some("2/2 Ana followed"));
+        pager_press("p", &inputs);
+        assert_eq!(pager_visual("p", &inputs).label.as_deref(), Some("Dee raided with 3"));
+        // Another pager hasn't acknowledged anything.
+        assert_eq!(pager_visual("q", &json!({})).state.as_deref(), Some("new"));
+    }
 }

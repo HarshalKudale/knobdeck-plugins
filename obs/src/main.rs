@@ -216,19 +216,27 @@ fn on_event(name: &str, d: &Value) {
         }
         "StreamStateChanged" => {
             CACHE.lock().unwrap().streaming = flag("outputActive");
-            RT.get().map(|rt| rt.notify("stream", pick(flag("outputActive"), "streaming", "stopped")));
+            if let Some(rt) = RT.get() {
+                rt.notify("stream", pick(flag("outputActive"), "streaming", "stopped"));
+            }
         }
         "VirtualcamStateChanged" => {
             CACHE.lock().unwrap().vcam = flag("outputActive");
-            RT.get().map(|rt| rt.notify("virtual-cam", pick(flag("outputActive"), "on", "off")));
+            if let Some(rt) = RT.get() {
+                rt.notify("virtual-cam", pick(flag("outputActive"), "on", "off"));
+            }
         }
         "ReplayBufferStateChanged" => {
             CACHE.lock().unwrap().replay_buffer = flag("outputActive");
-            RT.get().map(|rt| rt.notify("replay-buffer", pick(flag("outputActive"), "active", "stopped")));
+            if let Some(rt) = RT.get() {
+                rt.notify("replay-buffer", pick(flag("outputActive"), "active", "stopped"));
+            }
         }
         "StudioModeStateChanged" => {
             CACHE.lock().unwrap().studio_mode = flag("studioModeEnabled");
-            RT.get().map(|rt| rt.notify("studio-mode", pick(flag("studioModeEnabled"), "on", "off")));
+            if let Some(rt) = RT.get() {
+                rt.notify("studio-mode", pick(flag("studioModeEnabled"), "on", "off"));
+            }
         }
         "SceneItemEnableStateChanged" => {
             let Some(rt) = RT.get() else { return };
@@ -308,6 +316,7 @@ fn simple_button(id: &str, label: &str, icon: &str, request: &'static str) -> Ac
 }
 
 /// A button picking one named thing via a query-backed select, then applying it.
+#[allow(clippy::too_many_arguments)]
 fn select_button(id: &str, label: &str, icon: &str, key: &'static str, query: &str, missing: &'static str, request: &'static str, param: &'static str) -> Action {
     Action::button(id, label).icon(icon).inputs(vec![input::query_select(key, label, query, &[])]).on_press(move |ctx| {
         require_obs(ctx)?;
@@ -338,6 +347,58 @@ fn scenes() -> Result<Vec<Value>> {
     let mut list = names(&call("GetSceneList", json!({}))?, "scenes", "sceneName");
     list.reverse();
     Ok(list)
+}
+
+/// Whether the connected obs-websocket knows `request` (from GetVersion's `availableRequests`).
+fn supports(request: &str) -> Result<bool> {
+    Ok(call("GetVersion", json!({}))?["availableRequests"].as_array().is_some_and(|a| a.iter().any(|r| r == request)))
+}
+
+/// Text sources: `text_gdiplus` (Windows) and `text_ft2_source` (macOS / Linux), any `_vN`.
+fn is_text_kind(unversioned: &str, kind: &str) -> bool {
+    let k = if unversioned.is_empty() { kind } else { unversioned };
+    k.starts_with("text_gdiplus") || k.starts_with("text_ft2_source")
+}
+
+/// `HH:MM:SS.mmm` → `HH:MM:SS` (`MM:SS` under an hour).
+fn short_timecode(tc: &str) -> String {
+    let t = tc.split('.').next().unwrap_or(tc);
+    match t.strip_prefix("00:") {
+        Some(rest) if rest.len() == 5 => rest.to_string(),
+        _ => t.to_string(),
+    }
+}
+
+/// The time tile for GetStreamStatus / GetRecordStatus.
+fn output_time_visual(record: bool, st: &Value) -> Visual {
+    let active = st["outputActive"].as_bool().unwrap_or(false);
+    if !active {
+        return Visual::new().state("off").label(if record { "Not recording" } else { "Offline" });
+    }
+    let tc = short_timecode(s(st, "outputTimecode"));
+    let prefix = match (record, st["outputPaused"].as_bool().unwrap_or(false), st["outputReconnecting"].as_bool().unwrap_or(false)) {
+        (true, true, _) => "Paused",
+        (true, false, _) => "REC",
+        (false, _, true) => "Reconnecting",
+        (false, _, false) => "LIVE",
+    };
+    Visual::new().state("on").label(format!("{prefix} {tc}"))
+}
+
+#[test]
+fn output_time_reads_well() {
+    assert_eq!(short_timecode("00:12:34.567"), "12:34");
+    assert_eq!(short_timecode("01:02:03.004"), "01:02:03");
+    assert_eq!(short_timecode(""), "");
+    let v = output_time_visual(true, &json!({"outputActive": true, "outputPaused": false, "outputTimecode": "00:00:05.100"}));
+    assert_eq!((v.state.as_deref(), v.label.as_deref()), (Some("on"), Some("REC 00:05")));
+    let v = output_time_visual(true, &json!({"outputActive": true, "outputPaused": true, "outputTimecode": "02:00:00.000"}));
+    assert_eq!(v.label.as_deref(), Some("Paused 02:00:00"));
+    let v = output_time_visual(false, &json!({"outputActive": false}));
+    assert_eq!((v.state.as_deref(), v.label.as_deref()), (Some("off"), Some("Offline")));
+    assert!(is_text_kind("text_gdiplus", "text_gdiplus_v3"));
+    assert!(is_text_kind("", "text_ft2_source_v2"));
+    assert!(!is_text_kind("browser_source", "browser_source"));
 }
 
 fn main() {
@@ -641,6 +702,55 @@ fn main() {
                     call("PressInputPropertiesButton", json!({"inputName": source, "propertyName": "refreshnocache"})).map(|_| ())
                 }),
         )
+        // 24. Split the recording into a new file (obs-websocket 5.5 / OBS 30.2+)
+        .action(Action::button("split-recording", "Split Recording").icon("scissors").on_press(|ctx| {
+            require_obs(ctx)?;
+            if !supports("SplitRecordFile")? {
+                return ctx.fail("Split Recording needs OBS 30.2 or newer");
+            }
+            match call("SplitRecordFile", json!({})) {
+                Err(_) if call("GetRecordStatus", json!({}))?["outputActive"] != true => ctx.fail("OBS is not recording"),
+                // OBS splits only when Settings ▸ Output (Advanced) ▸ Recording ▸ Automatic File Splitting is on.
+                Err(e) if e.to_string().contains("splitting") => ctx.fail("Turn on Automatic File Splitting in OBS first (Settings ▸ Output ▸ Advanced ▸ Recording; \"Only split manually\" is enough)"),
+                r => r.map(|_| ()),
+            }
+        }))
+        // 25. Set the text of a text source (placeholders expanded)
+        .action(
+            Action::button("set-text", "Set Text")
+                .icon("type")
+                .inputs(vec![input::query_select("source", "Text Source", "get-text-sources", &[]), input::textarea("text", "Text").placeholder("Now playing: {clipboard}").accepts_placeholders()])
+                .on_press(|ctx| {
+                    require_obs(ctx)?;
+                    let source = require_input(ctx, "source", "No text source selected")?;
+                    let text = ctx.expand(&ctx.input_str("text"))?;
+                    call("SetInputSettings", json!({"inputName": source, "inputSettings": {"text": text}})).map(|_| ())
+                }),
+        )
+        // 26. Stream / record time on the key
+        .action(
+            Action::toggle("output-time", "Stream / Record Time")
+                .icon("timer")
+                .inputs(vec![input::select("output", "Show", &[("stream", "Stream time"), ("record", "Recording time")]).with("default", "stream")])
+                .state("off", "Off", "timer-off")
+                .state("on", "On", "timer")
+                .live(std::time::Duration::from_secs(1), |ic| {
+                    if !connected() {
+                        return Ok(Visual::new().state("off").label("OBS offline"));
+                    }
+                    let record = ic.input_str("output") == "record";
+                    let st = call(if record { "GetRecordStatus" } else { "GetStreamStatus" }, json!({}))?;
+                    Ok(output_time_visual(record, &st))
+                })
+                // A display: pressing does nothing to OBS (Record / Stream start and stop it).
+                .on_press(|_| Ok(())),
+        )
+        .query("get-text-sources", query(|_| {
+            // GDI+ text (Windows) and FreeType 2 text (macOS / Linux), any version.
+            let all = call("GetInputList", json!({}))?;
+            let text = all["inputs"].as_array().map(|a| a.iter().filter(|i| is_text_kind(s(i, "unversionedInputKind"), s(i, "inputKind"))).map(|i| json!({"value": i["inputName"], "label": i["inputName"]})).collect()).unwrap_or_default();
+            Ok(text)
+        }))
         .query("get-browser-sources", query(|_| Ok(names(&call("GetInputList", json!({"inputKind": "browser_source"}))?, "inputs", "inputName"))))
         // Queries
         .query("get-scenes", query(|_| scenes()))

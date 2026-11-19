@@ -5,7 +5,7 @@
 mod helix;
 
 const DEVICE_URL: &str = "https://id.twitch.tv/oauth2/device";
-const SCOPES: &str = "user:write:chat moderator:manage:chat_settings moderator:manage:chat_messages channel:edit:commercial channel:manage:broadcast clips:edit";
+const SCOPES: &str = "user:write:chat moderator:manage:chat_settings moderator:manage:chat_messages channel:edit:commercial channel:manage:broadcast clips:edit moderator:read:followers channel:read:subscriptions bits:read";
 
 fn main() {
     knobdeck_sdk::run_setup(|ctx| {

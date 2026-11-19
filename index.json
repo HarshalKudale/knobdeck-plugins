@@ -388,7 +388,7 @@
     },
     "twitch": {
       "name": "Twitch",
-      "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers.",
+      "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers, alerts.",
       "tags": [
         "Streaming",
         "Communication"
@@ -481,7 +481,7 @@
     },
     "youtube": {
       "name": "YouTube",
-      "summary": "Live viewers and the Studio live dashboard (read-only).",
+      "summary": "Live viewers, channel stats and the Studio live dashboard (read-only).",
       "tags": [
         "Streaming",
         "Broadcast"

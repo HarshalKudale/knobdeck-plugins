@@ -6,6 +6,8 @@ YouTube live streaming controls in KnobDeck, on Windows and macOS.
 
 - Viewers: concurrent viewers of your live stream (updated every minute), "Offline" otherwise.
 - Live Dashboard: opens YouTube Studio's live streaming page.
+- Channel Stats: subscribers, total views or video count of any channel (by @handle, channel ID or
+  URL; empty for your own), refreshed every 10 minutes; press to open the channel.
 
 The plugin signs in **read-only**: it can see your channel and live stream, never change them.
 Start and stop streams with the OBS plugin.
@@ -22,7 +24,8 @@ KnobDeck's plugin data folder.
 ## How it works
 
 The YouTube Data API with your Google sign-in. Every call counts against YouTube's daily API quota,
-so the live keys refresh once a minute.
+so the live keys refresh once a minute and Channel Stats every 10 minutes (one read per channel,
+shared by its keys).
 
 No client secret ships in the plugin. With KnobDeck's Google app, the code exchange and token
 refresh go to the KnobDeck website (`KNOBDECK_GOOGLE_TOKEN_URL`, set at build time), which must:
