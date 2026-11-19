@@ -294,6 +294,15 @@
       ],
       "sort": 98
     },
+    "text-to-speech": {
+      "name": "Text to Speech",
+      "summary": "Read the selection, the clipboard or your own text aloud; voice, rate and volume dials.",
+      "tags": [
+        "Accessibility",
+        "Productivity"
+      ],
+      "sort": 102
+    },
     "twitch": {
       "name": "Twitch",
       "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers.",
