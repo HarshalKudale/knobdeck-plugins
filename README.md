@@ -61,6 +61,8 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [teamspeak](./teamspeak) | TeamSpeak 5/6 Remote Apps WebSocket (buttons bound in TeamSpeak, state from its events) and TeamSpeak 3 ClientQuery: mic / speaker mute, away, push-to-talk, current channel, who's talking | Windows, macOS, Linux |
 | [vtube-studio](./vtube-studio) | VTube Studio public API: hotkeys, load model, toggle expressions, move / resize / rotate the model and drive a parameter on a dial, current model | Windows, macOS |
 | [blender](./blender) | Blender through the KnobDeck add-on (companion hub, `bpy`): play / pause, frame dial, jumps, workspaces, shading, overlays, X-ray, render, save, undo, mode, brush size / strength and object transform dials, live mode / object key | Windows, macOS, Linux |
+| [mqtt](./mqtt) | Your MQTT broker (MQTT 3.1.1, optional TLS and login; password in the credential store): publish with placeholders, on/off toggle with state from a topic, a topic's value on a key (JSON path, wildcards), value dial; Zigbee2MQTT, Tasmota, Shelly | Windows, macOS, Linux |
+| [openrgb](./openrgb) | OpenRGB SDK server (TCP 6742): load profile (key or wheel), set colour on all devices or one, brightness dial (the mode's own brightness, else the colour scaled) | Windows, macOS, Linux |
 
 The `vscode`, `intellij`, `browser-plugin` and `blender` plugins talk to companions that run
 *inside* VS Code, JetBrains IDEs, browsers and Blender (an editor extension, an IDE plugin, a

@@ -1,0 +1,19 @@
+[package]
+name = "mqtt"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true, features = ["secrets", "placeholders"] }
+serde_json.workspace = true
+# Sync MQTT 3.1.1 client. TLS through rustls with the ring provider (the workspace's other
+# rustls users take ring too; aws-lc would need cmake and a C toolchain on every OS).
+rumqttc = { version = "0.25", default-features = false, features = ["use-rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+rustls-native-certs = "0.8"
+rustls-pemfile = "2"
+
+[dev-dependencies]
+# A real broker in-process for the tests (no TLS, no websocket).
+rumqttd = { version = "0.20", default-features = false }
