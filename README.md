@@ -61,6 +61,7 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [teamspeak](./teamspeak) | TeamSpeak 5/6 Remote Apps WebSocket (buttons bound in TeamSpeak, state from its events) and TeamSpeak 3 ClientQuery: mic / speaker mute, away, push-to-talk, current channel, who's talking | Windows, macOS, Linux |
 | [vtube-studio](./vtube-studio) | VTube Studio public API: hotkeys, load model, toggle expressions, move / resize / rotate the model and drive a parameter on a dial, current model | Windows, macOS |
 | [blender](./blender) | Blender through the KnobDeck add-on (companion hub, `bpy`): play / pause, frame dial, jumps, workspaces, shading, overlays, X-ray, render, save, undo, mode, brush size / strength and object transform dials, live mode / object key | Windows, macOS, Linux |
+| [reaper](./reaper) | REAPER web browser interface (`/_/` commands): play / pause, stop, record, repeat, metronome with live state, position, markers (add, next, previous, go to), any action by numeric or named command id, track volume / pan dials, mute, solo, record arm, selected track | Windows, macOS, Linux |
 
 The `vscode`, `intellij`, `browser-plugin` and `blender` plugins talk to companions that run
 *inside* VS Code, JetBrains IDEs, browsers and Blender (an editor extension, an IDE plugin, a
