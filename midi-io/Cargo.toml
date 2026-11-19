@@ -1,0 +1,15 @@
+[package]
+name = "midi-io"
+version = "1.0.0"
+edition = "2021"
+publish = false
+description = "MIDI ports shared by the midi and daw-mackie plugins (not a plugin): virtual and existing ports, send and receive."
+
+# Windows (WinMM) and macOS (CoreMIDI) through midir.
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+midir = "0.11"
+
+# Linux: the ALSA sequencer through libasound.so.2, loaded at run time, so the build needs no ALSA
+# headers (CI has none) and a missing library is a clear error, never a failed launch.
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"

@@ -63,6 +63,15 @@
       ],
       "sort": 31
     },
+    "daw-mackie": {
+      "name": "DAW Control (Mackie)",
+      "summary": "Control your DAW as a Mackie Control surface: transport, jog, faders, banks, mute / solo / arm, with its LEDs and track names.",
+      "tags": [
+        "Music",
+        "Audio"
+      ],
+      "sort": 106
+    },
     "discord": {
       "name": "Discord",
       "summary": "Mute, deafen, push-to-talk, channels and soundboard.",
@@ -192,6 +201,15 @@
       ],
       "featured": true,
       "sort": 41
+    },
+    "midi": {
+      "name": "MIDI",
+      "summary": "Send notes, CCs and program changes to any MIDI port, turn a CC on a dial, and see incoming values on a key.",
+      "tags": [
+        "Music",
+        "Audio"
+      ],
+      "sort": 105
     },
     "nanoleaf": {
       "name": "Nanoleaf",
