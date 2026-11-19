@@ -775,6 +775,7 @@ mod app {
             )
             // Win+L can't be injected via SendInput, so lock through the API.
             .action(Action::button("lock-pc", "Lock PC").icon("lock").on_press(|_| win32::lock_workstation()))
+            .action(Action::button("sleep-display", "Sleep Display").icon("moon").on_press(|_| win32::sleep_display()))
             .action(Action::button("text-snippet", "Text Snippet").icon("text-cursor-input").inputs(snippet_inputs()).on_press(|ctx| {
                 // Placeholders ({selection}, {clipboard}, {date}…) are read before anything is
                 // typed or copied, so `{clipboard}` is the user's clipboard, not the snippet.

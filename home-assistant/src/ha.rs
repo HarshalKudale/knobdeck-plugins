@@ -1,7 +1,8 @@
-//! Home Assistant REST API (`/api/…`) with a long-lived access token. Shared by the plugin and
-//! its setup program.
+//! Home Assistant REST API (`/api/…`) with a long-lived access token, and the entity states the
+//! plugin's WebSocket feed keeps current. Shared by the plugin and its setup program.
 
 use knobdeck_sdk::{Error, Result, Value};
+use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -80,11 +81,38 @@ pub fn normalize_url(url: &str) -> String {
     }
 }
 
-/// Every key polls; one `/api/states` reply serves them all for a moment.
+/// Without the live feed every key polls; one `/api/states` reply serves them all for a moment.
 static STATES: Mutex<Option<(Instant, Vec<Value>)>> = Mutex::new(None);
 const FRESH: Duration = Duration::from_millis(1500);
 
+/// Every entity's state as the WebSocket feed reports it (entity id → state), while it is up.
+static LIVE: Mutex<Option<HashMap<String, Value>>> = Mutex::new(None);
+
+/// The feed (re)connected with every state.
+pub fn live_all(list: Vec<Value>) {
+    let map = list.into_iter().filter_map(|s| Some((s["entity_id"].as_str()?.to_string(), s))).collect();
+    *LIVE.lock().unwrap() = Some(map);
+}
+
+/// One entity changed (`None` = removed). Ignored while the feed is down.
+pub fn live_change(entity: &str, state: Option<Value>) {
+    if let Some(map) = LIVE.lock().unwrap().as_mut() {
+        match state {
+            Some(s) => map.insert(entity.to_string(), s),
+            None => map.remove(entity),
+        };
+    }
+}
+
+/// The feed dropped: back to REST polling.
+pub fn live_down() {
+    *LIVE.lock().unwrap() = None;
+}
+
 pub fn states(conn: &Conn) -> Result<Vec<Value>> {
+    if let Some(map) = LIVE.lock().unwrap().as_ref() {
+        return Ok(map.values().cloned().collect());
+    }
     if let Some((at, v)) = STATES.lock().unwrap().as_ref() {
         if at.elapsed() < FRESH {
             return Ok(v.clone());
@@ -95,13 +123,18 @@ pub fn states(conn: &Conn) -> Result<Vec<Value>> {
     Ok(list)
 }
 
-/// Forget the cached states (after a service call, so keys show the change at once).
+/// Forget the polled states (after a service call, so keys show the change at once). The live
+/// feed needs no help: Home Assistant sends the change itself.
 pub fn invalidate() {
     *STATES.lock().unwrap() = None;
 }
 
 pub fn state(conn: &Conn, entity: &str) -> Result<Value> {
-    states(conn)?.into_iter().find(|s| s["entity_id"] == entity).ok_or_else(|| Error::msg(format!("Home Assistant has no entity {entity}")))
+    let missing = || Error::msg(format!("Home Assistant has no entity {entity}"));
+    if let Some(map) = LIVE.lock().unwrap().as_ref() {
+        return map.get(entity).cloned().ok_or_else(missing);
+    }
+    states(conn)?.into_iter().find(|s| s["entity_id"] == entity).ok_or_else(missing)
 }
 
 pub fn domain(entity: &str) -> &str {
@@ -270,6 +303,21 @@ pub fn display(s: &Value, attribute: &str) -> String {
 mod tests {
     use super::*;
     use knobdeck_sdk::json;
+
+    #[test]
+    fn live_states_win_over_polling() {
+        // A URL nothing answers on: with the feed up no request is made.
+        let c = Conn::new("http://127.0.0.1:9", "t");
+        live_all(vec![json!({"entity_id": "light.a", "state": "off"}), json!({"entity_id": "switch.b", "state": "on"})]);
+        assert_eq!(state(&c, "light.a").unwrap()["state"], "off");
+        live_change("light.a", Some(json!({"entity_id": "light.a", "state": "on"})));
+        live_change("switch.b", None);
+        assert_eq!(state(&c, "light.a").unwrap()["state"], "on");
+        assert_eq!(states(&c).unwrap().len(), 1);
+        assert!(state(&c, "switch.b").unwrap_err().message().contains("no entity"));
+        live_down();
+        assert!(state(&c, "light.a").is_err()); // polling now, and nothing answers
+    }
 
     #[test]
     fn urls() {
