@@ -12,7 +12,9 @@ plugin ships for Linux only when the app has an official Linux build. Streamlabs
 Voicemod have none. Files on Linux works only with Dolphin (experimental; GNOME Files doesn't
 share its selection).
 `linux-desktop` is a shared library crate (not a
-plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries.
+plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries. `midi-io` is another
+(not a plugin): MIDI ports for `midi` and `daw-mackie` (midir on Windows and macOS, the ALSA sequencer
+loaded at run time on Linux, so builds need no ALSA headers).
 
 | Plugin | Description | OS |
 |--------|-------------|----|
@@ -62,6 +64,8 @@ plugin): the KWin / GNOME Shell window bridge, D-Bus helpers and desktop entries
 | [vtube-studio](./vtube-studio) | VTube Studio public API: hotkeys, load model, toggle expressions, move / resize / rotate the model and drive a parameter on a dial, current model | Windows, macOS |
 | [text-to-speech](./text-to-speech) | Read the selected text, the clipboard or any text (placeholders) aloud with the OS's voices: Windows WinRT SpeechSynthesizer, macOS `say`, Linux Speech Dispatcher (SSIP); stop, voice picker, rate and volume dials | Windows, macOS, Linux |
 | [blender](./blender) | Blender through the KnobDeck add-on (companion hub, `bpy`): play / pause, frame dial, jumps, workspaces, shading, overlays, X-ray, render, save, undo, mode, brush size / strength and object transform dials, live mode / object key | Windows, macOS, Linux |
+| [midi](./midi) | MIDI to and from any port (WinMM, CoreMIDI, the ALSA sequencer), with a virtual "KnobDeck" port on macOS and Linux: notes, CCs, CC toggle and dial, program / bank changes, raw messages and SysEx, received CC / note on a key | Windows, macOS, Linux |
+| [daw-mackie](./daw-mackie) | Mackie Control surface for any DAW that has one: transport, jog wheel, faders (touch-aware), V-Pots, bank / track, mute / solo / arm / select and any MCU button, with LEDs, fader positions, LCD track names and the time display fed back | Windows, macOS, Linux |
 | [finance](./finance) | CoinGecko public API (crypto) and Yahoo Finance's chart endpoint (stocks, ETFs, indices, forex; Finnhub with your key as the fallback), no account: ticker keys with change and sparkline, a watchlist wheel and a watchlist dial; shared cache, rate-limit back-off | Windows, macOS, Linux |
 | [network](./network) | Public IP, Wake-on-LAN, Tailscale LocalAPI (on/off, exit node key and wheel), saved Wi-Fi networks and VPNs (NetworkManager D-Bus; Windows Native Wi-Fi and RAS; macOS `scutil --nc`, VPN only), Pi-hole v6 blocking toggle, Uptime Kuma status page tile | Windows, macOS, Linux |
 | [reaper](./reaper) | REAPER web browser interface (`/_/` commands): play / pause, stop, record, repeat, metronome with live state, position, markers (add, next, previous, go to), any action by numeric or named command id, track volume / pan dials, mute, solo, record arm, selected track | Windows, macOS, Linux |
