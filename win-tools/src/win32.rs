@@ -447,6 +447,13 @@ pub fn lock_workstation() -> Result {
     unsafe { windows::Win32::System::Shutdown::LockWorkStation() }.map_err(|e| win_err("LockWorkStation", e))
 }
 
+/// Turn the displays off (they wake on mouse or keyboard input): `SC_MONITORPOWER` with 2 (off),
+/// handled by any top-level window's default window procedure. Posted to every top-level window
+/// rather than sent, so a hung window can't block the plugin.
+pub fn sleep_display() -> Result {
+    unsafe { PostMessageW(HWND_BROADCAST, WM_SYSCOMMAND, WPARAM(SC_MONITORPOWER as usize), LPARAM(2)) }.map_err(|e| win_err("PostMessageW", e))
+}
+
 /// Cover the entire monitor, taskbar included.
 pub fn make_fullscreen(hwnd: Hwnd, m: Rect) {
     set_window_bounds(hwnd, m.x, m.y, m.width, m.height);

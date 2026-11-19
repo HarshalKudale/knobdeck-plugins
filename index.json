@@ -47,7 +47,7 @@
     },
     "clocks": {
       "name": "Clocks",
-      "summary": "Clock for any time zone, world clock, countdown timer, stopwatch.",
+      "summary": "Clock for any time zone, world clock, countdown timer, Pomodoro, stopwatch.",
       "tags": [
         "Time",
         "Productivity"
@@ -120,7 +120,7 @@
     },
     "game-launcher": {
       "name": "Game Launcher",
-      "summary": "Launch installed Steam and Epic games from a key or wheel.",
+      "summary": "Launch installed Steam, Epic, GOG, Ubisoft, Heroic and Lutris games; close a running game.",
       "tags": [
         "Gaming",
         "Launcher"
