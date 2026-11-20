@@ -64,6 +64,7 @@ loaded at run time on Linux, so builds need no ALSA headers).
 | [vtube-studio](./vtube-studio) | VTube Studio public API: hotkeys, load model, toggle expressions, move / resize / rotate the model and drive a parameter on a dial, current model | Windows, macOS |
 | [text-to-speech](./text-to-speech) | Read the selected text, the clipboard or any text (placeholders) aloud with the OS's voices: Windows WinRT SpeechSynthesizer, macOS `say`, Linux Speech Dispatcher (SSIP); stop, voice picker, rate and volume dials | Windows, macOS, Linux |
 | [blender](./blender) | Blender through the KnobDeck add-on (companion hub, `bpy`): play / pause, frame dial, jumps, workspaces, shading, overlays, X-ray, render, save, undo, mode, brush size / strength and object transform dials, live mode / object key | Windows, macOS, Linux |
+| [lightroom-classic](./lightroom-classic) | Lightroom Classic through the KnobDeck plug-in (`KnobDeck.lrplugin`, Lightroom SDK over two loopback `LrSocket` ports, paired once in Lightroom): Basic panel dials and a Develop Slider dial for every other panel (tone curve, HSL, color grading, detail, lens, transform, effects, calibration) with live values, press to reset; modules, next / previous photo, flag, rating (key and dial), colour label, rotate, copy / paste settings, reset all, auto tone / white balance, before / after, tools, panels, undo / redo | Windows, macOS |
 | [mqtt](./mqtt) | Your MQTT broker (MQTT 3.1.1, optional TLS and login; password in the credential store): publish with placeholders, on/off toggle with state from a topic, a topic's value on a key (JSON path, wildcards), value dial; Zigbee2MQTT, Tasmota, Shelly | Windows, macOS, Linux |
 | [openrgb](./openrgb) | OpenRGB SDK server (TCP 6742): load profile (key or wheel), set colour on all devices or one, brightness dial (the mode's own brightness, else the colour scaled) | Windows, macOS, Linux |
 | [midi](./midi) | MIDI to and from any port (WinMM, CoreMIDI, the ALSA sequencer), with a virtual "KnobDeck" port on macOS and Linux: notes, CCs, CC toggle and dial, program / bank changes, raw messages and SysEx, received CC / note on a key | Windows, macOS, Linux |
@@ -75,15 +76,16 @@ loaded at run time on Linux, so builds need no ALSA headers).
 | [toolbox](./toolbox) | Counter on a key or a dial (kept across restarts), dice, coin flip, random pick from your own list, tally rows to a CSV file; all local | Windows, macOS, Linux |
 | [text-tools](./text-tools) | Transforms on the selected text (case, trim, slugify, URL / Base64 encode and decode, JSON format / minify) onto the clipboard or in place of the selection; word count; nine saved text slots | Windows, macOS, Linux |
 
-The `vscode`, `intellij`, `browser-plugin`, `blender` and `ableton` plugins talk to companions that run
-*inside* VS Code, JetBrains IDEs, browsers, Blender and Ableton Live (an editor extension, an IDE plugin, a
-browser extension, a Blender add-on and a Live Remote Script, not KnobDeck SDK plugins). Each lives in its own repo, listed in
+The `vscode`, `intellij`, `browser-plugin`, `blender`, `ableton` and `lightroom-classic` plugins talk to companions that run
+*inside* VS Code, JetBrains IDEs, browsers, Blender, Ableton Live and Lightroom Classic (an editor extension, an IDE plugin, a
+browser extension, a Blender add-on, a Live Remote Script and a Lightroom plug-in, not KnobDeck SDK plugins). Each lives in its own repo, listed in
 [knobdeck-companion](https://github.com/Knobdeck/knobdeck-companion):
 [vscode](https://github.com/Knobdeck/knobdeck-vscode-companion),
 [intellij](https://github.com/Knobdeck/knobdeck-intellij-companion),
 [browser](https://github.com/Knobdeck/knobdeck-browser-companion),
 [blender](https://github.com/Knobdeck/knobdeck-blender-companion),
-[ableton](https://github.com/Knobdeck/knobdeck-ableton-companion). Each one's CI builds its plugin
+[ableton](https://github.com/Knobdeck/knobdeck-ableton-companion),
+[lightroom](https://github.com/Knobdeck/knobdeck-lightroom-companion). Each one's CI builds its plugin
 from this repo and drives it against the companion.
 
 Spotify, Twitch, Voicemod and YouTube take app credentials at build time from repository variables

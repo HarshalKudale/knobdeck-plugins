@@ -36,7 +36,7 @@ const GLYPH = {
   ableton: "grid-3x3", "ai-actions": "sparkles", "ai-stats": "activity", "browser-plugin": "globe", clocks: "clock",
   "coding-agents": "code-xml", "daw-mackie": "sliders-vertical", files: "files", finance: "chart-candlestick",
   "game-launcher": "gamepad-2", govee: "lamp-ceiling", "hardware-monitor": "thermometer",
-  "linux-tools": "square-terminal", "mac-tools": "command", midi: "piano", nanoleaf: "hexagon",
+  "lightroom-classic": "aperture", "linux-tools": "square-terminal", "mac-tools": "command", midi: "piano", nanoleaf: "hexagon",
   network: "network", "now-playing": "disc-3", openrgb: "palette", reaper: "audio-waveform",
   slides: "presentation", soundboard: "speaker", speedtest: "gauge", streamerbot: "bot",
   "text-to-speech": "speech", "text-tools": "type", toolbox: "wrench", voicemeeter: "audio-lines",
@@ -55,6 +55,7 @@ const TAG_COLOR = [
   [["Gaming"], "#d9483b"],
   [["Network", "Monitoring", "System", "Information", "Weather", "Time", "Finance"], "#2f8fe8"],
   [["Linux", "macOS", "Windows", "Automation", "Browser"], "#1f9aa3"],
+  [["Photo"], "#0e7fb0"],
 ];
 const DEFAULT_COLOR = "#1f9aa3";
 
