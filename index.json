@@ -1,5 +1,16 @@
 {
   "plugins": {
+    "ableton": {
+      "name": "Ableton Live",
+      "summary": "Transport, record, tempo, mixer, scenes, locators and device parameter dials with live state, through the KnobDeck Remote Script.",
+      "tags": [
+        "Audio",
+        "Music",
+        "Creative"
+      ],
+      "featured": false,
+      "sort": 110
+    },
     "ai-actions": {
       "name": "AI Actions",
       "summary": "Fix, rewrite, translate or explain selected text with your own AI model.",

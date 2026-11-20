@@ -71,17 +71,19 @@ loaded at run time on Linux, so builds need no ALSA headers).
 | [finance](./finance) | CoinGecko public API (crypto) and Yahoo Finance's chart endpoint (stocks, ETFs, indices, forex; Finnhub with your key as the fallback), no account: ticker keys with change and sparkline, a watchlist wheel and a watchlist dial; shared cache, rate-limit back-off | Windows, macOS, Linux |
 | [network](./network) | Public IP, Wake-on-LAN, Tailscale LocalAPI (on/off, exit node key and wheel), saved Wi-Fi networks and VPNs (NetworkManager D-Bus; Windows Native Wi-Fi and RAS; macOS `scutil --nc`, VPN only), Pi-hole v6 blocking toggle, Uptime Kuma status page tile | Windows, macOS, Linux |
 | [reaper](./reaper) | REAPER web browser interface (`/_/` commands): play / pause, stop, record, repeat, metronome with live state, position, markers (add, next, previous, go to), any action by numeric or named command id, track volume / pan dials, mute, solo, record arm, selected track | Windows, macOS, Linux |
+| [ableton](./ableton) | Ableton Live through the KnobDeck Remote Script (companion hub, Live's Python API): play / stop, arrangement and session record, overdub, metronome, loop, punch, tap tempo and tempo dial, locators, undo, Capture MIDI, master / track volume and pan dials, mute / solo / arm, scenes, track and scene dials and wheels, device parameter dials in banks, with live state | Windows, macOS |
 | [toolbox](./toolbox) | Counter on a key or a dial (kept across restarts), dice, coin flip, random pick from your own list, tally rows to a CSV file; all local | Windows, macOS, Linux |
 | [text-tools](./text-tools) | Transforms on the selected text (case, trim, slugify, URL / Base64 encode and decode, JSON format / minify) onto the clipboard or in place of the selection; word count; nine saved text slots | Windows, macOS, Linux |
 
-The `vscode`, `intellij`, `browser-plugin` and `blender` plugins talk to companions that run
-*inside* VS Code, JetBrains IDEs, browsers and Blender (an editor extension, an IDE plugin, a
-browser extension and a Blender add-on, not KnobDeck SDK plugins). Each lives in its own repo, listed in
+The `vscode`, `intellij`, `browser-plugin`, `blender` and `ableton` plugins talk to companions that run
+*inside* VS Code, JetBrains IDEs, browsers, Blender and Ableton Live (an editor extension, an IDE plugin, a
+browser extension, a Blender add-on and a Live Remote Script, not KnobDeck SDK plugins). Each lives in its own repo, listed in
 [knobdeck-companion](https://github.com/Knobdeck/knobdeck-companion):
 [vscode](https://github.com/Knobdeck/knobdeck-vscode-companion),
 [intellij](https://github.com/Knobdeck/knobdeck-intellij-companion),
 [browser](https://github.com/Knobdeck/knobdeck-browser-companion),
-[blender](https://github.com/Knobdeck/knobdeck-blender-companion). Each one's CI builds its plugin
+[blender](https://github.com/Knobdeck/knobdeck-blender-companion),
+[ableton](https://github.com/Knobdeck/knobdeck-ableton-companion). Each one's CI builds its plugin
 from this repo and drives it against the companion.
 
 Spotify, Twitch, Voicemod and YouTube take app credentials at build time from repository variables
