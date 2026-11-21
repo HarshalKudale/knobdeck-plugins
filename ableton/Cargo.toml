@@ -1,0 +1,11 @@
+[package]
+name = "ableton"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true }
+# Setup: fetching the Remote Script's release and unpacking it into Live's User Library.
+ureq.workspace = true
+zip = { version = "2", default-features = false, features = ["deflate"] }
