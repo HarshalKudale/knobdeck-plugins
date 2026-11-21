@@ -1,0 +1,18 @@
+[package]
+name = "lightroom-classic"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true, features = ["secrets"] }
+ureq.workspace = true
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+[[bin]]
+name = "lightroom-classic"
+path = "src/main.rs"
+
+[[bin]]
+name = "lightroom-classic-setup"
+path = "src/bin/lightroom-classic-setup.rs"

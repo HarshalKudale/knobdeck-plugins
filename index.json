@@ -202,6 +202,16 @@
       ],
       "sort": 97
     },
+    "lightroom-classic": {
+      "name": "Lightroom Classic",
+      "summary": "Every Develop slider on a dial with its live value, plus modules, photos, flags, ratings, labels and undo, through the KnobDeck plug-in.",
+      "tags": [
+        "Photo",
+        "Creative"
+      ],
+      "featured": false,
+      "sort": 111
+    },
     "linux-tools": {
       "name": "Linux Tools",
       "summary": "Windows, workspaces, per-app volume, audio devices on GNOME and KDE.",
