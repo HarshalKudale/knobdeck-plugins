@@ -129,6 +129,16 @@
       ],
       "sort": 103
     },
+    "flight-sim": {
+      "name": "Flight Simulator",
+      "summary": "MSFS 2020 and 2024 over SimConnect: autopilot modes and bug dials, radios, transponder, gear, flaps, lights and readouts, with live state.",
+      "tags": [
+        "Gaming",
+        "Simulation"
+      ],
+      "featured": false,
+      "sort": 112
+    },
     "game-launcher": {
       "name": "Game Launcher",
       "summary": "Launch installed Steam, Epic, GOG, Ubisoft, Heroic and Lutris games; close a running game.",

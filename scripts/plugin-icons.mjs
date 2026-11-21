@@ -34,7 +34,7 @@ const BRAND = {
 /// Plugin dir → Lucide glyph (one each, so no two plugins look alike).
 const GLYPH = {
   ableton: "grid-3x3", "ai-actions": "sparkles", "ai-stats": "activity", "browser-plugin": "globe", clocks: "clock",
-  "coding-agents": "code-xml", "daw-mackie": "sliders-vertical", files: "files", finance: "chart-candlestick",
+  "coding-agents": "code-xml", "daw-mackie": "sliders-vertical", files: "files", finance: "chart-candlestick", "flight-sim": "plane",
   "game-launcher": "gamepad-2", govee: "lamp-ceiling", "hardware-monitor": "thermometer",
   "lightroom-classic": "aperture", "linux-tools": "square-terminal", "mac-tools": "command", midi: "piano", nanoleaf: "hexagon",
   network: "network", "now-playing": "disc-3", openrgb: "palette", reaper: "audio-waveform",
