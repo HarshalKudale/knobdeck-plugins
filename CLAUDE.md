@@ -100,6 +100,7 @@ Current decisions (keep this list up to date):
 | reaper | REAPER's built-in web browser interface over HTTP (`/_/` command strings: `TRANSPORT`, `TRACK`, `MARKER`, `GET/REPEAT`, `SET/TRACK/n/VOL` / `PAN` / `MUTE` / `SOLO` / `RECARM` / `SEL`, `SET/POS_STR/m<id>`, `GET/<id>` for toggle state, numeric and named action ids such as `_SWS_…`) | none. Transport and marker keys run REAPER's own actions by command id, never as key presses |
 | toolbox | none needed (counters, dice, coin, random pick, a CSV tally file; all local) | none |
 | text-tools | the selection from `knobdeck_sdk::os` (UI Automation, Accessibility, AT-SPI); transforms in Rust; clipboard through Win32 / NSPasteboard / Klipper / the GNOME extension; slots in the data folder | Entering the result in place of the selection (Transform's "in place" output, Paste Slot), like AI Actions: Windows and Linux paste it (clipboard + Ctrl+V), macOS types it as Unicode key events |
+| flight-sim | SimConnect, the sim's own client API (`SimConnect.dll` loaded at run time from the MSFS SDK (`%MSFS_SDK%` / `%MSFS2024_SDK%`), the running sim's folder or the plugin's data folder; not bundled, the SDK licence doesn't clearly allow redistributing it): K-events by name (`SimConnect_MapClientEventToSimEvent` + `TransmitClientEvent_EX1`), SimVars through data requests every changed sim frame, the `Pause` system event | none |
 
 ## Rule 2: every OS stays working
 
